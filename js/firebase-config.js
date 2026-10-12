@@ -17,15 +17,19 @@ import { getAuth }        from "https://www.gstatic.com/firebasejs/10.12.2/fireb
 import { getFirestore }   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getStorage }     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
-//  REPLACE THIS WITH YOUR FIREBASE CONFIG 
+import { localFirebaseConfig } from './env-config.js';
+
+// Load configuration from Vite environment variables or local unversioned config
+const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
+
 export const firebaseConfig = {
-  apiKey: "AIzaSyCJgQ45ZpW1CYzX4Vt2L6T5r93ON1DUP7g",
-  authDomain: "hmc-iimbodhgaya.firebaseapp.com",
-  projectId: "hmc-iimbodhgaya",
-  storageBucket: "hmc-iimbodhgaya.firebasestorage.app",
-  messagingSenderId: "1071466096630",
-  appId: "1:1071466096630:web:86c23928a659f340ba09d7",
-  measurementId: "G-0B2NEH0DR0"
+  apiKey: env.VITE_FIREBASE_API_KEY || localFirebaseConfig?.apiKey || "",
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || localFirebaseConfig?.authDomain || "",
+  projectId: env.VITE_FIREBASE_PROJECT_ID || localFirebaseConfig?.projectId || "",
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || localFirebaseConfig?.storageBucket || "",
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || localFirebaseConfig?.messagingSenderId || "",
+  appId: env.VITE_FIREBASE_APP_ID || localFirebaseConfig?.appId || "",
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID || localFirebaseConfig?.measurementId || ""
 };
 
 const app  = initializeApp(firebaseConfig);
