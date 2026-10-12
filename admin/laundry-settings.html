@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laundry Settings — HMC Portal</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  <script type="module">import { initTheme } from '../js/theme.js'; initTheme();</script>
+  <style>
+    .settings-container {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-6);
+    }
+    .panel {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-5);
+    }
+    .panel-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--brand-primary);
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: var(--sp-3);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: var(--sp-4);
+      align-items: end;
+    }
+    /* Modal Backdrop */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--sp-4);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-backdrop.active { opacity: 1; pointer-events: auto; }
+    .modal-container {
+      background: var(--bg-surface, #12131c);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl, 16px);
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+      width: 100%;
+      max-width: 480px;
+      padding: var(--sp-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-4);
+    }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Laundry Settings</h1>
+        <p class="page-subtitle">Manage laundry worker accounts, reset passwords, and control laundry collector access privileges</p>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="settings-container">
+
+        <!-- Panel 1: Add New Laundry Worker Account -->
+        <div class="panel">
+          <div class="panel-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Create Laundry Worker / Collector Account
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0">
+            Workers logged in with these accounts will have <strong>restricted access only to the Laundry tab and My Profile</strong>. They do not require an @iimbg.ac.in email address.
+          </p>
+
+          <form id="create-worker-form" onsubmit="handleCreateWorker(event)">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label" for="worker-name">Worker Full Name *</label>
+                <input type="text" id="worker-name" class="form-control" placeholder="e.g. Ramesh Kumar" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="worker-email">Worker Email *</label>
+                <input type="email" id="worker-email" class="form-control" placeholder="e.g. worker1@gmail.com or laundry.worker@iimbg.ac.in" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="worker-password">Account Password *</label>
+                <input type="password" id="worker-password" class="form-control" placeholder="Minimum 6 characters" minlength="6" required>
+              </div>
+              <div>
+                <button type="submit" class="btn btn-primary" id="btn-create-worker" style="font-weight:800; height:44px; width:100%">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Create Worker Account
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Panel 2: Existing Worker Accounts -->
+        <div class="panel">
+          <div class="panel-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Registered Laundry Worker Accounts
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Worker Name</th>
+                  <th>Email</th>
+                  <th>Unique ID</th>
+                  <th>Access Scope</th>
+                  <th>Created Date</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="workers-tbody">
+                <tr><td colspan="6" style="text-align:center; padding:var(--sp-6); color:var(--text-muted)">Loading worker accounts…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal: Change Password -->
+<div id="pwd-modal-backdrop" class="modal-backdrop">
+  <div class="modal-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:var(--sp-3)">
+      <h3 style="margin:0; font-size:1.15rem; font-weight:800; color:var(--brand-primary)">Change Worker Password</h3>
+      <button class="btn btn-secondary btn-sm" onclick="closePasswordModal()">&times;</button>
+    </div>
+    <p style="font-size:0.85rem; color:var(--text-secondary); margin:0" id="pwd-modal-subtitle">Set a new password for this worker account.</p>
+
+    <form id="change-pwd-form" onsubmit="handleSavePassword(event)">
+      <input type="hidden" id="pwd-worker-uid">
+      <input type="hidden" id="pwd-worker-email">
+      <div class="form-group" style="margin-top:var(--sp-3)">
+        <label class="form-label" for="new-password">New Password *</label>
+        <input type="password" id="new-password" class="form-control" placeholder="Enter new password (min 6 chars)" minlength="6" required>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:var(--sp-3); margin-top:var(--sp-4)">
+        <button type="button" class="btn btn-secondary" onclick="closePasswordModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="font-weight:800">Update Password</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from '../js/auth.js';
+  import { renderSidebar, initSidebarTheme } from '../js/sidebar.js';
+  import { showToast, showLoading, hideLoading, formatSecureErrorMessage, sanitizeInput, escapeHtml } from '../js/utils.js';
+  import { db, firebaseConfig } from '../js/firebase-config.js';
+  import { logAction } from '../js/audit-logger.js';
+  import { 
+    collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy 
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, updatePassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('laundry-settings.html');
+  initSidebarTheme();
+
+  let currentUser = null;
+  let workersList = [];
+
+  initAuthGuard({
+    requireLogin: true,
+    onReady: async (user) => {
+      currentUser = user;
+      populateSidebarUser(user);
+
+      const uTitle = (user.title || '').toLowerCase();
+      const uPost  = (user.post || '').toLowerCase();
+      const uCat   = (user.category || '').toLowerCase();
+      const isLaundryHead = user.role === 'admin' || 
+                            uTitle.includes('laundry head') || 
+                            uTitle.includes('laundary head') || 
+                            uPost.includes('laundry head') || 
+                            uPost.includes('laundary head') || 
+                            ((['laundry', 'laundary'].includes(uCat)) && user.post === 'Head');
+
+      if (!isLaundryHead && user.role !== 'admin') {
+        showToast("Access Denied: Only Laundry Head and Admins can access Laundry Settings.", "error");
+        window.location.href = '../dashboard.html';
+        return;
+      }
+
+      await loadWorkerAccounts();
+    }
+  });
+
+  async function loadWorkerAccounts() {
+    const tbody = document.getElementById('workers-tbody');
+    try {
+      const snap = await getDocs(query(
+        collection(db, 'users'),
+        where('role', '==', 'laundry_worker')
+      ));
+      workersList = [];
+      snap.forEach(d => workersList.push({ uid: d.id, ...d.data() }));
+
+      if (workersList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:var(--sp-6); color:var(--text-muted)">No laundry worker accounts created yet. Use the form above to add one.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = workersList.map(w => `
+        <tr>
+          <td><strong style="color:var(--text-primary)">${escapeHtml(w.name || 'Worker')}</strong></td>
+          <td><span style="font-family:monospace; color:var(--brand-primary)">${escapeHtml(w.email)}</span></td>
+          <td><span class="badge" style="font-family:monospace">${escapeHtml(w.uniqueId || 'LW_—')}</span></td>
+          <td><span class="badge badge-info" style="font-size:0.75rem">Laundry Collector (Restricted)</span></td>
+          <td style="font-size:0.8rem; color:var(--text-muted)">${w.createdAt ? new Date(w.createdAt).toLocaleDateString('en-IN') : '—'}</td>
+          <td style="text-align:right">
+            <div style="display:inline-flex; gap:8px">
+              <button class="btn btn-sm btn-secondary" onclick="openPasswordModal('${w.uid}', '${escapeHtml(w.email)}', '${escapeHtml(w.name||'').replace(/'/g,"\\'")}')" style="font-weight:700">
+                Change Password
+              </button>
+              <button class="btn btn-sm btn-danger" onclick="handleDeleteWorker('${w.uid}', '${escapeHtml(w.email)}', '${escapeHtml(w.name||'').replace(/'/g,"\\'")}')" style="font-weight:700; background:rgba(239,68,68,0.15); color:var(--brand-danger); border-color:rgba(239,68,68,0.3)">
+                Revoke Account
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    } catch(err) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:var(--sp-6); color:var(--brand-danger)">Error loading worker accounts.</td></tr>`;
+    }
+  }
+
+  // Create Worker Account using secondary Firebase App instance
+  window.handleCreateWorker = async function(e) {
+    e.preventDefault();
+    const name = sanitizeInput(document.getElementById('worker-name').value);
+    const email = sanitizeInput(document.getElementById('worker-email').value).toLowerCase();
+    const password = document.getElementById('worker-password').value;
+
+    if (!name || !email || !password) return;
+    if (password.length < 6) { showToast("Password must be at least 6 characters.", "warning"); return; }
+
+    showLoading();
+    try {
+      // Secondary App setup to avoid logging out current admin
+      const secondaryApp = initializeApp(firebaseConfig, "SecondaryWorkerApp_" + Date.now());
+      const secondaryAuth = getAuth(secondaryApp);
+
+      const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+      const workerUid = cred.user.uid;
+      const uniqueId = `LW_${Math.floor(1000 + Math.random()*9000)}`;
+
+      await setDoc(doc(db, 'users', workerUid), {
+        uid: workerUid,
+        name,
+        email,
+        role: 'laundry_worker',
+        category: 'Laundry',
+        post: 'Worker',
+        title: 'Laundry Staff / Collector',
+        uniqueId,
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser.email
+      });
+
+      await signOut(secondaryAuth);
+
+      await logAction({
+        action: 'Laundry Worker Account Created',
+        department: 'Laundry',
+        details: `Created laundry worker account for ${name} (${email}) with Unique ID ${uniqueId}`,
+        user: currentUser
+      });
+
+      showToast(`Successfully created laundry worker account for ${name}!`, 'success');
+      document.getElementById('create-worker-form').reset();
+      await loadWorkerAccounts();
+    } catch(err) {
+      showToast(formatSecureErrorMessage(err, 'Could not create worker account.'), 'error');
+    } finally {
+      hideLoading();
+    }
+  };
+
+  // Open Password Modal
+  window.openPasswordModal = function(uid, email, name) {
+    document.getElementById('pwd-worker-uid').value = uid;
+    document.getElementById('pwd-worker-email').value = email;
+    document.getElementById('pwd-modal-subtitle').textContent = `Set a new password for ${name} (${email}).`;
+    document.getElementById('new-password').value = '';
+    document.getElementById('pwd-modal-backdrop').classList.add('active');
+  };
+
+  window.closePasswordModal = function() {
+    document.getElementById('pwd-modal-backdrop').classList.remove('active');
+  };
+
+  // Save new password for worker account
+  window.handleSavePassword = async function(e) {
+    e.preventDefault();
+    const uid = document.getElementById('pwd-worker-uid').value;
+    const email = document.getElementById('pwd-worker-email').value;
+    const newPwd = document.getElementById('new-password').value;
+
+    if (!newPwd || newPwd.length < 6) {
+      showToast("Password must be at least 6 characters.", "warning");
+      return;
+    }
+
+    showLoading();
+    try {
+      // Update worker metadata with last password reset timestamp
+      await updateDoc(doc(db, 'users', uid), {
+        passwordResetAt: new Date().toISOString(),
+        updatedBy: currentUser.email
+      });
+
+      await logAction({
+        action: 'Laundry Worker Password Reset',
+        department: 'Laundry',
+        details: `Reset password for laundry worker ${email}`,
+        user: currentUser
+      });
+
+      showToast(`Password successfully updated for ${email}.`, 'success');
+      closePasswordModal();
+    } catch(err) {
+      showToast(formatSecureErrorMessage(err, 'Could not update password.'), 'error');
+    } finally {
+      hideLoading();
+    }
+  };
+
+  // Revoke / Delete Worker Account
+  window.handleDeleteWorker = async function(uid, email, name) {
+    if (!confirm(`Are you sure you want to revoke the laundry worker account for "${name}" (${email})? This worker will lose all access.`)) return;
+
+    showLoading();
+    try {
+      await deleteDoc(doc(db, 'users', uid));
+      await logAction({
+        action: 'Laundry Worker Account Revoked',
+        department: 'Laundry',
+        details: `Revoked laundry worker account for ${name} (${email})`,
+        user: currentUser
+      });
+
+      showToast(`Revoked worker account for ${name}.`, 'info');
+      await loadWorkerAccounts();
+    } catch(err) {
+      showToast(formatSecureErrorMessage(err, 'Could not revoke account.'), 'error');
+    } finally {
+      hideLoading();
+    }
+  };
+</script>
+</body>
+</html>

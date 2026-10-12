@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Categories — HMC Portal</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  <script type="module">import { initTheme } from '../js/theme.js'; initTheme();</script>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Task Categories</h1>
+        <p class="page-subtitle">Add, edit, and remove task categories</p>
+      </div>
+      <button class="btn btn-primary" onclick="openAddForm()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Category
+      </button>
+    </div>
+
+    <div class="page-body">
+      <div class="grid-2" style="align-items:start">
+
+        <!-- Categories List -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">All Categories</h3>
+            <span class="badge badge-primary" id="cat-count">0</span>
+          </div>
+          <div id="categories-list" style="display:flex;flex-direction:column;gap:var(--sp-2)">
+            <div style="text-align:center;padding:var(--sp-8)"><div class="spinner" style="margin:0 auto"></div></div>
+          </div>
+        </div>
+
+        <!-- Add/Edit Form -->
+        <div class="card" id="category-form-card">
+          <div class="card-header">
+            <h3 class="card-title" id="form-title">Add Category</h3>
+          </div>
+          <form id="category-form" onsubmit="handleSaveCategory(event)">
+            <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+              <div class="form-group">
+                <label class="form-label">Category Name *</label>
+                <input type="text" id="cat-name" class="form-control" required placeholder="e.g. Maintenance">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Color</label>
+                <div style="display:flex;align-items:center;gap:var(--sp-3)">
+                  <input type="color" id="cat-color" value="#6C63FF" style="width:48px;height:40px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:none;cursor:pointer;padding:4px">
+                  <span style="font-size:0.82rem;color:var(--text-secondary)">Choose a color for this category</span>
+                </div>
+              </div>
+
+              <!-- Preview -->
+              <div style="padding:var(--sp-3);background:rgba(255,255,255,0.02);border-radius:var(--radius-md)">
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:var(--sp-2)">Preview:</div>
+                <span class="task-category-tag" id="cat-preview" style="background:rgba(108,99,255,0.15);color:#6C63FF">Category Name</span>
+              </div>
+
+              <div class="flex gap-3" style="margin-top:var(--sp-2)">
+                <button type="submit" class="btn btn-primary flex-1" id="cat-save-btn">Save Category</button>
+                <button type="button" class="btn btn-secondary" onclick="resetForm()">Cancel</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from '../js/auth.js';
+  import { renderSidebar, initSidebarTheme } from '../js/sidebar.js';
+  import {
+    getCategories, addCategory, updateCategory, deleteCategory,
+    seedCategoriesIfNeeded
+  } from '../js/tasks.js';
+  import { showToast, openModal, closeModal } from '../js/utils.js';
+
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('categories.html');
+  initSidebarTheme();
+
+  let categories = [];
+  let editingId  = null;
+
+  initAuthGuard({
+    requireLogin: true,
+    requireRoles: ['admin'],
+    onReady: async (user) => {
+      populateSidebarUser(user);
+      await seedCategoriesIfNeeded();
+      await loadCategories();
+      initColorPreview();
+    }
+  });
+
+  async function loadCategories() {
+    categories = await getCategories();
+    document.getElementById('cat-count').textContent = categories.length;
+    renderList();
+  }
+
+  function renderList() {
+    const el = document.getElementById('categories-list');
+    if (!categories.length) {
+      el.innerHTML = `<div class="empty-state" style="padding:var(--sp-8)"><p>No categories yet</p></div>`;
+      return;
+    }
+    el.innerHTML = categories.map(cat => `
+      <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:rgba(255,255,255,0.02);border-radius:var(--radius-md);border:1px solid var(--border-subtle);transition:var(--transition-fast)" onmouseover="this.style.borderColor='var(--border-normal)'" onmouseout="this.style.borderColor='var(--border-subtle)'">
+        <div style="width:12px;height:12px;border-radius:3px;background:${cat.color || '#6C63FF'};flex-shrink:0"></div>
+        <span style="flex:1;font-weight:600;font-size:0.9rem">${cat.name}</span>
+        <span class="task-category-tag" style="background:${(cat.color||'#6C63FF')}22;color:${cat.color||'#6C63FF'}">${cat.name}</span>
+        <div style="display:flex;gap:var(--sp-1)">
+          <button class="btn-icon btn btn-sm" onclick="openEdit('${cat.id}','${cat.name}','${cat.color||'#6C63FF'}')" title="Edit">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn-icon btn btn-sm" onclick="handleDelete('${cat.id}','${cat.name}')" title="Delete" style="color:var(--brand-danger)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function initColorPreview() {
+    const colorInput = document.getElementById('cat-color');
+    const nameInput  = document.getElementById('cat-name');
+    const preview    = document.getElementById('cat-preview');
+
+    function updatePreview() {
+      const color = colorInput.value;
+      const name  = nameInput.value || 'Category';
+      preview.textContent = name;
+      preview.style.color = color;
+      preview.style.background = color + '22';
+    }
+    colorInput.addEventListener('input', updatePreview);
+    nameInput.addEventListener('input', updatePreview);
+  }
+
+  window.openAddForm = function() {
+    editingId = null;
+    document.getElementById('form-title').textContent = 'Add Category';
+    document.getElementById('cat-name').value  = '';
+    document.getElementById('cat-color').value = '#6C63FF';
+    document.getElementById('cat-save-btn').textContent = 'Save Category';
+    document.getElementById('cat-preview').textContent = 'Category Name';
+    document.getElementById('cat-preview').style.color = '#6C63FF';
+    document.getElementById('cat-preview').style.background = '#6C63FF22';
+  };
+
+  window.openEdit = function(id, name, color) {
+    editingId = id;
+    document.getElementById('form-title').textContent = 'Edit Category';
+    document.getElementById('cat-name').value  = name;
+    document.getElementById('cat-color').value = color;
+    document.getElementById('cat-save-btn').textContent = 'Update Category';
+    document.getElementById('cat-preview').textContent = name;
+    document.getElementById('cat-preview').style.color = color;
+    document.getElementById('cat-preview').style.background = color + '22';
+  };
+
+  window.resetForm = openAddForm;
+
+  window.handleSaveCategory = async function(e) {
+    e.preventDefault();
+    const name  = document.getElementById('cat-name').value.trim();
+    const color = document.getElementById('cat-color').value;
+    try {
+      if (editingId) {
+        await updateCategory(editingId, { name, color });
+        showToast('Category updated!', 'success');
+      } else {
+        await addCategory({ name, color });
+        showToast(`Category "${name}" added!`, 'success');
+      }
+      resetForm();
+      await loadCategories();
+    } catch (err) {
+      showToast(err.message || 'Save failed', 'error');
+    }
+  };
+
+  window.handleDelete = async function(id, name) {
+    if (!confirm(`Delete category "${name}"?`)) return;
+    try {
+      await deleteCategory(id);
+      showToast(`"${name}" deleted`, 'info');
+      await loadCategories();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+</script>
+
+<style>
+  .task-category-tag {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+  }
+</style>
+</body>
+</html>

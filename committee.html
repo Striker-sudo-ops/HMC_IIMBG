@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>HMC Committee — IIM Bodhgaya</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <script type="module">import { initTheme } from './js/theme.js'; initTheme();</script>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">HMC Committee</h1>
+        <p class="page-subtitle">Current and past IIM Bodhgaya HMC members</p>
+      </div>
+      <a href="admin/manage-members.html?action=add-past" class="btn btn-primary admin-only hidden">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Add HMC Member
+      </a>
+    </div>
+
+    <div class="page-body">
+      <!-- Current Committee -->
+      <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:var(--sp-4);color:var(--text-secondary);display:flex;align-items:center;gap:var(--sp-2)">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--brand-success);display:inline-block"></span>
+        Current HMC Committee
+      </h2>
+      <div id="current-grid" class="committee-grid" style="margin-bottom:var(--sp-8)">
+        <div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>
+      </div>
+
+      <!-- Past Members -->
+      <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:var(--sp-4);color:var(--text-secondary);display:flex;align-items:center;gap:var(--sp-2)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Past HMC Members
+      </h2>
+      <div id="past-grid" class="committee-grid">
+        <div class="empty-state"><p style="font-size:0.85rem">No past members recorded</p></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<style>
+  .committee-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--sp-5);
+  }
+  .comm-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    backdrop-filter: var(--glass-blur);
+    padding: var(--sp-5);
+    text-align: center;
+    transition: var(--transition-normal);
+    position: relative;
+  }
+  .comm-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-glow-sm); border-color: var(--border-normal); }
+  .comm-card-avatar {
+    width: 76px; height: 76px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--border-normal);
+    margin: 0 auto var(--sp-3);
+    display: block;
+  }
+  .comm-card-avatar-ph {
+    width: 76px; height: 76px;
+    border-radius: 50%;
+    background: var(--grad-primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 800; color: white;
+    margin: 0 auto var(--sp-3);
+  }
+  .comm-card-name        { font-size: 1rem; font-weight: 700; margin-bottom: 3px; }
+  .comm-card-designation { font-size: 0.8rem; color: var(--brand-primary); font-weight: 600; margin-bottom: var(--sp-3); }
+  .comm-card-contact     { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.8; }
+  .comm-card-contact a   { color: var(--brand-info); text-decoration: none; }
+  .comm-card-prof        { margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--border-subtle); font-size: 0.74rem; color: var(--text-muted); }
+  .batch-sep             { grid-column:1/-1; font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;padding-bottom:var(--sp-2);border-bottom:1px solid var(--border-subtle); }
+</style>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from './js/auth.js';
+  import { renderSidebar, initSidebarTheme } from './js/sidebar.js';
+  import { getAllMembers } from './js/members.js';
+  import { showToast } from './js/utils.js';
+
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('committee.html');
+  initSidebarTheme();
+
+  initAuthGuard({
+    requireLogin: true,
+    onReady: async (user) => {
+      populateSidebarUser(user);
+      if (user.role === 'admin' || user.role === 'subadmin') {
+        document.querySelectorAll('.admin-only').forEach(e => e.classList.remove('hidden'));
+      }
+      
+      try {
+        const membersList = await getAllMembers();
+        
+        function formatCategory(catText) {
+          if (!catText) return '—';
+          const lower = catText.toLowerCase().trim();
+          if (lower === 'hmc') return 'HMC';
+          if (lower.startsWith('laund')) return 'Laundry';
+          return catText.charAt(0).toUpperCase() + catText.slice(1);
+        }
+
+        const mapped = membersList.map(m => {
+          const catText = m.category || '';
+          const postText = m.post || '';
+          const catCap = formatCategory(catText);
+          const postCap = postText.charAt(0) ? (postText.charAt(0).toUpperCase() + postText.slice(1)) : '';
+          const computedTitle = postText === 'Chairperson' ? 'Chairperson' : 
+            ((catCap && postCap && catCap !== '—') ? `${catCap} ${postCap}` : '');
+
+          let des = m.title || computedTitle || m.post || 'HMC Member';
+          if (des) {
+            des = des.replace(/\bHmc\b/g, 'HMC');
+          }
+
+          return {
+            name: m.name,
+            designation: des,
+            contactNumber: m.contact || '',
+            email: m.email || '',
+            profilePicUrl: m.profilePicUrl || null,
+            associatedProfessor: m.associatedProfessor || '',
+            isCurrent: m.isCurrent !== false,
+            batch: m.graduationYear || 'Legacy',
+            order: m.post === 'Chairperson' ? 1 : (m.post && m.post.toLowerCase().includes('head')) ? 2 : 3
+          };
+        });
+
+        const currentMembers = mapped.filter(m => m.isCurrent);
+        const pastMembers = mapped.filter(m => !m.isCurrent);
+
+        renderCurrent(currentMembers);
+        renderPast(pastMembers);
+      } catch(err) {
+        showToast("Error loading HMC committee members: " + err.message, "error");
+      }
+    }
+  });
+
+  function renderCurrent(members) {
+    const el = document.getElementById('current-grid');
+    if (!members.length) { el.innerHTML = '<div class="empty-state"><p>No members added yet</p></div>'; return; }
+    el.innerHTML = members.sort((a,b) => (a.order||999)-(b.order||999)).map(m => commCard(m)).join('');
+  }
+
+  function renderPast(members) {
+    const el = document.getElementById('past-grid');
+    if (!members.length) return;
+    const byBatch = {};
+    members.forEach(m => {
+      const b = m.batch || 'Legacy';
+      if (!byBatch[b]) byBatch[b] = [];
+      byBatch[b].push(m);
+    });
+    let html = '';
+    Object.entries(byBatch).sort((a,b) => b[0].localeCompare(a[0])).forEach(([batch, list]) => {
+      html += `<div class="batch-sep">Batch ${batch}</div>`;
+      html += `<div class="comm-grid">${list.map(m => commCard(m)).join('')}</div>`;
+    });
+    el.innerHTML = html;
+  }
+
+  function commCard(m) {
+    const init = (m.name||'M').split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
+    const avatarHtml = m.profilePicUrl
+      ? `<img src="${m.profilePicUrl}" class="comm-card-avatar" alt="${m.name}" onerror="this.onerror=null;this.outerHTML='<div class=\\'comm-card-avatar-ph\\'>${init}</div>'">`
+      : `<div class="comm-card-avatar-ph">${init}</div>`;
+    return `
+      <div class="comm-card">
+        ${avatarHtml}
+        <div class="comm-card-name">${m.name}</div>
+        <div class="comm-card-designation">${m.designation}</div>
+        <div class="comm-card-contact" style="display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;margin-top:var(--sp-2)">
+          ${m.contactNumber ? `
+            <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--text-secondary)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted)"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.92z"/></svg>
+              <span>${m.contactNumber}</span>
+            </div>` : ''}
+          ${m.email ? `
+            <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--text-secondary)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted)"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <a href="mailto:${m.email}" style="color:var(--brand-primary);text-decoration:none">${m.email}</a>
+            </div>` : ''}
+        </div>
+        ${m.associatedProfessor ? `
+          <div class="comm-card-prof">
+            <strong>Faculty Advisor</strong><br>${m.associatedProfessor}
+          </div>` : ''}
+      </div>`;
+  }
+</script>
+</body>
+</html>

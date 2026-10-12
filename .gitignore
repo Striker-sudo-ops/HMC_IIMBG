@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.firebase/
+.DS_Store
+*.log
+*.jks
+*.keystore
+.gradle/
+build/
+android/app/build/
+android/build/
+android/.gradle/
+temp_*.js
+scratch_*.txt

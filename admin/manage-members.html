@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Members — HMC Admin</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  <script type="module">import { initTheme } from '../js/theme.js'; initTheme();</script>
+  <style>
+    .premium-form-control {
+      width: 100%;
+      padding: 11px 16px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-normal);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: var(--transition-fast);
+      box-sizing: border-box;
+      margin-bottom: 0;
+    }
+
+    .premium-form-control:focus {
+      background: var(--bg-surface);
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+      outline: none;
+    }
+
+    .premium-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='%23a1a1aa' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px;
+      padding-right: 40px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: var(--sp-2) var(--sp-4);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: var(--radius-md);
+      transition: var(--transition-fast);
+    }
+
+    .tab-btn:hover {
+      color: var(--text-normal);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tab-btn.active {
+      color: var(--brand-primary);
+      background: rgba(124, 58, 237, 0.12);
+    }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Manage Members</h1>
+        <p class="page-subtitle">Manage HMC member accounts, student upgrades, and designation openings</p>
+      </div>
+      <div class="flex gap-3">
+        <button class="btn btn-primary" onclick="openCreateModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add HMC Member
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tab-nav" style="display: flex; gap: var(--sp-2); margin-bottom: var(--sp-5); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--sp-3)">
+      <button class="tab-btn active" id="tab-btn-hmc" onclick="switchMainTab('hmc')">HMC Members</button>
+      <button class="tab-btn" id="tab-btn-past" onclick="switchMainTab('past')">Past HMC Members (<span id="total-past">0</span>)</button>
+      <button class="tab-btn" id="tab-btn-authorities" onclick="switchMainTab('authorities')">Hostel Authorities (<span id="total-authorities">0</span>)</button>
+      <button class="tab-btn" id="tab-btn-students" onclick="switchMainTab('students')">Student Accounts</button>
+      <button class="tab-btn" id="tab-btn-openings" onclick="switchMainTab('openings')">Post Openings & Limits</button>
+    </div>
+
+    <div class="page-body">
+      
+      <!-- Tab 1: HMC Members Table -->
+      <div id="tab-hmc" class="tab-content">
+        <div style="display:flex;gap:var(--sp-4);flex-wrap:wrap;margin-bottom:var(--sp-6)">
+          <div class="stat-card" style="flex:1;min-width:140px">
+            <div class="stat-icon stat-icon-primary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+            <div><div class="stat-value" id="total-members">—</div><div class="stat-label">HMC Members</div></div>
+          </div>
+          <div class="stat-card" style="flex:1;min-width:140px">
+            <div class="stat-icon stat-icon-danger"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div><div class="stat-value" id="total-admins">—</div><div class="stat-label">Admins</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">HMC Members Directory</h3>
+            <div class="search-bar" style="width:250px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Search…" id="member-search" oninput="filterMembers(this.value)">
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table id="members-table">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Unique ID</th>
+                  <th>Designation / Title</th>
+                  <th>Role</th>
+                  <th>Grad Year</th>
+                  <th>Category</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="members-tbody">
+                <tr><td colspan="7" style="text-align:center;padding:var(--sp-8)"><div class="spinner" style="margin:0 auto"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 1b: Past HMC Members Table -->
+      <div id="tab-past" class="tab-content" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Past HMC Members Directory</h3>
+              <p style="font-size:0.8rem;color:var(--text-muted);margin-top:2px">All portal features & access are revoked for past members. Only their name and historical details are preserved.</p>
+            </div>
+            <div class="search-bar" style="width:250px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Search past members…" id="past-search" oninput="filterPastMembers(this.value)">
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Past Member</th>
+                  <th>Unique ID</th>
+                  <th>Designation / Title</th>
+                  <th>Grad Year</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="past-tbody">
+                <tr><td colspan="7" style="text-align:center;padding:var(--sp-8)"><div class="spinner" style="margin:0 auto"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 1c: Hostel Authorities Table -->
+      <div id="tab-authorities" class="tab-content" style="display:none">
+        <div style="display:flex;gap:var(--sp-4);flex-wrap:wrap;margin-bottom:var(--sp-6)">
+          <div class="stat-card" style="flex:1;min-width:140px">
+            <div class="stat-icon stat-icon-primary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div><div class="stat-value" id="stat-chief-warden">0</div><div class="stat-label">Chief Warden</div></div>
+          </div>
+          <div class="stat-card" style="flex:1;min-width:140px">
+            <div class="stat-icon stat-icon-success"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <div><div class="stat-value" id="stat-hostel-wardens">0</div><div class="stat-label">Hostel Wardens</div></div>
+          </div>
+          <div class="stat-card" style="flex:1;min-width:140px">
+            <div class="stat-icon stat-icon-warning"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></div>
+            <div><div class="stat-value" id="stat-hostel-supervisors">0</div><div class="stat-label">Hostel Supervisors</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" style="flex-wrap:wrap;gap:var(--sp-3)">
+            <div>
+              <h3 class="card-title">Hostel Authorities Directory</h3>
+              <p style="font-size:0.8rem;color:var(--text-muted);margin:2px 0 0">Chief Warden, Hostel Wardens & Hostel Supervisors</p>
+            </div>
+            <div style="display:flex;gap:var(--sp-3);align-items:center;flex-wrap:wrap">
+              <div class="search-bar" style="width:230px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Search authorities…" id="authority-search" oninput="filterAuthorities(this.value)">
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="openCreateAuthorityModal()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Hostel Authority
+              </button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Authority Profile</th>
+                  <th>Unique ID</th>
+                  <th>Role / Post</th>
+                  <th>Assigned Hostels</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="authorities-tbody">
+                <tr><td colspan="6" style="text-align:center;padding:var(--sp-8)"><div class="spinner" style="margin:0 auto"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-students" class="tab-content" style="display:none">
+        <div style="display:flex;gap:var(--sp-4);flex-wrap:wrap;margin-bottom:var(--sp-6)">
+          <div class="stat-card" style="flex:1;max-width:300px">
+            <div class="stat-icon stat-icon-warning"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg></div>
+            <div><div class="stat-value" id="total-students">—</div><div class="stat-label">Self-registered Students</div></div>
+          </div>
+        </div>
+
+        <!-- Email Search Panel -->
+        <div class="card" style="margin-bottom:var(--sp-5)">
+          <div class="card-header" style="flex-wrap:wrap;gap:var(--sp-3)">
+            <div>
+              <h3 class="card-title">Search Student by Email</h3>
+              <p style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Find a student’s full details and manage their account</p>
+            </div>
+          </div>
+          <div style="padding:var(--sp-4) var(--sp-6);display:flex;gap:var(--sp-3);align-items:center">
+            <div class="input-wrapper" style="flex:1;max-width:420px">
+              <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="email-search-input" class="form-control" placeholder="Search by Name, Mobile, Email, or Room No."
+                onkeydown="if(event.key==='Enter') searchStudentByEmail()">
+            </div>
+            <button class="btn btn-primary" onclick="searchStudentByEmail()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Search
+            </button>
+          </div>
+          <!-- Student Detail Result -->
+          <div id="student-search-result" class="hidden" style="padding:0 var(--sp-6) var(--sp-5)">
+            <div style="border:1px solid var(--border-normal);border-radius:var(--radius-lg);overflow:hidden">
+              <div style="background:rgba(108,99,255,0.07);padding:var(--sp-4) var(--sp-5);display:flex;align-items:center;gap:var(--sp-4)">
+                <div id="search-result-avatar" style="width:52px;height:52px;border-radius:50%;background:var(--bg-glass);border:2px solid var(--border-normal);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;color:var(--brand-primary)"></div>
+                <div style="flex:1">
+                  <div style="font-weight:700;font-size:1rem" id="search-result-name">—</div>
+                  <div style="font-size:0.78rem;color:var(--text-muted)" id="search-result-email">—</div>
+                </div>
+                <span class="badge badge-primary" style="font-size:0.7rem">Student</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0;border-top:1px solid var(--border-subtle)">
+                <div style="padding:var(--sp-3) var(--sp-5);border-right:1px solid var(--border-subtle)">
+                  <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Roll Number</div>
+                  <div style="font-weight:600" id="search-result-roll">—</div>
+                </div>
+                <div style="padding:var(--sp-3) var(--sp-5);border-right:1px solid var(--border-subtle)">
+                  <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Batch Year</div>
+                  <div style="font-weight:600" id="search-result-batch">—</div>
+                </div>
+                <div style="padding:var(--sp-3) var(--sp-5);border-right:1px solid var(--border-subtle)">
+                  <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Hostel</div>
+                  <div style="font-weight:600" id="search-result-hostel">—</div>
+                </div>
+                <div style="padding:var(--sp-3) var(--sp-5)">
+                  <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Room No.</div>
+                  <div style="font-weight:600" id="search-result-room">—</div>
+                </div>
+              </div>
+              <div style="padding:var(--sp-4) var(--sp-5);border-top:1px solid var(--border-subtle);display:flex;gap:var(--sp-3);justify-content:flex-end">
+                <button class="btn btn-primary btn-sm" id="search-result-upgrade-btn" onclick="">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>
+                  Upgrade to HMC
+                </button>
+                <button class="btn btn-sm" id="search-result-delete-btn" onclick="" style="background:rgba(239,68,68,0.12);color:var(--brand-danger);border:1px solid rgba(239,68,68,0.25)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="student-search-notfound" class="hidden" style="padding:var(--sp-4) var(--sp-6);font-size:0.85rem;color:var(--text-muted)">No student found with that email address.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Registered Students Directory</h3>
+            <div class="search-bar" style="width:250px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Search…" id="student-search" oninput="filterStudents(this.value)">
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Email</th>
+                  <th>Roll Number</th>
+                  <th>Batch Year</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="students-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:var(--sp-8)"><div class="spinner" style="margin:0 auto"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Openings Limits Table -->
+      <div id="tab-openings" class="tab-content" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Designation Openings & Limits</h3>
+          </div>
+          <p style="font-size:0.82rem; color:var(--text-muted); padding: 0 var(--sp-6) var(--sp-2)">
+            Define limits for the number of members allowed for each Designation. The portal enforces these limits when adding or promoting members.
+          </p>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Designation / Title</th>
+                  <th style="text-align: center">Active Members</th>
+                  <th style="text-align: center">Max Openings</th>
+                  <th style="text-align: center">Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="openings-tbody">
+                <!-- Dynamically generated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Add / Edit Member Modal -->
+<div class="modal-overlay" id="member-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 class="modal-title" id="member-modal-title">Add HMC Member</h3>
+      <button class="modal-close" onclick="closeMemberModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <form id="member-form" onsubmit="handleSaveMember(event)">
+      <div style="display:flex;justify-content:center;margin-bottom:var(--sp-5)">
+        <div style="position:relative;display:inline-block">
+          <div id="modal-avatar-preview" style="width:80px;height:80px;border-radius:50%;background:var(--bg-glass);border:2px dashed var(--border-normal);display:flex;align-items:center;justify-content:center;color:var(--text-muted)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <label style="position:absolute;bottom:0;right:0;background:var(--brand-primary);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg-surface)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <input type="file" id="pic-upload" accept="image/*" style="display:none" onchange="previewPic(this)">
+          </label>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" id="m-name" class="form-control" required placeholder="e.g. Amit Sharma">
+        </div>
+        <div class="form-group" id="group-email">
+          <label class="form-label">Email * <span style="font-size:0.7rem;color:var(--brand-primary)">(@iimbg.ac.in)</span></label>
+          <input type="email" id="m-email" class="form-control" placeholder="name@iimbg.ac.in" oninput="validateEmailField(this,'m-domain-warn')">
+          <div id="m-domain-warn" class="hidden" style="font-size:0.72rem;color:var(--brand-danger);margin-top:4px">Only @iimbg.ac.in emails accepted</div>
+        </div>
+        <div class="form-group" id="group-password">
+          <label class="form-label">Password * (min 8 chars)</label>
+          <input type="password" id="m-password" class="form-control" minlength="8" placeholder="Set login password">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Post / Designation *</label>
+          <select id="m-post" class="form-control premium-form-control premium-select" onchange="onModalPostChange('m-post', 'm-category', 'group-category')" required>
+            <option value="member">Member</option>
+            <option value="Head">Head</option>
+            <option value="POC">POC</option>
+            <option value="Chairperson">Chairperson</option>
+          </select>
+        </div>
+        <div class="form-group" id="group-category">
+          <label class="form-label">Category / Department *</label>
+          <select id="m-category" class="form-control premium-form-control premium-select" required>
+            <option value="mess">Mess</option>
+            <option value="laundary">Laundry</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="hostel">Hostel</option>
+            <option value="administration">Administration</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Date of Birth</label>
+          <input type="date" id="m-dob" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contact Number</label>
+          <input type="tel" id="m-contact" class="form-control" placeholder="9876543210">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Year of Graduation *</label>
+          <input type="number" id="m-grad-year" class="form-control" required min="2024" max="2040" value="2027">
+        </div>
+        <div class="form-group">
+          <label class="form-label">HMC Membership Status *</label>
+          <select id="m-is-current" class="form-control premium-form-control premium-select" required>
+            <option value="true">Active / Current HMC Member</option>
+            <option value="false">Past HMC Member</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Portal Role *</label>
+          <select id="m-role" class="form-control premium-form-control premium-select">
+            <option value="member">Member</option>
+            <option value="subadmin">Sub-Admin (Co-Admin)</option>
+            <option value="admin">Admin (Full Control)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:var(--sp-4);padding:var(--sp-3) var(--sp-4);background:rgba(108,99,255,0.06);border-radius:var(--radius-md)">
+        <span style="font-size:0.78rem;color:var(--text-muted)">Unique ID / Title Preview: </span>
+        <span style="font-family:var(--font-mono);color:var(--brand-primary);font-weight:700" id="id-preview">#HMC_27_XXX</span>
+        <span style="color:var(--text-secondary);font-size:0.8rem;margin-left:12px;font-weight:600" id="title-preview">Mess Member</span>
+      </div>
+
+      <div class="flex gap-3" style="margin-top:var(--sp-5)">
+        <button type="submit" class="btn btn-primary flex-1" id="save-member-btn">Create Member</button>
+        <button type="button" class="btn btn-secondary" onclick="closeMemberModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Add / Edit Hostel Authority -->
+<div class="modal-overlay" id="authority-modal">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-header">
+      <h3 class="modal-title" id="authority-modal-title">Add Hostel Authority</h3>
+      <button class="modal-close" onclick="closeAuthorityModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+
+    <form id="authority-form" onsubmit="saveAuthority(event)" style="padding:var(--sp-6)">
+      <!-- Avatar Upload -->
+      <div style="display:flex;align-items:center;gap:var(--sp-4);margin-bottom:var(--sp-5);padding-bottom:var(--sp-4);border-bottom:1px solid var(--border-subtle)">
+        <div id="auth-avatar-preview" style="width:72px;height:72px;border-radius:50%;background:var(--bg-glass);border:2px dashed var(--border-normal);display:flex;align-items:center;justify-content:center;color:var(--text-muted);overflow:hidden;flex-shrink:0">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload Photo
+            <input type="file" id="auth-pic-input" accept="image/*" style="display:none" onchange="previewAuthPic(this)">
+          </label>
+          <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px">JPG, PNG or WebP.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+        <!-- Role / Authority Type -->
+        <div class="form-group" id="group-auth-role">
+          <label class="form-label">Authority Role / Post *</label>
+          <select id="auth-role" class="form-control premium-form-control premium-select" onchange="onAuthorityRoleChange(this.value)" required>
+            <option value="chief_warden">Chief Warden (Oversees All Hostels)</option>
+            <option value="hostel_warden">Hostel Warden (Assigned to one or more hostels)</option>
+            <option value="hostel_supervisor">Hostel Supervisor (Specific Hostel Operations)</option>
+          </select>
+          <p id="auth-role-desc" style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">Supervises all hostels, wardens, supervisors, and student residence affairs across the institute.</p>
+        </div>
+
+        <!-- Full Name -->
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" id="auth-name" class="form-control premium-form-control" placeholder="e.g. Dr. Rajesh Sharma" required>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group" id="group-auth-email">
+          <label class="form-label">Official Email *</label>
+          <input type="email" id="auth-email" class="form-control premium-form-control" placeholder="e.g. warden@iimbg.ac.in" required oninput="validateEmailField(this, 'auth-email-warn')">
+          <div id="auth-email-warn" class="hidden" style="font-size:0.75rem;color:var(--brand-warning);margin-top:4px">
+            Prefer using official institution email (@iimbg.ac.in).
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group" id="group-auth-password">
+          <label class="form-label">Password * <span style="font-size:0.7rem;color:var(--text-muted)">(Min 6 chars)</span></label>
+          <input type="password" id="auth-password" class="form-control premium-form-control" placeholder="Initial temporary password" minlength="6" required>
+          <span style="font-size:0.72rem;color:var(--text-muted);display:block;margin-top:3px">No email verification is sent — account is created instantly active.</span>
+        </div>
+
+        <!-- Contact Number -->
+        <div class="form-group">
+          <label class="form-label">Contact / Mobile Number</label>
+          <input type="tel" id="auth-contact" class="form-control premium-form-control" placeholder="e.g. 9876543210">
+        </div>
+
+        <!-- Assigned Hostels Configuration -->
+        <div class="form-group" id="group-assigned-hostels">
+          <label class="form-label" id="lbl-assigned-hostels">Assigned Hostel(s) *</label>
+          
+          <!-- Chief Warden notice -->
+          <div id="auth-hostel-all-notice" style="background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.25);border-radius:var(--radius-md);padding:10px 14px;font-size:0.82rem;color:var(--text-normal)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" stroke-width="2" style="vertical-align:-2px;margin-right:6px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <strong>All Hostels:</strong> Chief Warden has full access to all residential buildings automatically.
+          </div>
+
+          <!-- Warden multi-select checkboxes -->
+          <div id="auth-hostels-warden-container" class="hidden" style="background:var(--bg-base);border:1px solid var(--border-normal);border-radius:var(--radius-md);padding:12px;max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
+            <!-- Dynamically filled with checkboxes -->
+          </div>
+
+          <!-- Supervisor single select -->
+          <div id="auth-hostels-supervisor-container" class="hidden">
+            <select id="auth-supervisor-hostel-select" class="form-control premium-form-control premium-select">
+              <option value="">Select Hostel…</option>
+              <!-- Dynamically filled -->
+            </select>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="flex gap-3" style="margin-top:var(--sp-6)">
+        <button type="submit" class="btn btn-primary flex-1" id="save-authority-btn">Create Authority Account</button>
+        <button type="button" class="btn btn-secondary" onclick="closeAuthorityModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 3-Step Upgrade Student Modal -->
+<div class="modal-overlay" id="promote-modal">
+  <div class="modal" style="max-width:500px">
+
+    <!-- Step indicator -->
+    <div style="display:flex;align-items:center;gap:0;margin-bottom:var(--sp-5);border-bottom:1px solid var(--border-subtle);padding-bottom:var(--sp-4)">
+      <div id="promote-step-dot-1" style="display:flex;align-items:center;gap:var(--sp-2);flex:1">
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--brand-primary);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#fff">1</div>
+        <span style="font-size:0.8rem;font-weight:600;color:var(--brand-primary)">Role & Details</span>
+      </div>
+      <div style="width:30px;height:1px;background:var(--border-subtle)"></div>
+      <div id="promote-step-dot-2" style="display:flex;align-items:center;gap:var(--sp-2);flex:1;justify-content:center">
+        <div id="step2-num" style="width:26px;height:26px;border-radius:50%;background:var(--bg-glass);border:2px solid var(--border-normal);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:var(--text-muted)">2</div>
+        <span id="step2-lbl" style="font-size:0.8rem;font-weight:600;color:var(--text-muted)">Review</span>
+      </div>
+      <div style="width:30px;height:1px;background:var(--border-subtle)"></div>
+      <div id="promote-step-dot-3" style="display:flex;align-items:center;gap:var(--sp-2);flex:1;justify-content:flex-end">
+        <div id="step3-num" style="width:26px;height:26px;border-radius:50%;background:var(--bg-glass);border:2px solid var(--border-normal);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:var(--text-muted)">3</div>
+        <span id="step3-lbl" style="font-size:0.8rem;font-weight:600;color:var(--text-muted)">Verify</span>
+      </div>
+      <button class="modal-close" style="margin-left:var(--sp-4)" onclick="closeModal('promote-modal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+
+    <!-- Step 1: Role & Details -->
+    <div id="promote-step-1">
+      <h3 class="modal-title" style="margin-bottom:var(--sp-2)">Upgrade Student to HMC</h3>
+      <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:var(--sp-4)">
+        Upgrading: <strong id="promote-student-name"></strong> &nbsp;<span style="color:var(--text-muted);font-size:0.8rem" id="promote-student-email"></span>
+      </p>
+      <div style="display:flex; flex-direction:column; gap:var(--sp-4)">
+        <div class="form-group">
+          <label class="form-label">Post / Designation *</label>
+          <select id="p-post-select" class="form-control premium-form-control premium-select" onchange="onModalPostChange('p-post-select', 'p-category-select', 'group-promote-category')">
+            <option value="member">Member</option>
+            <option value="Head">Head</option>
+            <option value="POC">POC</option>
+            <option value="Chairperson">Chairperson</option>
+          </select>
+        </div>
+        <div class="form-group" id="group-promote-category">
+          <label class="form-label">Category / Department *</label>
+          <select id="p-category-select" class="form-control premium-form-control premium-select">
+            <option value="mess">Mess</option>
+            <option value="laundary">Laundry</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="hostel">Hostel</option>
+            <option value="administration">Administration</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Year of Graduation *</label>
+          <input type="number" id="p-grad-year" class="form-control" min="2024" max="2040" value="2027">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Portal Role *</label>
+          <select id="p-role-select" class="form-control premium-form-control premium-select">
+            <option value="member">Member</option>
+            <option value="subadmin">Sub-Admin (Co-Admin)</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-3" style="margin-top:var(--sp-5)">
+        <button class="btn btn-primary flex-1" onclick="promoteGoStep(2)">Review &rarr;</button>
+        <button class="btn btn-secondary" onclick="closeModal('promote-modal')">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Review Summary -->
+    <div id="promote-step-2" style="display:none">
+      <h3 class="modal-title" style="margin-bottom:var(--sp-4)">Review Upgrade Details</h3>
+      <div style="background:rgba(108,99,255,0.07);border:1px solid rgba(108,99,255,0.2);border-radius:var(--radius-lg);padding:var(--sp-5);margin-bottom:var(--sp-4)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)">
+          <div>
+            <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:2px">Student</div>
+            <div style="font-weight:700" id="review-name">—</div>
+            <div style="font-size:0.78rem;color:var(--text-muted)" id="review-email">—</div>
+          </div>
+          <div>
+            <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:2px">New Role</div>
+            <div style="font-weight:700" id="review-role">—</div>
+          </div>
+          <div>
+            <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:2px">Designation</div>
+            <div style="font-weight:700" id="review-title">—</div>
+          </div>
+          <div>
+            <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:2px">Department</div>
+            <div style="font-weight:700" id="review-category">—</div>
+          </div>
+          <div style="grid-column:span 2">
+            <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:2px">Grad Year</div>
+            <div style="font-weight:700" id="review-grad-year">—</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:var(--radius-md);margin-bottom:var(--sp-5)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand-warning)" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span style="font-size:0.82rem;color:var(--text-secondary)">This will grant <strong id="review-name-warn"></strong> access to restricted HMC portal areas. You will be required to verify your identity in the next step.</span>
+      </div>
+      <div class="flex gap-3">
+        <button class="btn btn-primary flex-1" onclick="promoteGoStep(3)">Proceed to Verify &rarr;</button>
+        <button class="btn btn-secondary" onclick="promoteGoStep(1)">&larr; Back</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Admin Password Re-Authentication -->
+    <div id="promote-step-3" style="display:none">
+      <h3 class="modal-title" style="margin-bottom:var(--sp-2)">Admin Verification Required</h3>
+      <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:var(--sp-5)">To confirm this action, please enter your admin account password.</p>
+      <div class="form-group" style="margin-bottom:var(--sp-4)">
+        <label class="form-label">Your Admin Password</label>
+        <div class="input-wrapper">
+          <svg class="input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="password" id="promote-admin-pass" class="form-control has-toggle" placeholder="Enter your password" autocomplete="current-password">
+          <button type="button" class="password-toggle" onclick="togglePromotePass()" title="Toggle visibility">
+            <svg id="promote-pass-eye" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="promote-auth-error" class="hidden" style="font-size:0.8rem;color:var(--brand-danger);margin-bottom:var(--sp-3);padding:var(--sp-2) var(--sp-3);background:rgba(239,68,68,0.08);border-radius:var(--radius-sm)"></div>
+      <div class="flex gap-3">
+        <button class="btn btn-primary flex-1" id="promote-confirm-btn" onclick="submitUpgradeStudent()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Confirm Upgrade
+        </button>
+        <button class="btn btn-secondary" onclick="promoteGoStep(2)">&larr; Back</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from '../js/auth.js';
+  import { renderSidebar, initSidebarTheme } from '../js/sidebar.js';
+  import { 
+    getAllMembers, createMember, updateMember, deleteMember, 
+    getAllStudents, deleteStudentAccount, generateUniqueId,
+    getAllHostelAuthorities, createHostelAuthority, updateHostelAuthority, toggleAccountFreeze
+  } from '../js/members.js';
+  import { renderAvatar, showToast, openModal, closeModal } from '../js/utils.js';
+  import { db, auth } from '../js/firebase-config.js';
+  import { getCategories } from '../js/tasks.js';
+  import { 
+    doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where 
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import {
+    EmailAuthProvider, reauthenticateWithCredential
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  // Inject sidebar
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('manage-members.html');
+  initSidebarTheme();
+
+  // Globals
+  let allMembers = [];
+  let allStudents = [];
+  let allAuthorities = [];
+  let allHostelsList = [];
+  let openingsLimits = {};
+  
+  let picFile = null;
+  let authPicFile = null;
+  let editingMemberUid = null; 
+  let editingAuthUid = null;
+  let promoteTargetUid = null;
+
+  const DEFAULT_TITLES = [
+    'Chairperson',
+    'Mess Head', 'Mess Member',
+    'Laundary Head', 'Laundary Member',
+    'Maintenance Head', 'Maintenance Member',
+    'Hostel Head', 'Hostel Member'
+  ];
+
+  // Helper utilities available immediately
+  window.escapeHtml = function(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  };
+  function escapeHtml(str) { return window.escapeHtml(str); }
+
+  // Switch tabs (available immediately for UI interactivity)
+  window.switchMainTab = function(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
+
+    const btn = document.getElementById(`tab-btn-${tabId}`);
+    if (btn) btn.classList.add('active');
+    const tab = document.getElementById(`tab-${tabId}`);
+    if (tab) tab.style.display = 'block';
+  };
+
+  // Auth Guard
+  initAuthGuard({
+    requireLogin: true,
+    requireRoles: ['admin'],
+    onReady: async (user) => {
+      populateSidebarUser(user);
+      await loadAll();
+      
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('action') === 'add-past') {
+        openCreatePastMemberModal();
+      } else if (params.get('action') === 'add-authority') {
+        switchMainTab('authorities');
+        openCreateAuthorityModal();
+      }
+    }
+  });
+
+  // Load everything
+  async function loadAll() {
+    try {
+      const [members, students, openingsSnap, catsList, authorities, hostelsSnap] = await Promise.all([
+        getAllMembers().catch(err => { console.error("Error loading members:", err); return []; }),
+        getAllStudents().catch(err => { console.error("Error loading students:", err); return []; }),
+        getDoc(doc(db, 'meta', 'openings')).catch(err => { console.error("Error loading openings:", err); return { exists: () => false }; }),
+        getCategories().catch(err => { console.error("Error loading categories:", err); return []; }),
+        getAllHostelAuthorities().catch(err => { console.error("Error loading authorities:", err); return []; }),
+        getDocs(collection(db, 'hostels')).catch(err => { console.error("Error loading hostels:", err); return { docs: [] }; })
+      ]);
+
+      allMembers = members || [];
+      allStudents = students || [];
+      allAuthorities = authorities || [];
+      allHostelsList = (hostelsSnap && hostelsSnap.docs) ? hostelsSnap.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+      
+      openingsLimits = (openingsSnap && typeof openingsSnap.exists === 'function' && openingsSnap.exists()) 
+        ? (openingsSnap.data().limits || {}) 
+        : {};
+
+      const activeMembers = allMembers.filter(m => m.isCurrent !== false && m.role !== 'past_member');
+      const pastMembers   = allMembers.filter(m => m.isCurrent === false || m.role === 'past_member');
+
+      if (document.getElementById('total-members')) document.getElementById('total-members').textContent = activeMembers.length;
+      if (document.getElementById('total-admins')) document.getElementById('total-admins').textContent = activeMembers.filter(m => m.role === 'admin').length;
+      if (document.getElementById('total-students')) document.getElementById('total-students').textContent = allStudents.length;
+      if (document.getElementById('total-past')) document.getElementById('total-past').textContent = pastMembers.length;
+
+      const chiefWardens = allAuthorities.filter(a => a.role === 'chief_warden');
+      const hostelWardens = allAuthorities.filter(a => a.role === 'hostel_warden');
+      const hostelSupervisors = allAuthorities.filter(a => a.role === 'hostel_supervisor');
+
+      if (document.getElementById('stat-chief-warden')) document.getElementById('stat-chief-warden').textContent = chiefWardens.length;
+      if (document.getElementById('stat-hostel-wardens')) document.getElementById('stat-hostel-wardens').textContent = hostelWardens.length;
+      if (document.getElementById('stat-hostel-supervisors')) document.getElementById('stat-hostel-supervisors').textContent = hostelSupervisors.length;
+      if (document.getElementById('total-authorities')) document.getElementById('total-authorities').textContent = allAuthorities.length;
+
+      // Populate Categories & Hostels dynamically
+      populateCategoryDropdowns(catsList || []);
+      populateHostelDropdowns(allHostelsList || []);
+
+      renderMembersTable(activeMembers);
+      renderPastMembersTable(pastMembers);
+      renderAuthoritiesTable(allAuthorities);
+      renderStudentsTable(allStudents);
+      renderOpeningsTable();
+    } catch(err) {
+      console.error("loadAll top level error:", err);
+      showToast("Error loading directory database: " + err.message, "error");
+    }
+  }
+
+  // Populate category select boxes dynamically
+  function populateCategoryDropdowns(cats) {
+    const mCatSelect = document.getElementById('m-category');
+    const pCatSelect = document.getElementById('p-category-select');
+    
+    let html = '';
+    
+    // Add default HMC Administration category if not present
+    const hasAdmin = cats.some(c => c.name.toLowerCase() === 'administration');
+    if (!hasAdmin) {
+      html += `<option value="administration">Administration</option>`;
+    }
+
+    cats.forEach(c => {
+      const rawVal = c.name.toLowerCase();
+      // Keep alignment with internal laundry keys
+      const val = (rawVal === 'laundry') ? 'laundary' : rawVal;
+      html += `<option value="${val}">${c.name}</option>`;
+    });
+
+    if (mCatSelect) mCatSelect.innerHTML = html;
+    if (pCatSelect) pCatSelect.innerHTML = html;
+  }
+
+  function formatCategory(ct) {
+    if (!ct) return '—';
+    const lower = ct.toLowerCase().trim();
+    if (lower === 'hmc') return 'HMC';
+    if (lower.startsWith('laund')) return 'Laundry';
+    return ct.charAt(0).toUpperCase() + ct.slice(1);
+  }
+
+  // Render HMC Directory table
+  function renderMembersTable(members) {
+    const tbody = document.getElementById('members-tbody');
+    if (!tbody) return;
+    if (!members.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:var(--sp-8);color:var(--text-muted)">No active HMC members found</td></tr>`;
+      return;
+    }
+
+    const roleColor = { admin:'danger', subadmin:'warning', member:'primary' };
+    
+    tbody.innerHTML = members.map(m => {
+      // Compute title fallback
+      const catText = m.category || '';
+      const postText = m.post || '';
+      const catCap = formatCategory(catText);
+      const postCap = postText.charAt(0) ? (postText.charAt(0).toUpperCase() + postText.slice(1)) : '';
+      const computedTitle = postText === 'Chairperson' ? 'Chairperson' : 
+        ((catCap && postCap && catCap !== '—') ? `${catCap} ${postCap}` : m.post || 'HMC Member');
+      
+      let finalTitle = m.title || computedTitle;
+      if (finalTitle) {
+        finalTitle = finalTitle.replace(/\bHmc\b/g, 'HMC');
+      }
+
+      return `
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:var(--sp-3)">
+              ${renderAvatar(m, 'sm')}
+              <div>
+                <div style="font-weight:600">${m.name}</div>
+                <div style="font-size:0.72rem;color:var(--text-muted)">${m.email}</div>
+              </div>
+            </div>
+          </td>
+          <td><span style="font-family:var(--font-mono);color:var(--brand-primary);font-size:0.82rem">${m.uniqueId || '—'}</span></td>
+          <td style="font-weight:700; color:var(--text-normal)">${finalTitle}</td>
+          <td><span class="badge badge-${roleColor[m.role] || 'muted'}">${m.role || 'member'}</span></td>
+          <td>${m.graduationYear || '—'}</td>
+          <td>${formatCategory(m.category)}</td>
+          <td>
+            <div style="display:flex;gap:var(--sp-2)">
+              <button class="btn btn-icon" title="Edit Member details" onclick="openEditMemberModal('${m.uid}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="btn btn-icon" title="View Profile Card" onclick="window.location.href='../profile.html?uid=${m.uid}'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </button>
+              <button class="btn btn-icon" title="Delete member account" onclick="handleDelete('${m.uid}','${m.name}','hmc')" style="color:var(--brand-danger)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Render Students Table
+  function renderStudentsTable(students) {
+    const tbody = document.getElementById('students-tbody');
+    if (!students.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:var(--sp-8);color:var(--text-muted)">No student accounts found</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = students.map(s => `
+      <tr>
+        <td style="font-weight:600">${s.name || '—'}</td>
+        <td style="font-size:0.82rem">${s.email || '—'}</td>
+        <td>${s.roll || '—'}</td>
+        <td>${s.batch || '—'}</td>
+        <td>
+          <div style="display:flex;gap:var(--sp-2)">
+            <button class="btn btn-sm btn-primary" onclick="openPromoteModal('${s.uid}', '${s.name}', '${s.email}', '${s.batch || ''}')" title="Promote to HMC">
+              Upgrade to HMC
+            </button>
+            <button class="btn btn-icon" title="View Profile Card" onclick="window.location.href='../profile.html?uid=${s.uid}'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="handleDelete('${s.uid}','${s.name || s.email}','student')" title="Delete account">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Delete
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // Render Designation Limits Table
+  function renderOpeningsTable() {
+    const tbody = document.getElementById('openings-tbody');
+    if (!tbody) return;
+    
+    // Aggregate unique active designations or show default HMC matrix
+    const titlesSet = new Set(DEFAULT_TITLES);
+    allMembers.forEach(m => {
+      if (m.title) titlesSet.add(m.title);
+    });
+
+    const list = Array.from(titlesSet);
+    tbody.innerHTML = list.map(title => {
+      const activeCount = allMembers.filter(m => m.title === title).length;
+      
+      // Default limits: Chairperson = 1, Head = 2, Member = 99
+      const defaultLimit = title === 'Chairperson' ? 1 : title.endsWith('Head') ? 2 : 99;
+      const currentLimit = openingsLimits[title] ?? defaultLimit;
+
+      const isExceeded = activeCount > currentLimit;
+      const statusHtml = isExceeded 
+        ? `<span class="badge badge-danger">Exceeded</span>` 
+        : activeCount === currentLimit 
+          ? `<span class="badge badge-warning">Full</span>`
+          : `<span class="badge badge-success">${currentLimit - activeCount} Left</span>`;
+
+      return `
+        <tr>
+          <td><strong>${title}</strong></td>
+          <td style="text-align: center; font-weight:700">${activeCount}</td>
+          <td style="text-align: center">
+            <input type="number" id="limit-input-${title.replace(/ /g, '_')}" class="premium-form-control" style="width: 80px; text-align: center; margin: 0 auto" value="${currentLimit}" min="0" max="999">
+          </td>
+          <td style="text-align: center">${statusHtml}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="saveDesignationLimit('${title}')">
+              Save
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Populate Hostel Dropdowns and Checkboxes
+  function populateHostelDropdowns(hostels) {
+    const wardenBox = document.getElementById('auth-hostels-warden-container');
+    const supSelect = document.getElementById('auth-supervisor-hostel-select');
+    if (!wardenBox || !supSelect) return;
+
+    if (!hostels.length) {
+      wardenBox.innerHTML = '<span style="font-size:0.78rem;color:var(--text-muted)">No hostels found in database. Create hostels in Manage Hostels first.</span>';
+      supSelect.innerHTML = '<option value="">No hostels available</option>';
+      return;
+    }
+
+    // Checkboxes for Wardens
+    wardenBox.innerHTML = hostels.map(h => `
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer;color:var(--text-normal)">
+        <input type="checkbox" class="auth-warden-hostel-cb" value="${escapeHtml(h.name)}" style="accent-color:var(--brand-primary);width:16px;height:16px">
+        <span>${escapeHtml(h.name)}</span>
+      </label>
+    `).join('');
+
+    // Single-select for Supervisors
+    supSelect.innerHTML = `<option value="">Select Hostel…</option>` + hostels.map(h => `
+      <option value="${escapeHtml(h.name)}">${escapeHtml(h.name)}</option>
+    `).join('');
+  }
+
+  // Render Authorities Table
+  function renderAuthoritiesTable(authorities) {
+    const tbody = document.getElementById('authorities-tbody');
+    if (!tbody) return;
+    if (!authorities.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:var(--sp-8);color:var(--text-muted)">No hostel authority accounts created yet. Click "Add Hostel Authority" to create one.</td></tr>`;
+      return;
+    }
+
+    const roleBadges = {
+      chief_warden: '<span class="badge badge-danger">Chief Warden</span>',
+      hostel_warden: '<span class="badge badge-success">Hostel Warden</span>',
+      hostel_supervisor: '<span class="badge badge-warning">Hostel Supervisor</span>'
+    };
+
+    tbody.innerHTML = authorities.map(a => {
+      const isFrozen = a.accessRevoked === true;
+      const statusBadge = isFrozen 
+        ? `<span class="badge badge-danger" style="font-size:0.72rem">Frozen</span>`
+        : `<span class="badge badge-success" style="font-size:0.72rem">Active</span>`;
+
+      let assignedHostelsText = 'All Hostels';
+      if (a.role === 'hostel_warden') {
+        const list = Array.isArray(a.assignedHostels) && a.assignedHostels.length ? a.assignedHostels : (a.assignedHostel ? [a.assignedHostel] : []);
+        assignedHostelsText = list.length ? list.join(', ') : '<span style="color:var(--brand-danger)">Unassigned</span>';
+      } else if (a.role === 'hostel_supervisor') {
+        assignedHostelsText = a.assignedHostel || (Array.isArray(a.assignedHostels) && a.assignedHostels[0]) || '<span style="color:var(--brand-danger)">Unassigned</span>';
+      }
+
+      return `
+        <tr style="${isFrozen ? 'opacity:0.7;background:rgba(239,68,68,0.03)' : ''}">
+          <td>
+            <div style="display:flex;align-items:center;gap:var(--sp-3)">
+              ${renderAvatar(a, 'sm')}
+              <div>
+                <div style="font-weight:700;color:var(--text-primary)">${escapeHtml(a.name || '—')}</div>
+                <div style="font-size:0.72rem;color:var(--text-muted)">${escapeHtml(a.email || '—')} ${a.contact ? '• ' + escapeHtml(a.contact) : ''}</div>
+              </div>
+            </div>
+          </td>
+          <td><span style="font-family:var(--font-mono);color:var(--brand-primary);font-weight:700;font-size:0.82rem">${a.uniqueId || '—'}</span></td>
+          <td>${roleBadges[a.role] || a.role}</td>
+          <td style="font-size:0.85rem;font-weight:600;color:var(--text-normal)">${assignedHostelsText}</td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="display:flex;gap:var(--sp-2);align-items:center">
+              <button class="btn btn-icon" title="Edit Authority" onclick="openEditAuthorityModal('${a.uid}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="btn btn-sm ${isFrozen ? 'btn-success' : 'btn-secondary'}" style="${isFrozen ? 'background:rgba(16,185,129,0.1);color:var(--brand-success);border:1px solid rgba(16,185,129,0.3)' : 'color:var(--brand-warning)'}" title="${isFrozen ? 'Unfreeze account' : 'Freeze account'}" onclick="handleToggleFreeze('${a.uid}', ${!isFrozen}, '${escapeHtml(a.name)}')">
+                ${isFrozen ? 'Unfreeze' : 'Freeze'}
+              </button>
+              <button class="btn btn-icon" title="Delete Authority account" onclick="handleDeleteAuthority('${a.uid}','${escapeHtml(a.name)}')" style="color:var(--brand-danger)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+
+
+  // Filter authorities
+  window.filterAuthorities = (q) => {
+    const lq = q.toLowerCase();
+    renderAuthoritiesTable(allAuthorities.filter(a => 
+      a.name?.toLowerCase().includes(lq) || 
+      a.email?.toLowerCase().includes(lq) || 
+      a.uniqueId?.toLowerCase().includes(lq) || 
+      a.post?.toLowerCase().includes(lq) ||
+      (a.assignedHostel && a.assignedHostel.toLowerCase().includes(lq)) ||
+      (Array.isArray(a.assignedHostels) && a.assignedHostels.some(h => h.toLowerCase().includes(lq)))
+    ));
+  };
+
+  // Authority role change handler
+  window.onAuthorityRoleChange = function(role) {
+    const descEl = document.getElementById('auth-role-desc');
+    const allNotice = document.getElementById('auth-hostel-all-notice');
+    const wardenBox = document.getElementById('auth-hostels-warden-container');
+    const supBox = document.getElementById('auth-hostels-supervisor-container');
+    const lbl = document.getElementById('lbl-assigned-hostels');
+
+    if (role === 'chief_warden') {
+      if (descEl) descEl.textContent = 'Supervises all hostels, wardens, supervisors, and student residence affairs across the institute.';
+      if (lbl) lbl.textContent = 'Assigned Hostel(s)';
+      allNotice.classList.remove('hidden');
+      wardenBox.classList.add('hidden');
+      supBox.classList.add('hidden');
+    } else if (role === 'hostel_warden') {
+      if (descEl) descEl.textContent = 'Oversees discipline, student welfare, inspections and maintenance across one or more assigned hostels.';
+      if (lbl) lbl.textContent = 'Select Assigned Hostel(s) *';
+      allNotice.classList.add('hidden');
+      wardenBox.classList.remove('hidden');
+      supBox.classList.add('hidden');
+    } else if (role === 'hostel_supervisor') {
+      if (descEl) descEl.textContent = 'Manages on-ground facilities, room allocation inspections, maintenance tasks and complaints for a specific hostel.';
+      if (lbl) lbl.textContent = 'Select Assigned Hostel *';
+      allNotice.classList.add('hidden');
+      wardenBox.classList.add('hidden');
+      supBox.classList.remove('hidden');
+    }
+  };
+
+  window.openCreateAuthorityModal = function() {
+    editingAuthUid = null;
+    document.getElementById('authority-modal-title').textContent = 'Add Hostel Authority';
+    document.getElementById('authority-form').reset();
+    document.getElementById('auth-avatar-preview').innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    document.getElementById('group-auth-email').style.display = 'block';
+    document.getElementById('group-auth-password').style.display = 'block';
+    document.getElementById('auth-email').required = true;
+    document.getElementById('auth-password').required = true;
+    document.getElementById('save-authority-btn').textContent = 'Create Authority Account';
+    authPicFile = null;
+
+    document.getElementById('auth-role').value = 'chief_warden';
+    document.getElementById('auth-role').disabled = false;
+    onAuthorityRoleChange('chief_warden');
+
+    openModal('authority-modal');
+  };
+
+  window.openEditAuthorityModal = function(uid) {
+    const authUser = allAuthorities.find(a => a.uid === uid);
+    if (!authUser) return;
+
+    editingAuthUid = uid;
+    document.getElementById('authority-modal-title').textContent = `Edit ${authUser.name}`;
+    document.getElementById('group-auth-email').style.display = 'none';
+    document.getElementById('group-auth-password').style.display = 'none';
+    document.getElementById('auth-email').required = false;
+    document.getElementById('auth-password').required = false;
+    document.getElementById('save-authority-btn').textContent = 'Save Changes';
+    authPicFile = null;
+
+    document.getElementById('auth-role').value = authUser.role || 'hostel_warden';
+    document.getElementById('auth-role').disabled = true;
+    document.getElementById('auth-name').value = authUser.name || '';
+    document.getElementById('auth-email').value = authUser.email || '';
+    document.getElementById('auth-contact').value = authUser.contact || '';
+
+    onAuthorityRoleChange(authUser.role || 'hostel_warden');
+
+    if (authUser.role === 'hostel_warden') {
+      const assigned = Array.isArray(authUser.assignedHostels) ? authUser.assignedHostels : (authUser.assignedHostel ? [authUser.assignedHostel] : []);
+      document.querySelectorAll('.auth-warden-hostel-cb').forEach(cb => {
+        cb.checked = assigned.includes(cb.value);
+      });
+    } else if (authUser.role === 'hostel_supervisor') {
+      const sel = document.getElementById('auth-supervisor-hostel-select');
+      if (sel) sel.value = authUser.assignedHostel || (Array.isArray(authUser.assignedHostels) ? authUser.assignedHostels[0] : '') || '';
+    }
+
+    if (authUser.profilePicUrl) {
+      document.getElementById('auth-avatar-preview').innerHTML = `<img src="${authUser.profilePicUrl}" style="width:72px;height:72px;border-radius:50%;object-fit:cover">`;
+    } else {
+      document.getElementById('auth-avatar-preview').innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    }
+
+    openModal('authority-modal');
+  };
+
+  window.closeAuthorityModal = function() {
+    closeModal('authority-modal');
+    document.getElementById('authority-form').reset();
+    editingAuthUid = null;
+    authPicFile = null;
+  };
+
+  window.previewAuthPic = function(input) {
+    if (!input.files[0]) return;
+    authPicFile = input.files[0];
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('auth-avatar-preview').innerHTML =
+        `<img src="${e.target.result}" style="width:72px;height:72px;border-radius:50%;object-fit:cover">`;
+    };
+    reader.readAsDataURL(authPicFile);
+  };
+
+  window.saveAuthority = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('save-authority-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    try {
+      const role = document.getElementById('auth-role').value;
+      const name = document.getElementById('auth-name').value.trim();
+      const contact = document.getElementById('auth-contact').value.trim();
+
+      // Collect assigned hostels
+      let assignedHostels = [];
+      let assignedHostel = '';
+
+      if (role === 'chief_warden') {
+        assignedHostels = ['ALL'];
+        assignedHostel = 'ALL';
+      } else if (role === 'hostel_warden') {
+        document.querySelectorAll('.auth-warden-hostel-cb:checked').forEach(cb => {
+          assignedHostels.push(cb.value);
+        });
+        if (!assignedHostels.length) {
+          showToast('Please select at least one assigned hostel for Hostel Warden.', 'warning');
+          btn.disabled = false;
+          btn.textContent = editingAuthUid ? 'Save Changes' : 'Create Authority Account';
+          return;
+        }
+        assignedHostel = assignedHostels.join(', ');
+      } else if (role === 'hostel_supervisor') {
+        assignedHostel = document.getElementById('auth-supervisor-hostel-select').value;
+        if (!assignedHostel) {
+          showToast('Please select the assigned hostel for Hostel Supervisor.', 'warning');
+          btn.disabled = false;
+          btn.textContent = editingAuthUid ? 'Save Changes' : 'Create Authority Account';
+          return;
+        }
+        assignedHostels = [assignedHostel];
+      }
+
+      if (editingAuthUid) {
+        // Edit existing authority
+        const updates = {
+          name,
+          contact,
+          assignedHostels,
+          assignedHostel
+        };
+        await updateHostelAuthority(editingAuthUid, updates);
+        showToast(`Authority details for "${name}" updated successfully!`, 'success');
+      } else {
+        // Create new authority (no email verification needed)
+        const email = document.getElementById('auth-email').value.trim();
+        const password = document.getElementById('auth-password').value;
+
+        const postName = role === 'chief_warden' ? 'Chief Warden' : role === 'hostel_warden' ? 'Hostel Warden' : 'Hostel Supervisor';
+
+        await createHostelAuthority({
+          name,
+          email,
+          password,
+          role,
+          post: postName,
+          contact,
+          assignedHostels,
+          assignedHostel,
+          profilePicFile: authPicFile
+        });
+
+        showToast(`✓ Created ${postName} account for "${name}" successfully!`, 'success');
+      }
+
+      closeAuthorityModal();
+      await loadAll();
+    } catch(err) {
+      console.error(err);
+      showToast('Error saving authority: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = editingAuthUid ? 'Save Changes' : 'Create Authority Account';
+    }
+  };
+
+  window.handleToggleFreeze = async function(uid, freezeState, name) {
+    const actionText = freezeState ? 'Freeze' : 'Unfreeze';
+    if (!confirm(`Are you sure you want to ${actionText.toLowerCase()} the account for "${name}"?`)) return;
+
+    try {
+      await toggleAccountFreeze(uid, freezeState);
+      showToast(`Account for "${name}" has been ${freezeState ? 'frozen' : 'unfrozen'}.`, 'success');
+      await loadAll();
+    } catch(err) {
+      showToast(`Failed to ${actionText.toLowerCase()} account: ` + err.message, 'error');
+    }
+  };
+
+  window.handleDeleteAuthority = async function(uid, name) {
+    if (!confirm(`Are you sure you want to permanently delete the authority account for "${name}"?`)) return;
+
+    try {
+      await deleteDoc(doc(db, 'users', uid));
+      showToast(`Authority account for "${name}" deleted.`, 'success');
+      await loadAll();
+    } catch(err) {
+      showToast('Error deleting authority: ' + err.message, 'error');
+    }
+  };
+
+  // Save specific limit to Firestore doc
+  window.saveDesignationLimit = async function(title) {
+    const inputId = `limit-input-${title.replace(/ /g, '_')}`;
+    const newVal = parseInt(document.getElementById(inputId).value);
+
+    if (isNaN(newVal) || newVal < 0) {
+      showToast("Please enter a valid positive number for limit.", "warning");
+      return;
+    }
+
+    try {
+      openingsLimits[title] = newVal;
+      await setDoc(doc(db, 'meta', 'openings'), { limits: openingsLimits }, { merge: true });
+      showToast(`Limit for ${title} updated to ${newVal}!`, "success");
+      await loadAll();
+    } catch(err) {
+      showToast("Error updating limit: " + err.message, "error");
+    }
+  };
+
+
+
+  // Filter lists
+  window.filterMembers = (q) => {
+    const lq = q.toLowerCase();
+    renderMembersTable(allMembers.filter(m => 
+      m.name?.toLowerCase().includes(lq) || 
+      m.email?.toLowerCase().includes(lq) || 
+      m.uniqueId?.toLowerCase().includes(lq) || 
+      m.title?.toLowerCase().includes(lq) ||
+      m.post?.toLowerCase().includes(lq)
+    ));
+  };
+
+  window.filterStudents = (q) => {
+    const lq = q.toLowerCase();
+    renderStudentsTable(allStudents.filter(s => 
+      s.name?.toLowerCase().includes(lq) || 
+      s.email?.toLowerCase().includes(lq) || 
+      s.roll?.toLowerCase().includes(lq)
+    ));
+  };
+
+  // Handle dropdown autofill when selected post changes
+  window.onModalPostChange = function(postSelectId, catSelectId, catGroupId) {
+    const post = document.getElementById(postSelectId).value;
+    const catSelect = document.getElementById(catSelectId);
+    const catGroup = document.getElementById(catGroupId);
+    
+    if (post === 'Chairperson') {
+      catSelect.value = 'administration';
+      if (catGroup) catGroup.style.display = 'none';
+    } else {
+      if (catGroup) catGroup.style.display = 'block';
+    }
+    updatePreviews();
+  };
+
+  // Live preview title / Unique ID inside member modal
+  function updatePreviews() {
+    const gradYear = document.getElementById('m-grad-year').value;
+    const yr = String(gradYear).slice(-2);
+    document.getElementById('id-preview').textContent = `#HMC_${yr}_XXX`;
+
+    const post = document.getElementById('m-post').value;
+    const cat = document.getElementById('m-category').value;
+    document.getElementById('title-preview').textContent = computeMemberTitle(cat, post);
+  }
+
+  function computeMemberTitle(category, post) {
+    if (post === 'Chairperson') return 'Chairperson';
+    const catCap = category.charAt(0).toUpperCase() + category.slice(1);
+    const postCap = post.charAt(0).toUpperCase() + post.slice(1);
+    return `${catCap} ${postCap}`;
+  }
+
+  document.getElementById('m-grad-year')?.addEventListener('input', updatePreviews);
+  document.getElementById('m-post')?.addEventListener('change', updatePreviews);
+  document.getElementById('m-category')?.addEventListener('change', updatePreviews);
+
+  // Modal open controllers
+  window.openCreateModal = function() {
+    editingMemberUid = null;
+    document.getElementById('member-modal-title').textContent = "Add New HMC Member";
+    document.getElementById('group-email').style.display = 'block';
+    document.getElementById('group-password').style.display = 'block';
+    document.getElementById('m-email').required = true;
+    document.getElementById('m-password').required = true;
+    
+    document.getElementById('save-member-btn').textContent = "Create Member";
+    closeMemberModal(); // Reset form values
+    openModal('member-modal');
+    updatePreviews();
+  };
+
+  window.openCreatePastMemberModal = function() {
+    openCreateModal();
+    document.getElementById('member-modal-title').textContent = "Add Past HMC Member";
+    document.getElementById('m-is-current').value = 'false';
+  };
+
+  window.openEditMemberModal = async function(memberUid) {
+    editingMemberUid = memberUid;
+    document.getElementById('member-modal-title').textContent = "Edit HMC Member";
+    document.getElementById('group-email').style.display = 'none';
+    document.getElementById('group-password').style.display = 'none';
+    document.getElementById('m-email').required = false;
+    document.getElementById('m-password').required = false;
+    document.getElementById('save-member-btn').textContent = "Save Changes";
+
+    const m = allMembers.find(member => member.uid === memberUid);
+    if (!m) return;
+
+    document.getElementById('m-name').value = m.name || '';
+    document.getElementById('m-post').value = m.post || 'member';
+    document.getElementById('m-category').value = m.category || 'mess';
+    document.getElementById('m-dob').value = m.dob || '';
+    document.getElementById('m-contact').value = m.contact || '';
+    document.getElementById('m-grad-year').value = m.graduationYear || 2027;
+    document.getElementById('m-is-current').value = m.isCurrent !== false ? 'true' : 'false';
+    document.getElementById('m-role').value = m.role || 'member';
+
+    if (m.profilePicUrl) {
+      document.getElementById('modal-avatar-preview').innerHTML = `<img src="${m.profilePicUrl}" style="width:80px;height:80px;border-radius:50%;object-fit:cover">`;
+    } else {
+      document.getElementById('modal-avatar-preview').innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    }
+
+    onModalPostChange('m-post', 'm-category', 'group-category');
+    openModal('member-modal');
+    updatePreviews();
+  };
+
+  window.closeMemberModal = function() {
+    closeModal('member-modal');
+    document.getElementById('member-form').reset();
+    document.getElementById('modal-avatar-preview').innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    picFile = null;
+    editingMemberUid = null;
+  };
+
+  // Image upload handler
+  window.previewPic = function(input) {
+    if (!input.files[0]) return;
+    picFile = input.files[0];
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('modal-avatar-preview').innerHTML =
+        `<img src="${e.target.result}" style="width:80px;height:80px;border-radius:50%;object-fit:cover">`;
+    };
+    reader.readAsDataURL(picFile);
+  };
+
+  window.validateEmailField = function(input, warnId) {
+    const el = document.getElementById(warnId);
+    if (el) el.classList.toggle('hidden', input.value.endsWith('@iimbg.ac.in') || !input.value.includes('@'));
+  };
+
+  // Save Member (Add / Edit)
+  window.handleSaveMember = async function(e) {
+    e.preventDefault();
+    
+    const post = document.getElementById('m-post').value;
+    const category = document.getElementById('m-category').value;
+    const title = computeMemberTitle(category, post);
+
+    // 1. Verify openings limit count
+    const limit = openingsLimits[title] ?? (title === 'Chairperson' ? 1 : title.endsWith('Head') ? 2 : 99);
+    const existingOccupants = allMembers.filter(m => m.title === title && m.uid !== editingMemberUid).length;
+    
+    if (existingOccupants >= limit) {
+      showToast(`Can only have ${limit} ${title}s. To add more ${title}s, please edit the number of openings under "Openings & Limits".`, "warning");
+      return;
+    }
+
+    const btn = document.getElementById('save-member-btn');
+    btn.disabled = true; 
+    btn.textContent = editingMemberUid ? 'Saving…' : 'Creating…';
+
+    try {
+      const isCurrent = document.getElementById('m-is-current').value === 'true';
+
+      if (editingMemberUid) {
+        // Edit Mode
+        const updates = {
+          name:           document.getElementById('m-name').value.trim(),
+          post,
+          category,
+          title,
+          dob:            document.getElementById('m-dob').value,
+          contact:        document.getElementById('m-contact').value.trim(),
+          graduationYear: parseInt(document.getElementById('m-grad-year').value),
+          role:           document.getElementById('m-role').value,
+          isCurrent:      isCurrent
+        };
+
+        await updateMember(editingMemberUid, updates, picFile);
+        showToast("HMC Member details updated successfully!", "success");
+      } else {
+        // Create Mode
+        const email = document.getElementById('m-email').value.trim();
+        if (!email.endsWith('@iimbg.ac.in')) { 
+          showToast('Only @iimbg.ac.in emails are accepted', 'error'); 
+          btn.disabled = false;
+          return; 
+        }
+
+        const member = await createMember({
+          name:           document.getElementById('m-name').value.trim(),
+          email,
+          password:       document.getElementById('m-password').value,
+          post,
+          category,
+          title,
+          dob:            document.getElementById('m-dob').value,
+          contact:        document.getElementById('m-contact').value.trim(),
+          graduationYear: parseInt(document.getElementById('m-grad-year').value),
+          role:           document.getElementById('m-role').value,
+          profilePicFile: picFile,
+          isCurrent:      isCurrent
+        });
+        
+        // Ensure title and isCurrent field is written explicitly
+        await updateDoc(doc(db, 'users', member.uid), { title, isCurrent });
+
+        showToast(`${member.name} — ${member.uniqueId} created successfully!`, 'success');
+      }
+
+      closeMemberModal();
+      await loadAll();
+    } catch (err) {
+      showToast(err.message || 'Operation failed', 'error');
+    } finally {
+      btn.disabled = false; 
+      btn.textContent = editingMemberUid ? 'Save Changes' : 'Create Member';
+    }
+  };
+
+  // Render Past HMC Members Table
+  function renderPastMembersTable(pastMembers) {
+    const tbody = document.getElementById('past-tbody');
+    if (!tbody) return;
+    if (!pastMembers.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:var(--sp-8);color:var(--text-muted)">No past HMC members found</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = pastMembers.map(m => `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:var(--sp-3)">
+            ${renderAvatar(m, 'sm')}
+            <div>
+              <div style="font-weight:600">${m.name}</div>
+              <div style="font-size:0.72rem;color:var(--text-muted)">${m.email || '—'}</div>
+            </div>
+          </div>
+        </td>
+        <td><span style="font-family:var(--font-mono);color:var(--text-muted);font-size:0.82rem">${m.uniqueId || '—'}</span></td>
+        <td style="font-weight:700; color:var(--text-muted)">${m.title || m.post || 'Past Member'}</td>
+        <td>${m.graduationYear || '—'}</td>
+        <td>${formatCategory(m.category)}</td>
+        <td><span class="badge badge-muted">Access Revoked</span></td>
+        <td>
+          <div style="display:flex;gap:var(--sp-2)">
+            <button class="btn btn-sm btn-secondary" onclick="restorePastMember('${m.uid}','${m.name}')" title="Reactivate Access">
+              Restore Access
+            </button>
+            <button class="btn btn-icon" title="Permanently delete account" onclick="handleDelete('${m.uid}','${m.name}','permanent_delete')" style="color:var(--brand-danger)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  window.filterPastMembers = (q) => {
+    const lq = q.toLowerCase();
+    const pastMembers = allMembers.filter(m => m.isCurrent === false || m.role === 'past_member');
+    renderPastMembersTable(pastMembers.filter(m =>
+      m.name?.toLowerCase().includes(lq) ||
+      m.email?.toLowerCase().includes(lq) ||
+      m.uniqueId?.toLowerCase().includes(lq) ||
+      m.title?.toLowerCase().includes(lq)
+    ));
+  };
+
+  window.restorePastMember = async function(uid, name) {
+    if (!confirm(`Restore HMC member access for "${name}"?`)) return;
+    try {
+      await updateDoc(doc(db, 'users', uid), {
+        isCurrent: true,
+        role: 'member',
+        accessRevoked: false
+      });
+      showToast(`Access restored for "${name}".`, 'success');
+      await loadAll();
+    } catch(e) { showToast('Restore failed: ' + e.message, 'error'); }
+  };
+
+  // Deletion logic with Admin Safeguard and Past Member options
+  window.handleDelete = async function(uid, name, type) {
+    if (type === 'student') {
+      const msg = `Delete student account for "${name}"? They will lose access permanently.`;
+      if (!confirm(msg)) return;
+      try {
+        await deleteStudentAccount(uid);
+        showToast(`Student account for ${name} has been deleted.`, 'info');
+        await loadAll();
+      } catch (e) { showToast(e.message, 'error'); }
+    } else if (type === 'permanent_delete') {
+      const permDelete = confirm(`Are you sure you want to PERMANENTLY DELETE "${name}" from the database? This action cannot be undone.`);
+      if (!permDelete) return;
+      try {
+        await deleteMember(uid);
+        showToast(`Member "${name}" permanently deleted.`, 'info');
+        await loadAll();
+      } catch (e) { showToast(e.message, 'error'); }
+    } else {
+      const member = allMembers.find(m => m.uid === uid);
+      if (!member) return;
+
+      // 1. Admin safeguard: Check if target member is an admin
+      if (member.role === 'admin') {
+        const activeAdmins = allMembers.filter(m => m.role === 'admin' && m.isCurrent !== false && m.role !== 'past_member');
+        if (activeAdmins.length <= 1) {
+          showToast(`Cannot delete or archive "${name}". There must always exist at least one active Admin on the portal. Please assign another member to Admin role first.`, 'error');
+          return;
+        }
+      }
+
+      // 2. Ask user whether to move to Past HMC Member or Permanently Delete
+      const choice = confirm(
+        `Options for "${name}":\n\n` +
+        `• Click "OK" to move "${name}" to PAST HMC MEMBERS (revokes portal access, preserves name & details).\n` +
+        `• Click "Cancel" if you want to permanently delete or stop.`
+      );
+
+      if (choice) {
+        // Move to Past HMC Member
+        try {
+          await updateDoc(doc(db, 'users', uid), {
+            isCurrent: false,
+            role: 'past_member',
+            accessRevoked: true
+          });
+          showToast(`"${name}" moved to Past HMC Members (access revoked).`, 'success');
+          await loadAll();
+        } catch (e) { showToast(e.message, 'error'); }
+      } else {
+        const permDelete = confirm(`Are you sure you want to PERMANENTLY DELETE "${name}" from the database?`);
+        if (permDelete) {
+          try {
+            await deleteMember(uid);
+            showToast(`Member "${name}" permanently deleted.`, 'info');
+            await loadAll();
+          } catch (e) { showToast(e.message, 'error'); }
+        }
+      }
+    }
+  };
+
+  // Step navigation helper for 3-step promote modal
+  window.promoteGoStep = function(step) {
+    // If going to step 2, populate review panel
+    if (step === 2) {
+      const post     = document.getElementById('p-post-select').value;
+      const category = document.getElementById('p-category-select').value;
+      const role     = document.getElementById('p-role-select').value;
+      const gradYear = document.getElementById('p-grad-year').value;
+      const title    = computeMemberTitle(category, post);
+      const name     = document.getElementById('promote-student-name').textContent;
+      const email    = document.getElementById('promote-student-email').textContent;
+
+      document.getElementById('review-name').textContent      = name;
+      document.getElementById('review-email').textContent     = email;
+      document.getElementById('review-role').textContent      = role.charAt(0).toUpperCase() + role.slice(1);
+      document.getElementById('review-title').textContent     = title;
+      document.getElementById('review-category').textContent  = category.charAt(0).toUpperCase() + category.slice(1);
+      document.getElementById('review-grad-year').textContent = gradYear;
+      document.getElementById('review-name-warn').textContent = name;
+    }
+    if (step === 3) {
+      // Clear previous password and error
+      const passEl = document.getElementById('promote-admin-pass');
+      if (passEl) passEl.value = '';
+      const errEl = document.getElementById('promote-auth-error');
+      if (errEl) errEl.classList.add('hidden');
+    }
+
+    // Show/hide steps and update step indicator
+    [1, 2, 3].forEach(s => {
+      document.getElementById(`promote-step-${s}`).style.display = (s === step) ? 'block' : 'none';
+    });
+    [2, 3].forEach(s => {
+      const numEl = document.getElementById(`step${s}-num`);
+      const lblEl = document.getElementById(`step${s}-lbl`);
+      if (!numEl || !lblEl) return;
+      const isActive = (s === step);
+      const isDone   = (s < step);
+      numEl.style.background     = isDone ? 'var(--brand-success)' : isActive ? 'var(--brand-primary)' : 'var(--bg-glass)';
+      numEl.style.border         = isDone || isActive ? 'none' : '2px solid var(--border-normal)';
+      numEl.style.color          = isDone || isActive ? '#fff' : 'var(--text-muted)';
+      lblEl.style.color          = isDone || isActive ? (isDone ? 'var(--brand-success)' : 'var(--brand-primary)') : 'var(--text-muted)';
+      lblEl.style.fontWeight     = isActive ? '700' : '600';
+    });
+  };
+
+  // Toggle password visibility in step 3
+  window.togglePromotePass = function() {
+    const el  = document.getElementById('promote-admin-pass');
+    const eye = document.getElementById('promote-pass-eye');
+    if (!el) return;
+    const show = el.type === 'password';
+    el.type = show ? 'text' : 'password';
+    eye.innerHTML = show
+      ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+      : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  };
+
+  // Student upgrade / promote modal controllers
+  window.openPromoteModal = function(uid, name, email, batch) {
+    promoteTargetUid = uid;
+    document.getElementById('promote-student-name').textContent = name;
+    document.getElementById('promote-student-email').textContent = email;
+    
+    const gradYearInput = document.getElementById('p-grad-year');
+    if (gradYearInput) {
+      const year = parseInt(batch) || 2027;
+      gradYearInput.value = year;
+    }
+
+    // Always start at step 1
+    promoteGoStep(1);
+    openModal('promote-modal');
+    onModalPostChange('p-post-select', 'p-category-select', 'group-promote-category');
+  };
+
+  // Submit student upgrade — Step 3: re-authenticate admin, then upgrade
+  window.submitUpgradeStudent = async function() {
+    if (!promoteTargetUid) return;
+
+    const post     = document.getElementById('p-post-select').value;
+    const category = document.getElementById('p-category-select').value;
+    const title    = computeMemberTitle(category, post);
+    const gradYear = parseInt(document.getElementById('p-grad-year').value) || 2027;
+    const role     = document.getElementById('p-role-select').value;
+    const adminPass = document.getElementById('promote-admin-pass').value;
+    const errEl    = document.getElementById('promote-auth-error');
+    const confirmBtn = document.getElementById('promote-confirm-btn');
+
+    if (!adminPass) {
+      errEl.textContent = 'Please enter your admin password.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    // 1. Verify openings limits
+    const limit = openingsLimits[title] ?? (title === 'Chairperson' ? 1 : title.endsWith('Head') ? 2 : 99);
+    const existingOccupants = allMembers.filter(m => m.title === title).length;
+    if (existingOccupants >= limit) {
+      errEl.textContent = `Can only have ${limit} ${title}s. Please increase the openings limit first.`;
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    errEl.classList.add('hidden');
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;margin-right:6px"></div> Verifying…';
+
+    try {
+      // 2. Re-authenticate the current admin with their password
+      const adminUser = auth.currentUser;
+      if (!adminUser) throw new Error('Not authenticated.');
+      const credential = EmailAuthProvider.credential(adminUser.email, adminPass);
+      await reauthenticateWithCredential(adminUser, credential);
+
+      // 3. Generate unique ID for new HMC member
+      confirmBtn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;margin-right:6px"></div> Upgrading…';
+      const uniqueId = await generateUniqueId(gradYear);
+
+      // 4. Update student document to HMC
+      await updateDoc(doc(db, 'users', promoteTargetUid), {
+        uniqueId,
+        post,
+        category,
+        title,
+        graduationYear: gradYear,
+        role,
+        isCurrent: true,
+        accessRevoked: false,
+        trackRecord: { assigned: 0, completed: 0, avgRating: 0, ratings: [] }
+      });
+
+      // 5. Create search index
+      const studentName = document.getElementById('promote-student-name').textContent;
+      await setDoc(doc(db, 'uniqueIds', uniqueId), { uid: promoteTargetUid, name: studentName });
+
+      showToast(`✓ ${studentName} upgraded to HMC! Unique ID: ${uniqueId}`, 'success');
+      closeModal('promote-modal');
+      promoteTargetUid = null;
+      await loadAll();
+    } catch (err) {
+      const isAuthErr = err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/too-many-requests';
+      errEl.textContent = isAuthErr
+        ? 'Incorrect password. Please try again. Repeated failures will lock your account temporarily.'
+        : 'Upgrade failed: ' + err.message;
+      errEl.classList.remove('hidden');
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Confirm Upgrade';
+    }
+  };
+
+  // Student search (by Email, Name, Mobile, or Room No)
+  window.searchStudentByEmail = function() {
+    const query = document.getElementById('email-search-input').value.trim().toLowerCase();
+    const resultEl   = document.getElementById('student-search-result');
+    const notFoundEl = document.getElementById('student-search-notfound');
+    resultEl.classList.add('hidden');
+    notFoundEl.classList.add('hidden');
+
+    if (!query) return;
+
+    const found = allStudents.find(s =>
+      (s.email && s.email.toLowerCase().includes(query)) ||
+      (s.name && s.name.toLowerCase().includes(query)) ||
+      (s.mobile && String(s.mobile).toLowerCase().includes(query)) ||
+      (s.phone && String(s.phone).toLowerCase().includes(query)) ||
+      (s.roomNo && String(s.roomNo).toLowerCase().includes(query))
+    );
+    if (!found) {
+      notFoundEl.classList.remove('hidden');
+      return;
+    }
+
+    // Populate detail panel
+    const parts = (found.name || 'S').split(' ');
+    const initials = parts.length >= 2 ? parts[0][0] + parts[parts.length-1][0] : parts[0][0] || 'S';
+    document.getElementById('search-result-avatar').textContent = initials.toUpperCase();
+    document.getElementById('search-result-name').textContent   = found.name || '—';
+    document.getElementById('search-result-email').textContent  = found.email || '—';
+    document.getElementById('search-result-roll').textContent   = found.roll || '—';
+    document.getElementById('search-result-batch').textContent  = found.batch || found.graduationYear || '—';
+    document.getElementById('search-result-hostel').textContent = found.hostelName || '—';
+    document.getElementById('search-result-room').textContent   = found.roomNo || '—';
+
+    document.getElementById('search-result-upgrade-btn').onclick = () =>
+      openPromoteModal(found.uid, found.name, found.email, found.batch || found.graduationYear || 2027);
+    document.getElementById('search-result-delete-btn').onclick = () =>
+      handleDelete(found.uid, found.name || found.email, 'student');
+
+    resultEl.classList.remove('hidden');
+  };
+
+</script>
+</body>
+</html>

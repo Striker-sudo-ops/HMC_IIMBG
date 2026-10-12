@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>HMC Portal — IIM Bodhgaya</title>
+  <meta name="description" content="Official Hostel Management Committee portal for IIM Bodhgaya. Login for HMC members and students.">
+  <meta name="theme-color" content="#1D4ED8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <script type="module">
+    import { initTheme } from './js/theme.js';
+    initTheme();
+  </script>
+</head>
+<body class="login-page">
+
+  <!-- Background Orbs -->
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+
+  <!-- Theme toggle top-right -->
+  <div style="position:fixed;top:var(--sp-5);right:var(--sp-5);z-index:10" id="theme-btn-container"></div>
+
+  <div id="toast-container"></div>
+
+  <div class="login-container">
+
+    <!-- Logo & Branding -->
+    <div class="login-logo-section">
+      <div class="login-logo-img-wrap">
+        <img src="assets/hmc-logo.jpg" alt="HMC IIM Bodhgaya Logo" class="login-logo-img"
+        onerror="this.src='assets/hmc-logo.png';this.onerror=function(){this.outerHTML='<div class=\'login-logo\'>HMC</div>'}">
+    </div>
+      <h1 class="login-title text-gradient">HMC Portal</h1>
+      <p class="login-subtitle">IIM Bodhgaya — Hostel Management Committee</p>
+    </div>
+
+    <!-- Login Card -->
+    <div class="login-card">
+
+      <!-- Role Toggle (Only 2 Tabs: Sign In & Register) -->
+      <div class="role-toggle">
+        <button class="role-btn active" id="btn-login" onclick="switchMode('login')" style="flex:1;border-radius:var(--radius-md) 0 0 var(--radius-md)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Sign In
+        </button>
+        <button class="role-btn" id="btn-register" onclick="switchMode('register')" style="flex:1;border-radius:0 var(--radius-md) var(--radius-md) 0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          Register
+        </button>
+      </div>
+
+      <!-- Error / Success Message -->
+      <div class="error-msg hidden" id="error-msg">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <span id="error-text"></span>
+      </div>
+      <div class="hidden" id="success-msg" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:var(--radius-md);padding:var(--sp-3) var(--sp-4);font-size:0.85rem;color:var(--brand-success);display:flex;align-items:center;gap:var(--sp-2)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <span id="success-text"></span>
+      </div>
+
+      <!-- ── Unified Sign In Form ── -->
+      <form class="login-form" id="form-login" onsubmit="handleUnifiedLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input type="email" id="login-email" class="form-control" placeholder="Enter your email" required autocomplete="email">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input type="password" id="login-password" class="form-control has-toggle" placeholder="Enter password" required autocomplete="current-password">
+            <button type="button" class="password-toggle" onclick="togglePwd('login-password',this)" title="Toggle password visibility">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:var(--sp-1)">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.83rem;color:var(--text-secondary);user-select:none">
+            <input type="checkbox" id="remember-me" style="width:15px;height:15px;accent-color:var(--brand-primary);cursor:pointer">
+            Remember me
+          </label>
+          <a href="#" onclick="openForgotPassword('user')" style="color:var(--brand-primary);font-size:0.8rem;display:inline-flex;align-items:center;gap:4px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Forgot Password?
+          </a>
+        </div>
+        <button type="submit" class="login-submit" id="login-btn">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Sign In
+        </button>
+      </form>
+
+      <!-- ── Register Form ── -->
+      <form class="login-form hidden" id="form-register" onsubmit="handleStudentRegister(event)">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input type="text" id="reg-name" class="form-control" placeholder="Full name" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Roll Number *</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <input type="text" id="reg-roll" class="form-control" placeholder="Roll number" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input type="email" id="reg-email" class="form-control" placeholder="Enter your institutional email" required
+              oninput="validateDomain(this,'reg-domain-warn');">
+          </div>
+          <div id="reg-domain-warn" class="hidden" style="font-size:0.75rem;color:var(--brand-danger);margin-top:4px">Invalid email domain. Please use your official institutional email.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password * (min 8 chars)</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input type="password" id="reg-password" class="form-control has-toggle" placeholder="Password" required minlength="8">
+            <button type="button" class="password-toggle" onclick="togglePwd('reg-password',this)" title="Toggle password visibility">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="login-submit" id="reg-btn">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          Create Account
+        </button>
+        <p style="text-align:center;font-size:0.8rem;color:var(--text-muted);margin-top:var(--sp-3)">Already registered? <a href="#" onclick="switchMode('login')" style="color:var(--brand-primary)">Sign in</a></p>
+      </form>
+
+    </div><!-- end login-card -->
+
+    <p class="login-footer">IIM Bodhgaya · HMC Management System · &copy; 2026</p>
+  </div>
+
+  <!-- First Run Setup Modal -->
+  <div class="modal-overlay" id="setup-modal">
+    <div class="modal">
+      <div style="text-align:center;margin-bottom:var(--sp-5)">
+        <img src="assets/hmc-logo.png" alt="HMC Logo" style="width:64px;margin:0 auto var(--sp-3);display:block" onerror="this.style.display='none'">
+        <h3 class="modal-title" style="font-size:1.3rem">First-Time Portal Setup</h3>
+        <p style="color:var(--text-secondary);font-size:0.85rem;margin-top:var(--sp-2)">Create the Admin account to launch the HMC Portal</p>
+      </div>
+      <form id="setup-form" onsubmit="handleSetup(event)">
+        <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+          <div class="form-group">
+            <label class="form-label">Admin Full Name *</label>
+            <input type="text" id="setup-name" class="form-control" placeholder="e.g. Rahul Sharma" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Admin Email * <span style="color:var(--brand-primary);font-size:0.72rem">(@iimbg.ac.in)</span></label>
+            <input type="email" id="setup-email" class="form-control" placeholder="admin@iimbg.ac.in" required
+              oninput="validateDomain(this,'setup-domain-warn')">
+            <div id="setup-domain-warn" class="hidden" style="font-size:0.75rem;color:var(--brand-danger);margin-top:4px">Only @iimbg.ac.in emails accepted</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password * (min 8 chars)</label>
+            <input type="password" id="setup-password" class="form-control" placeholder="Strong password" required minlength="8">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Post/Designation *</label>
+            <input type="text" id="setup-post" class="form-control" placeholder="e.g. General Secretary" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Graduation Year (e.g. 2027)</label>
+            <input type="number" id="setup-year" class="form-control" value="2027" min="2024" max="2040" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-full btn-lg" id="setup-btn">
+            Create Admin Account &amp; Launch Portal
+          </button>
+          <div style="text-align:center;margin-top:var(--sp-3)">
+            <span style="color:var(--text-secondary);font-size:0.85rem">Already have an admin account?</span>
+            <a href="#" onclick="bypassSetupModal(); return false;" style="color:var(--brand-primary);font-size:0.85rem;font-weight:600;margin-left:4px;text-decoration:underline">Sign In</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div class="modal-overlay" id="forgot-modal">
+    <div class="modal" style="max-width:420px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-5)">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(124,58,237,0.1);color:var(--brand-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div>
+            <h3 class="modal-title" style="font-size:1.15rem;margin:0">Reset Password</h3>
+            <p style="color:var(--text-secondary);font-size:0.8rem;margin-top:2px">We'll send a password reset link to your email</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeForgotPassword()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.4rem;line-height:1;padding:4px">&times;</button>
+      </div>
+      <div id="forgot-success" class="hidden" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:var(--radius-md);padding:var(--sp-4);text-align:center;color:var(--brand-success);font-size:0.88rem;margin-bottom:var(--sp-4);display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Reset link sent! Check your inbox.
+      </div>
+      <form id="forgot-form" onsubmit="handleForgotPassword(event)">
+        <div class="form-group">
+          <label class="form-label">Registered Email</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input type="email" id="forgot-email" class="form-control" placeholder="Enter your email address" required autocomplete="email">
+          </div>
+        </div>
+        <div id="forgot-error" class="hidden" style="font-size:0.8rem;color:var(--brand-danger);margin-bottom:var(--sp-3)"></div>
+        <div style="display:flex;gap:var(--sp-3)">
+          <button type="submit" class="btn btn-primary flex-1" id="forgot-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Send Reset Link
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeForgotPassword()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+    <style>
+      .login-logo-img-wrap { text-align:center; margin-bottom:var(--sp-4); }
+      .login-logo-img {
+        width: 110px;
+        height: 110px;
+        object-fit: contain;
+        border-radius: 50%;
+        border: 3px solid var(--border-normal);
+        box-shadow: var(--shadow-glow), 0 0 0 6px rgba(108,99,255,0.08);
+        margin: 0 auto;
+        display: block;
+        background: transparent;
+      }
+      [data-theme="light"] .login-logo-img {
+        mix-blend-mode: screen;
+        background: #0A0A1A;
+        border-color: rgba(108,99,255,0.4);
+      }
+      [data-theme="light"] .login-logo-img {
+        background: white;
+        border-color: rgba(80,70,229,0.3);
+      }
+      .role-toggle { display:flex; gap:0; }
+      .role-btn { border-radius: 0; }
+      .role-btn:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+      .role-btn:last-child  { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+    </style>
+
+  <script type="module">
+    import { loginUser, fetchUserProfile, checkAdminExists, seedAdmin } from './js/auth.js';
+    import { initTheme, renderThemeToggle } from './js/theme.js';
+    import { showToast, formatSecureErrorMessage, sanitizeInput } from './js/utils.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { doc, setDoc, getDoc, deleteDoc, serverTimestamp, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { auth, db } from './js/firebase-config.js';
+
+    initTheme();
+    renderThemeToggle('theme-btn-container');
+
+    const ALLOWED_DOMAIN = 'iimbg.ac.in';
+
+    // ── Auth + Admin Check ─────────────────────────────────
+    // Strategy:
+    //  1. localStorage fast-gate: if admin was ever created on this browser,
+    //     skip the Firestore check entirely (instant, no flicker).
+    //  2. authStateReady(): wait for Firebase to fully resolve auth state
+    //     before checking Firestore (avoids the race condition where
+    //     onAuthStateChanged fires with null before reading localStorage).
+    //  3. Only show setup modal if Firestore confirms no admin exists.
+
+    const ADMIN_FLAG = 'hmc_admin_created';
+    window.isSeedingAdmin = false;
+
+    async function initPage() {
+      // Check query parameter to bypass setup modal (helps if DB flag gets desynced)
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('bypass') === 'true' || urlParams.get('bypass') === '1') {
+        localStorage.setItem(ADMIN_FLAG, '1');
+        window.history.replaceState({}, document.title, window.location.pathname); // clean URL bar
+      }
+
+      // Wait for Firebase auth to fully initialise (resolves once, not on change)
+      await auth.authStateReady();
+      const user = auth.currentUser;
+
+      if (user) {
+        // Already logged in — redirect
+        const { fetchUserProfile } = await import('./js/auth.js');
+        const profile = await fetchUserProfile(user.uid);
+        if (!profile) return;
+        window.location.href = profile.role === 'student'
+          ? 'student-dashboard.html'
+          : 'dashboard.html';
+        return;
+      }
+
+      // Not logged in.
+      // Fast-gate: if we previously recorded that an admin exists, skip Firestore
+      if (localStorage.getItem(ADMIN_FLAG) === '1') return;
+
+      // Firestore check (meta/setup is publicly readable — no auth needed)
+      try {
+        const exists = await checkAdminExists();
+        if (exists) {
+          localStorage.setItem(ADMIN_FLAG, '1'); // cache for future loads
+          return;
+        }
+        // No admin found — show setup modal
+        console.warn('[HMC] No admin found in Firestore. Showing setup modal.');
+        console.info('[HMC] If an admin account already exists, run this in the console to fix:\n  localStorage.setItem("hmc_admin_created","1"); location.reload();');
+        document.getElementById('setup-modal').classList.add('show');
+        document.body.style.overflow = 'hidden';
+      } catch (e) {
+        console.warn('[HMC] Admin check error (modal suppressed):', e.message);
+        // On any error, do NOT show setup modal (safer to assume admin exists)
+      }
+    }
+
+    initPage();
+
+    // Keep redirect working if user logs in on another tab
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        if (window.isSeedingAdmin) return;        // skip redirect during setup seeding
+        if (window._isSendingVerification) return; // skip redirect during resend-verification flow
+        import('./js/auth.js').then(({ fetchUserProfile }) => {
+          fetchUserProfile(user.uid).then(profile => {
+            if (!profile) return;
+            window.location.href = profile.role === 'student'
+              ? 'student-dashboard.html'
+              : 'dashboard.html';
+          });
+        }); 
+      }
+    });
+
+    // Domain validation
+    window.validateDomain = function(input, warnId) {
+      const warn = document.getElementById(warnId);
+      if (!warn) return;
+      const isValid = input.value.endsWith(`@${ALLOWED_DOMAIN}`);
+      warn.classList.toggle('hidden', isValid || !input.value.includes('@'));
+    };
+
+    // Mode switching (2 Tabs: login & register)
+    window.switchMode = function(mode) {
+      ['login','register'].forEach(id => {
+        document.getElementById(`form-${id}`)?.classList.add('hidden');
+      });
+      document.getElementById(`form-${mode}`)?.classList.remove('hidden');
+      ['btn-login','btn-register'].forEach(id => {
+        document.getElementById(id)?.classList.remove('active');
+      });
+      document.getElementById(`btn-${mode}`)?.classList.add('active');
+      clearMessages();
+    };
+
+    function clearMessages() {
+      document.getElementById('error-msg')?.classList.add('hidden');
+      document.getElementById('success-msg')?.classList.add('hidden');
+    }
+    function showError(msg) {
+      const errText = document.getElementById('error-text');
+      if (errText) errText.textContent = msg;
+      document.getElementById('error-msg')?.classList.remove('hidden');
+      document.getElementById('success-msg')?.classList.add('hidden');
+    }
+    function showSuccess(msg) {
+      const succText = document.getElementById('success-text');
+      if (succText) succText.textContent = msg;
+      document.getElementById('success-msg')?.classList.remove('hidden');
+      document.getElementById('error-msg')?.classList.add('hidden');
+    }
+
+    function checkDomain(email) {
+      if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+        throw new Error(`Only @${ALLOWED_DOMAIN} email addresses are accepted.`);
+      }
+    }
+
+    // Password toggle
+    window.togglePwd = function(id, btn) {
+      const el = document.getElementById(id);
+      const isPwd = el.type === 'password';
+      el.type = isPwd ? 'text' : 'password';
+      btn.innerHTML = isPwd
+        ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+        : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    };
+
+    window.bypassSetupModal = function() {
+      document.getElementById('setup-modal')?.classList.remove('show');
+      document.body.style.overflow = '';
+      localStorage.setItem(ADMIN_FLAG, '1');
+    };
+
+    // Resend verification email helper
+    // _isSendingVerification guards the onAuthStateChanged listener from redirecting
+    // during the temporary sign-in needed to resend the email.
+    window._lastUnverifiedEmail = null;
+    window._lastUnverifiedPass  = null;
+    window._isSendingVerification = false;
+    window.resendVerificationEmail = async function() {
+      const btn = document.getElementById('resend-verify-btn');
+      if (!btn) return;
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      try {
+        const { signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+        window._isSendingVerification = true; // prevent onAuthStateChanged from redirecting
+        const cred = await signInWithEmailAndPassword(auth, window._lastUnverifiedEmail, window._lastUnverifiedPass);
+        await sendEmailVerification(cred.user);
+        await signOut(auth);
+        window._isSendingVerification = false;
+        btn.textContent = 'Sent!';
+        setTimeout(() => { btn.disabled = false; btn.textContent = 'Resend Email'; }, 3000);
+      } catch (err) {
+        window._isSendingVerification = false;
+        btn.textContent = 'Failed – try again';
+        setTimeout(() => { btn.disabled = false; btn.textContent = 'Resend Email'; }, 3000);
+      }
+    };
+
+    // Unified Sign In (automatically redirects to dashboard or student-dashboard)
+    window.handleUnifiedLogin = async function(e) {
+      e.preventDefault();
+      clearMessages();
+      const email      = document.getElementById('login-email').value.trim();
+      const pass       = document.getElementById('login-password').value;
+      const rememberMe = document.getElementById('remember-me')?.checked || false;
+      const btn        = document.getElementById('login-btn');
+
+      let isRedirecting = false;
+      try {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px"></div> Signing in…';
+
+        // Set persistence BEFORE signing in: session (default) or local (remember me)
+        const { setPersistence, browserLocalPersistence, browserSessionPersistence, signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+
+        // Sign in to check verified status first
+        const cred = await signInWithEmailAndPassword(auth, email, pass);
+
+        // Check if user is an official account created directly in users (wardens, supervisors, HMC members, admin, etc.)
+        const userSnap = await getDoc(doc(db, 'users', cred.user.uid));
+        const isOfficialAccount = userSnap.exists() && userSnap.data().role !== 'student';
+
+        // Block unverified student accounts from signing in (official accounts created by admin bypass verification)
+        if (!cred.user.emailVerified && !isOfficialAccount) {
+          await signOut(auth);
+          window._lastUnverifiedEmail = email;
+          window._lastUnverifiedPass  = pass;
+          const errText = document.getElementById('error-text');
+          if (errText) errText.innerHTML = 'Please verify your email before signing in. Check your inbox for the verification link.<br><button id="resend-verify-btn" onclick="resendVerificationEmail()" style="margin-top:8px;padding:5px 14px;border-radius:6px;border:none;background:var(--brand-primary);color:#fff;cursor:pointer;font-size:0.8rem">Resend Verification Email</button>';
+          document.getElementById('error-msg')?.classList.remove('hidden');
+          return;
+        }
+
+        // ── Migrate pending_users → users after first verified login ──
+        const pendingSnap = await getDoc(doc(db, 'pending_users', cred.user.uid));
+        if (pendingSnap.exists()) {
+          // Move registration data from pending to the real users collection
+          await setDoc(doc(db, 'users', cred.user.uid), pendingSnap.data());
+          await deleteDoc(doc(db, 'pending_users', cred.user.uid));
+        }
+
+        const user = await fetchUserProfile(cred.user.uid);
+        if (!user) throw new Error('Account profile not found.');
+        
+        isRedirecting = true;
+        if (user.role === 'student') {
+          window.location.href = 'student-dashboard.html';
+        } else {
+          window.location.href = 'dashboard.html';
+        }
+      } catch (err) {
+        if (!isRedirecting && !err.message.includes('verify')) {
+          showError(formatSecureErrorMessage(err, 'Sign in failed. Please check your credentials and try again.'));
+        }
+      } finally {
+        if (!isRedirecting) {
+          btn.disabled = false;
+          btn.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Sign In`;
+        }
+      }
+    };
+
+    // Student Registration — Two-phase flow:
+    // Phase 1: Create Auth account → write to pending_users → send verification email → sign out
+    // Phase 2: On first login after verification → migrate pending_users → users (done in handleUnifiedLogin)
+    window.handleStudentRegister = async function(e) {
+      e.preventDefault();
+      clearMessages();
+      const name  = sanitizeInput(document.getElementById('reg-name').value);
+      const roll  = sanitizeInput(document.getElementById('reg-roll').value);
+      const email = sanitizeInput(document.getElementById('reg-email').value).toLowerCase().trim();
+      const pass  = document.getElementById('reg-password').value;
+      const btn   = document.getElementById('reg-btn');
+
+      try {
+        // ── Step 1: Domain check ───────────────────────────────────
+        checkDomain(email);
+
+        btn.disabled = true;
+        btn.textContent = 'Creating account…';
+
+        // ── Step 2: Create Firebase Auth account ───────────────────
+        // Must happen BEFORE hostel check so the user is authenticated for Firestore reads
+        let cred;
+        try {
+          cred = await createUserWithEmailAndPassword(auth, email, pass);
+        } catch (createErr) {
+          if (createErr.code === 'auth/email-already-in-use') {
+            // Check if this is a pending (unverified) registration or a real existing account
+            const { signInWithEmailAndPassword: signInTemp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+            try {
+              window._isSendingVerification = true;
+              const existingCred = await signInTemp(auth, email, pass);
+              if (!existingCred.user.emailVerified) {
+                // Pending unverified — offer to resend
+                await signOut(auth);
+                window._isSendingVerification = false;
+                window._lastUnverifiedEmail = email;
+                window._lastUnverifiedPass  = pass;
+                const errText = document.getElementById('error-text');
+                if (errText) errText.innerHTML = 'You already started registration with this email but haven\'t verified it yet. Check your inbox for the verification link.<br><button id="resend-verify-btn" onclick="resendVerificationEmail()" style="margin-top:8px;padding:5px 14px;border-radius:6px;border:none;background:var(--brand-primary);color:#fff;cursor:pointer;font-size:0.8rem">Resend Verification Email</button>';
+                document.getElementById('error-msg')?.classList.remove('hidden');
+                return;
+              } else {
+                // Verified account already exists
+                await signOut(auth);
+                window._isSendingVerification = false;
+                throw new Error('An account with this email already exists. Please sign in instead.');
+              }
+            } catch (signInErr) {
+              window._isSendingVerification = false;
+              if (signInErr.message.includes('already exists')) throw signInErr;
+              // Wrong password means a real account exists with different credentials
+              throw new Error('An account with this email already exists. Please sign in instead.');
+            }
+          }
+          throw createErr;
+        }
+
+        btn.textContent = 'Verifying hostel records…';
+
+        // ── Step 3: Hostel database check (user is now authenticated) ──
+        const hostelSnap = await getDocs(query(
+          collection(db, 'hostel_students'),
+          where('email', '==', email)
+        ));
+        if (hostelSnap.empty) {
+          // Hostel check failed — clean up the Auth account we just created
+          const { deleteUser } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+          await deleteUser(cred.user);
+          throw new Error('Your email is not found in hostel records. Please contact the hostel head to register your email first.');
+        }
+
+        // ── Extract graduation year from email local-part ──────────
+        const gradYearMatch = email.split('@')[0].match(/(20\d{2})/);
+        const graduationYear = gradYearMatch ? parseInt(gradYearMatch[1]) : null;
+        if (!graduationYear) {
+          const { deleteUser } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+          await deleteUser(cred.user);
+          throw new Error('Could not detect graduation year from your institutional email. Please contact the hostel head.');
+        }
+
+        btn.textContent = 'Saving registration…';
+
+        const hostelData = hostelSnap.docs[0].data();
+
+        // ── Step 4: Write to pending_users (NOT users yet) ─────────
+        // Data is migrated to 'users' only after the email is verified (on first login)
+        await setDoc(doc(db, 'pending_users', cred.user.uid), {
+          name, email, roll,
+          graduationYear,
+          batch: graduationYear - 2,
+          role: 'student',
+          hostelName: hostelData.hostelName || null,
+          hostelId:   hostelData.hostelId   || null,
+          roomNo:     hostelData.roomNo     || null,
+          profilePicUrl: null,
+          createdAt: serverTimestamp()
+        });
+
+        // ── Step 5: Send verification email, then sign out ─────────
+        await sendEmailVerification(cred.user);
+        await signOut(auth);
+
+        // Store credentials so the resend button can reuse them
+        window._lastUnverifiedEmail = email;
+        window._lastUnverifiedPass  = pass;
+
+        const succText = document.getElementById('success-text');
+        if (succText) succText.innerHTML = `Account created! A verification email has been sent to <strong>${email}</strong>. Please verify your email before signing in.<br><button id="resend-verify-btn" onclick="resendVerificationEmail()" style="margin-top:8px;padding:5px 14px;border-radius:6px;border:none;background:var(--brand-primary);color:#fff;cursor:pointer;font-size:0.8rem">Resend Verification Email</button>`;
+        document.getElementById('success-msg')?.classList.remove('hidden');
+        document.getElementById('error-msg')?.classList.add('hidden');
+        // Switch to login tab after a short pause
+        setTimeout(() => switchMode('login'), 5000);
+      } catch (err) {
+        showError(
+          err.message.includes('hostel records') || err.message.includes('graduation year') ||
+          err.message.includes('already exists') || err.message.includes('contact the hostel')
+            ? err.message
+            : formatSecureErrorMessage(err, 'Registration failed. Please try again.')
+        );
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Create Account`;
+      }
+    };
+
+    // detectGradYear is disabled — graduation year detection is intentionally hidden from public view
+    window.detectGradYear = function() {};
+
+    // First-run setup
+    window.handleSetup = async function(e) {
+      e.preventDefault();
+      const email = sanitizeInput(document.getElementById('setup-email').value);
+      try {
+        checkDomain(email);
+      } catch (err) { showToast(formatSecureErrorMessage(err), 'error'); return; }
+
+      const btn  = document.getElementById('setup-btn');
+      btn.disabled = true;
+      btn.textContent = 'Creating…';
+      try {
+        window.isSeedingAdmin = true;
+        await seedAdmin(
+          sanitizeInput(document.getElementById('setup-name').value),
+          email,
+          document.getElementById('setup-password').value,
+          parseInt(document.getElementById('setup-year').value),
+          sanitizeInput(document.getElementById('setup-post').value)
+        );
+        localStorage.setItem(ADMIN_FLAG, '1'); // mark admin created for fast future loads
+        showToast('Admin account created! Launching portal…', 'success');
+        setTimeout(() => window.location.href = 'dashboard.html', 1500);
+      } catch (err) {
+        showToast(formatSecureErrorMessage(err, 'Setup failed. Please try again.'), 'error');
+        btn.disabled = false;
+        btn.textContent = 'Create Admin Account & Launch Portal';
+      }
+    };
+
+    // Forgot Password
+    window.openForgotPassword = function() {
+      const emailEl = document.getElementById('login-email');
+      if (emailEl && emailEl.value) {
+        document.getElementById('forgot-email').value = emailEl.value;
+      }
+      document.getElementById('forgot-success')?.classList.add('hidden');
+      document.getElementById('forgot-error')?.classList.add('hidden');
+      document.getElementById('forgot-modal')?.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closeForgotPassword = function() {
+      document.getElementById('forgot-modal').classList.remove('show');
+      document.body.style.overflow = '';
+    };
+
+    window.handleForgotPassword = async function(e) {
+      e.preventDefault();
+      const email = sanitizeInput(document.getElementById('forgot-email').value);
+      const btn   = document.getElementById('forgot-btn');
+      const errEl = document.getElementById('forgot-error');
+      const okEl  = document.getElementById('forgot-success');
+
+      errEl.classList.add('hidden');
+      okEl.classList.add('hidden');
+
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      try {
+        await sendPasswordResetEmail(auth, email);
+        okEl.classList.remove('hidden');
+        document.getElementById('forgot-form').reset();
+        setTimeout(() => closeForgotPassword(), 3000);
+      } catch (err) {
+        errEl.textContent = formatSecureErrorMessage(err, 'Could not send reset email. Please try again.');
+        errEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Send Reset Link`;
+      }
+    };
+  </script>
+</body>
+</html>

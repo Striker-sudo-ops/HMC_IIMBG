@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events Portal — HMC</title>
+  <meta name="description" content="Manage campus events, permissions, equipment, accommodation and more.">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  <script type="module">import { initTheme } from '../js/theme.js'; initTheme();</script>
+  <style>
+    /* ── Events Portal Styles ── */
+    .events-hero {
+      background: linear-gradient(135deg, rgba(108,99,255,0.15) 0%, rgba(167,139,250,0.08) 100%);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: var(--sp-8) var(--sp-8);
+      margin-bottom: var(--sp-6);
+      position: relative;
+      overflow: hidden;
+    }
+    .events-hero::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(108,99,255,0.18) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .events-hero-title {
+      font-family: var(--font-display);
+      font-size: 1.85rem;
+      font-weight: 800;
+      background: var(--grad-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: var(--sp-2);
+    }
+    .events-hero-sub {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      max-width: 520px;
+      line-height: 1.6;
+    }
+    .hero-actions { display: flex; gap: var(--sp-3); margin-top: var(--sp-5); flex-wrap: wrap; }
+
+    /* ── Tabs ── */
+    .portal-tabs {
+      display: flex;
+      gap: var(--sp-2);
+      margin-bottom: var(--sp-6);
+      background: var(--bg-elevated);
+      padding: 5px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      width: fit-content;
+    }
+    .portal-tab {
+      padding: 8px 20px;
+      border-radius: var(--radius-md);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .portal-tab.active {
+      background: var(--brand-primary);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(108,99,255,0.35);
+    }
+    .portal-tab:not(.active):hover { background: var(--bg-glass); color: var(--text-primary); }
+
+    /* ── Event Cards Grid ── */
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: var(--sp-5);
+    }
+    .event-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: var(--sp-5);
+      backdrop-filter: var(--glass-blur);
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .event-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(108,99,255,0.18);
+      border-color: var(--border-normal);
+    }
+    .event-card-accent {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    }
+    .event-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--sp-3);
+      padding-top: var(--sp-2);
+    }
+    .event-card-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.3;
+      flex: 1;
+      margin-right: var(--sp-3);
+    }
+    .event-card-meta {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-2);
+      margin-bottom: var(--sp-4);
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .event-card-meta-row { display: flex; align-items: center; gap: 6px; }
+    .event-card-meta-row svg { flex-shrink: 0; opacity: 0.7; }
+    .event-features {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: var(--sp-4);
+    }
+    .feature-chip {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(108,99,255,0.3);
+      background: rgba(108,99,255,0.1);
+      color: var(--brand-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .event-card-actions {
+      display: flex;
+      gap: var(--sp-2);
+      padding-top: var(--sp-3);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* ── Feature Toggle Grid (Create form) ── */
+    .feature-toggles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--sp-4);
+      margin-bottom: var(--sp-5);
+    }
+    .feature-toggle-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-4);
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-3);
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .feature-toggle-card.enabled {
+      border-color: var(--brand-primary);
+      background: rgba(108,99,255,0.06);
+    }
+    .feature-icon-box {
+      width: 40px; height: 40px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      background: rgba(108,99,255,0.12);
+      color: var(--brand-primary);
+    }
+    .feature-toggle-info { flex: 1; }
+    .feature-toggle-name {
+      font-size: 0.875rem; font-weight: 700;
+      color: var(--text-primary); margin-bottom: 3px;
+    }
+    .feature-toggle-desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; }
+    .toggle-switch {
+      position: relative;
+      width: 42px; height: 24px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; cursor: pointer;
+      inset: 0;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-normal);
+      border-radius: 999px;
+      transition: 0.3s;
+    }
+    .toggle-slider:before {
+      content: '';
+      position: absolute;
+      height: 16px; width: 16px;
+      left: 3px; bottom: 3px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--brand-primary); border-color: var(--brand-primary); }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); background: #fff; }
+
+    /* ── Wizard Steps ── */
+    .wizard-steps {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: var(--sp-8);
+      overflow-x: auto;
+      padding-bottom: var(--sp-2);
+    }
+    .wizard-step {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      flex-shrink: 0;
+    }
+    .wizard-step-num {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 800;
+      border: 2px solid var(--border-normal);
+      color: var(--text-muted);
+      background: var(--bg-elevated);
+      transition: all 0.3s;
+    }
+    .wizard-step.active .wizard-step-num {
+      border-color: var(--brand-primary);
+      background: var(--brand-primary);
+      color: #fff;
+    }
+    .wizard-step.done .wizard-step-num {
+      border-color: var(--brand-success);
+      background: var(--brand-success);
+      color: #fff;
+    }
+    .wizard-step-label {
+      font-size: 0.8rem; font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .wizard-step.active .wizard-step-label { color: var(--brand-primary); }
+    .wizard-step.done .wizard-step-label { color: var(--brand-success); }
+    .wizard-connector {
+      height: 2px; width: 40px;
+      background: var(--border-subtle);
+      flex-shrink: 0;
+      margin: 0 var(--sp-1);
+    }
+    .wizard-connector.done { background: var(--brand-success); }
+
+    /* ── Permission Template Builder ── */
+    .perm-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: var(--sp-3);
+      align-items: center;
+      padding: var(--sp-3);
+      background: var(--bg-elevated);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--sp-2);
+    }
+    .perm-template-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-4);
+      margin-bottom: var(--sp-3);
+    }
+    .perm-template-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--sp-3);
+    }
+
+    /* ── Filters bar ── */
+    .filters-bar {
+      display: flex;
+      gap: var(--sp-3);
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: var(--sp-5);
+    }
+    .filter-chip {
+      padding: 5px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-chip.active, .filter-chip:hover {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+      background: rgba(108,99,255,0.08);
+    }
+
+    /* ── Empty state ── */
+    .events-empty {
+      text-align: center;
+      padding: var(--sp-16) var(--sp-8);
+      color: var(--text-muted);
+    }
+    .events-empty svg { margin-bottom: var(--sp-4); opacity: 0.4; }
+    .events-empty h3 { font-size: 1.1rem; font-weight: 700; color: var(--text-secondary); margin-bottom: var(--sp-2); }
+    .events-empty p { font-size: 0.85rem; }
+
+    .section-panel { display: none; }
+    .section-panel.active { display: block; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+    @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
+
+    /* ── Status dot ── */
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 5px;
+    }
+    .status-dot.draft { background: var(--text-muted); }
+    .status-dot.pending { background: var(--brand-warning); }
+    .status-dot.approved { background: var(--brand-info); }
+    .status-dot.live { background: var(--brand-success); box-shadow: 0 0 6px var(--brand-success); }
+    .status-dot.concluded { background: var(--text-muted); }
+    .status-dot.cancelled { background: var(--brand-danger); }
+
+    /* ── Redesigned QR popup modal ── */
+    .qr-modal-box {
+      background: var(--bg-elevated, #1A1A3E);
+      border: 1px solid rgba(108,99,255,0.35);
+      border-radius: var(--radius-xl, 20px);
+      padding: var(--sp-6, 24px);
+      width: 100%; max-width: 400px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.8), 0 0 50px rgba(108,99,255,0.2);
+      text-align: center; position: relative; overflow: hidden;
+      animation: qrModalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes qrModalPop {
+      0% { opacity: 0; transform: scale(0.92) translateY(12px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .qr-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-3); }
+    .qr-header-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 999px;
+      background: rgba(108,99,255,0.15); border: 1px solid rgba(108,99,255,0.3);
+      color: var(--brand-secondary, #A78BFA); font-size: 0.7rem; font-weight: 800;
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .qr-modal-title { font-size: 1.15rem; font-weight: 800; color: var(--text-primary, #F0F0FF); margin-bottom: 4px; line-height: 1.3; }
+    .qr-modal-sub { font-size: 0.76rem; color: var(--text-muted, #6B6B9A); margin-bottom: var(--sp-4); }
+
+    .qr-frame-wrapper {
+      position: relative; display: inline-block;
+      padding: 16px; background: #ffffff;
+      border-radius: 18px; box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+      margin: 0 auto var(--sp-4);
+    }
+    .qr-popup-url-container {
+      background: var(--bg-surface, #0A0A1A); border: 1px solid var(--border-subtle, rgba(108,99,255,0.15));
+      border-radius: var(--radius-md, 10px); padding: 8px 12px; margin-bottom: var(--sp-5); text-align: left;
+    }
+    .qr-url-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); display: block; margin-bottom: 2px; }
+    .qr-popup-url { font-family: monospace; font-size: 0.72rem; color: var(--brand-secondary, #A78BFA); word-break: break-all; }
+
+    .qr-action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+    .qr-btn-primary {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      background: linear-gradient(135deg, var(--brand-primary, #6C63FF) 0%, #8B5CF6 100%);
+      color: #fff; font-size: 0.8rem; font-weight: 800; padding: 10px 16px;
+      border-radius: var(--radius-md, 10px); border: none; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(108,99,255,0.35); transition: all 0.2s;
+    }
+    .qr-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,99,255,0.5); }
+    .qr-btn-secondary {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      background: var(--bg-surface, #0A0A1A); color: var(--text-primary);
+      font-size: 0.8rem; font-weight: 700; padding: 10px 16px;
+      border-radius: var(--radius-md, 10px); border: 1px solid var(--border-normal, rgba(108,99,255,0.3));
+      cursor: pointer; transition: all 0.2s;
+    }
+    .qr-btn-secondary:hover { background: rgba(108,99,255,0.1); border-color: var(--brand-primary); }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Events Portal</h1>
+        <p class="page-subtitle" id="portal-subtitle">Manage campus events, permissions &amp; resources</p>
+      </div>
+      <div style="display:flex;gap:var(--sp-3)">
+        <a href="../events/event-request.html" class="btn btn-secondary" target="_blank" style="font-size:0.8rem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          External Request Link
+        </a>
+        <button class="btn btn-primary" id="create-event-btn" onclick="switchTab('create')" style="font-weight:700">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create Event
+        </button>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- Hero Banner -->
+      <div class="events-hero" id="events-hero">
+        <div class="events-hero-title">Campus Events Management</div>
+        <div class="events-hero-sub">Create and manage every type of campus event — cultural fests, sports tournaments, hostel dinners, and more. Enable only the modules you need per event.</div>
+        <div class="hero-actions">
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(108,99,255,0.12);border:1px solid rgba(108,99,255,0.25);border-radius:var(--radius-md);padding:8px 14px;font-size:0.8rem;color:var(--brand-secondary)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span id="hero-live-count">0 Live Events</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.35);border-radius:var(--radius-md);padding:8px 14px;font-size:0.8rem;color:#16a34a;font-weight:700">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span id="hero-upcoming-count">0 Upcoming</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Pills -->
+      <div class="portal-tabs">
+        <button class="portal-tab active" id="tab-all" onclick="switchTab('all')">All Events</button>
+        <button class="portal-tab" id="tab-suggested" onclick="switchTab('suggested')">Suggested Events</button>
+        <button class="portal-tab" id="tab-create" onclick="switchTab('create')">Create Event</button>
+        <button class="portal-tab admin-tab-only hidden" id="tab-perms" onclick="switchTab('perms')">Permission Templates</button>
+      </div>
+
+      <!-- ── ALL EVENTS PANEL ── -->
+      <div id="panel-all" class="section-panel active">
+        <div class="filters-bar">
+          <button class="filter-chip active" onclick="filterEvents('all', this)">All</button>
+          <button class="filter-chip" onclick="filterEvents('draft', this)">Draft</button>
+          <button class="filter-chip" onclick="filterEvents('pending', this)">Pending</button>
+          <button class="filter-chip" onclick="filterEvents('live', this)">Live</button>
+          <button class="filter-chip" onclick="filterEvents('concluded', this)">Concluded</button>
+          <div style="margin-left:auto">
+            <input type="text" class="form-control" placeholder="Search events…" id="events-search" oninput="searchEvents(this.value)" style="width:200px;padding:7px 12px;font-size:0.82rem">
+          </div>
+        </div>
+        <div class="events-grid" id="events-grid">
+          <div style="grid-column:1/-1">
+            <div class="events-empty">
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <h3>Loading events…</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SUGGESTED EVENTS PANEL ── -->
+      <div id="panel-suggested" class="section-panel">
+        <div style="margin-bottom:var(--sp-5);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--sp-3)">
+          <div>
+            <h3 style="font-size:1.15rem;font-weight:800;color:var(--text-primary);margin-bottom:4px">Suggested Events from Calendar</h3>
+            <p style="font-size:0.85rem;color:var(--text-muted)">Upcoming national holidays, religious festivals &amp; calendar events. Click "Organize Event" to auto-fill event details and start planning!</p>
+          </div>
+        </div>
+        <div class="events-grid" id="suggested-events-grid">
+          <div style="grid-column:1/-1;text-align:center;padding:var(--sp-8)"><div class="spinner" style="margin:0 auto"></div></div>
+        </div>
+      </div>
+
+      <!-- ── CREATE EVENT PANEL ── -->
+      <div id="panel-create" class="section-panel">
+        <div class="card" style="max-width:860px">
+          <div class="card-header">
+            <h3 class="card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New Event
+            </h3>
+          </div>
+
+          <!-- Wizard Steps -->
+          <div class="wizard-steps" id="wizard-steps">
+            <div class="wizard-step active" id="ws-1"><div class="wizard-step-num">1</div><div class="wizard-step-label">Basic Info</div></div>
+            <div class="wizard-connector" id="wc-1"></div>
+            <div class="wizard-step" id="ws-2"><div class="wizard-step-num">2</div><div class="wizard-step-label">Features</div></div>
+            <div class="wizard-connector" id="wc-2"></div>
+            <div class="wizard-step" id="ws-3"><div class="wizard-step-num">3</div><div class="wizard-step-label">Permissions</div></div>
+            <div class="wizard-connector" id="wc-3"></div>
+            <div class="wizard-step" id="ws-4"><div class="wizard-step-num">4</div><div class="wizard-step-label">Team &amp; Reminders</div></div>
+            <div class="wizard-connector" id="wc-4"></div>
+            <div class="wizard-step" id="ws-5"><div class="wizard-step-num">5</div><div class="wizard-step-label">Review</div></div>
+          </div>
+
+          <!-- Step 1: Basic Info -->
+          <div id="step-1" class="wizard-panel">
+            <div class="form-row" style="margin-bottom:var(--sp-4)">
+              <div class="form-group">
+                <label class="form-label">Event Title *</label>
+                <input type="text" class="form-control" id="ev-title" placeholder="e.g. Cultural Fest 2025">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Event Type *</label>
+                <select class="form-control" id="ev-type">
+                  <option value="">Select type…</option>
+                  <option value="cultural">Cultural</option>
+                  <option value="sports">Sports</option>
+                  <option value="academic">Academic</option>
+                  <option value="hostel">Hostel</option>
+                  <option value="technical">Technical</option>
+                  <option value="festival">Festival</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:var(--sp-4)">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" id="ev-desc" rows="3" placeholder="Brief description of the event…"></textarea>
+            </div>
+            <div class="form-row" style="margin-bottom:var(--sp-4)">
+              <div class="form-group">
+                <label class="form-label">Start Date *</label>
+                <input type="date" class="form-control" id="ev-start">
+              </div>
+              <div class="form-group">
+                <label class="form-label">End Date *</label>
+                <input type="date" class="form-control" id="ev-end">
+              </div>
+            </div>
+            <div class="form-row" style="margin-bottom:var(--sp-4)">
+              <div class="form-group">
+                <label class="form-label">Venue / Location</label>
+                <input type="text" class="form-control" id="ev-venue" placeholder="e.g. Main Auditorium">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Expected Attendees</label>
+                <input type="number" class="form-control" id="ev-attendees" placeholder="100" min="1">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:var(--sp-5)">
+              <label class="form-label">Allocated Budget (₹)</label>
+              <input type="number" class="form-control" id="ev-budget" placeholder="50000" min="0">
+            </div>
+            <div style="display:flex;justify-content:flex-end">
+              <button class="btn btn-primary" onclick="wizardNext(1)">Next: Features</button>
+            </div>
+          </div>
+
+          <!-- Step 2: Features -->
+          <div id="step-2" class="wizard-panel hidden">
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:var(--sp-5)">Toggle the modules you need for this event. You can change these settings later.</p>
+            <div class="feature-toggles-grid" id="feature-toggles"></div>
+            <div style="display:flex;justify-content:space-between;margin-top:var(--sp-4)">
+              <button class="btn btn-secondary" onclick="wizardPrev(2)">Back</button>
+              <button class="btn btn-primary" onclick="wizardNext(2)">Next: Permissions</button>
+            </div>
+          </div>
+
+          <!-- Step 3: Permissions -->
+          <div id="step-3" class="wizard-panel hidden">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;gap:var(--sp-3)">
+              <div>
+                <div style="font-size:0.95rem;font-weight:700;color:var(--text-primary)">Required Institutional Approvals</div>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:4px">Add approvals or apply a template below</div>
+              </div>
+              <div style="display:flex;gap:var(--sp-2)">
+                <select class="form-control" id="perm-template-select" onchange="applyPermissionTemplate(this.value)" style="width:220px;font-size:0.82rem;margin-bottom:0">
+                  <option value="">Apply Template...</option>
+                </select>
+                <button class="btn btn-sm btn-secondary" onclick="addPermRow()">+ Add Approval</button>
+              </div>
+            </div>
+            <div id="perm-rows-container">
+              <!-- Rows added dynamically -->
+            </div>
+            <div style="margin-top:var(--sp-3);font-size:0.8rem;color:var(--text-muted)">
+              <strong style="color:var(--text-secondary)">Common approvals:</strong> Fire Dept NOC, Electricity Dept, Student Affairs, Warden Approval, External Security
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:var(--sp-5)">
+              <button class="btn btn-secondary" onclick="wizardPrev(3)">Back</button>
+              <button class="btn btn-primary" onclick="wizardNext(3)">Next: Team &amp; Reminders</button>
+            </div>
+          </div>
+
+          <!-- Step 4: Team & Reminders -->
+          <div id="step-4" class="wizard-panel hidden">
+            <div class="form-group" style="margin-bottom:var(--sp-4)">
+              <label class="form-label">Event POC(s)</label>
+              <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:var(--sp-2)">Search and add HMC members as Points of Contact for this event</p>
+              <div style="display:flex;gap:var(--sp-2);margin-bottom:var(--sp-3)">
+                <input type="text" class="form-control" id="poc-search" placeholder="Search member name or ID…" oninput="searchPOC(this.value)" style="flex:1">
+              </div>
+              <div id="poc-search-results" style="margin-bottom:var(--sp-3)"></div>
+              <div id="poc-selected-list">
+                <div style="color:var(--text-muted);font-size:0.82rem;padding:var(--sp-3);border:1px dashed var(--border-subtle);border-radius:var(--radius-md);text-align:center">No POCs added yet</div>
+              </div>
+            </div>
+
+            <!-- Send Notification Category Selection -->
+            <div class="form-group" style="margin-top:var(--sp-6);border-top:1px solid var(--border-subtle);padding-top:var(--sp-4)">
+              <label class="form-label" style="font-size:0.95rem;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                Send Notification &amp; Team Reminders
+              </label>
+              <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:var(--sp-3)">
+                Select categories to send reminder notifications. All members of selected teams will be sent a reminder message with event details to get ready and organize the event.
+              </p>
+              <div id="notify-categories-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));gap:var(--sp-3);background:var(--bg-elevated);padding:var(--sp-4);border-radius:var(--radius-lg);border:1px solid var(--border-subtle)">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;margin-top:var(--sp-5)">
+              <button class="btn btn-secondary" onclick="wizardPrev(4)">Back</button>
+              <button class="btn btn-primary" onclick="wizardNext(4)">Review</button>
+            </div>
+          </div>
+
+          <!-- Step 5: Review -->
+          <div id="step-5" class="wizard-panel hidden">
+            <div id="review-summary"></div>
+            <div style="display:flex;justify-content:space-between;margin-top:var(--sp-5)">
+              <button class="btn btn-secondary" onclick="wizardPrev(5)">Back</button>
+              <button class="btn btn-primary" id="submit-event-btn" onclick="submitEvent()" style="font-weight:700">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Submit Event
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PERMISSION TEMPLATES PANEL ── -->
+      <div id="panel-perms" class="section-panel">
+        <div style="max-width:760px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-5)">
+            <div>
+              <div style="font-size:1rem;font-weight:800;color:var(--text-primary)">Permission Templates</div>
+              <div style="font-size:0.82rem;color:var(--text-muted);margin-top:4px">Define reusable approval checklists for different event types</div>
+            </div>
+            <button class="btn btn-primary" onclick="showNewTemplateForm()">+ New Template</button>
+          </div>
+
+          <div id="new-template-form" class="card hidden" style="margin-bottom:var(--sp-5)">
+            <div class="card-header">
+              <h3 class="card-title">New Template</h3>
+              <button class="btn btn-sm btn-secondary" onclick="hideNewTemplateForm()">Cancel</button>
+            </div>
+            <div class="form-group" style="margin-bottom:var(--sp-4)">
+              <label class="form-label">Template Name</label>
+              <input type="text" class="form-control" id="tmpl-name" placeholder="e.g. Cultural Event, Sports Tournament">
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3)">
+              <label class="form-label" style="margin:0">Required Approvals</label>
+              <button class="btn btn-sm btn-secondary" onclick="addTemplatePermRow()">+ Add</button>
+            </div>
+            <div id="template-perm-rows"></div>
+            <div style="margin-top:var(--sp-4);display:flex;justify-content:flex-end">
+              <button class="btn btn-primary" onclick="saveTemplate()">Save Template</button>
+            </div>
+          </div>
+
+          <div id="templates-list">
+            <div style="color:var(--text-muted);font-size:0.85rem;padding:var(--sp-6);text-align:center">Loading templates…</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.page-body -->
+  </main>
+</div>
+
+<!-- QR Code Modal -->
+<div class="modal-overlay" id="qr-modal">
+  <div class="qr-modal-box">
+    <div class="qr-modal-header">
+      <div class="qr-header-badge">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Event Access QR</span>
+      </div>
+      <button class="modal-close" onclick="closeQrModal()" title="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="qr-modal-title" id="qr-event-title">Event QR Code</div>
+    <p class="qr-modal-sub">Scan with any mobile camera to open the public request form instantly</p>
+
+    <div class="qr-frame-wrapper">
+      <div id="qr-code-container">
+        <img id="qr-code-img" src="" alt="QR Code" style="width:220px;height:220px;display:block;border-radius:4px">
+      </div>
+    </div>
+
+    <div class="qr-popup-url-container">
+      <span class="qr-url-label">Direct Link</span>
+      <div class="qr-popup-url" id="qr-event-link"></div>
+    </div>
+
+    <div class="qr-action-buttons">
+      <button class="qr-btn-primary" onclick="downloadQR()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Download QR</span>
+      </button>
+      <button class="qr-btn-secondary" onclick="closeQrModal()">
+        <span>Close</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initAuthGuard, getCachedUser, populateSidebarUser } from '../js/auth.js';
+import { renderSidebar, initSidebarTheme } from '../js/sidebar.js';
+import { showToast, openModal, closeModal } from '../js/utils.js';
+import {
+  getAllCampusEvents, createCampusEvent, deleteCampusEvent,
+  getPermissionTemplates, savePermissionTemplate, deletePermissionTemplate,
+  eventStatusBadge, eventTypeColor, formatEventDate
+} from '../js/events.js';
+import { getAllMembers } from '../js/members.js';
+import { getAllEvents as getCalendarEvents, getStaticEvents } from '../js/calendar.js';
+import { sendMessage as sendChatMessage } from '../js/chat.js';
+import { logAction } from '../js/audit-logger.js';
+
+document.getElementById('sidebar-container').innerHTML = renderSidebar('events-portal.html');
+initSidebarTheme();
+
+// Expose modal helpers globally so inline onclick handlers can call them
+window.openModal  = openModal;
+window.closeModal = closeModal;
+
+let allEvents = [], allMembers = [], currentFilter = 'all', currentUser = null;
+let selectedPOCs = [];
+let wizardStep = 1;
+const features = [
+  { key: 'accommodation',     label: 'Guest Accommodation',        desc: 'Book hostel beds for external guests & generate QR gate passes', icon: 'home' },
+  { key: 'approvalPipeline',  label: 'Multi-Step Approval',        desc: 'Route event through a defined chain of approvals before going live', icon: 'shield' },
+  { key: 'equipment',         label: 'Equipment Rentals',          desc: 'Catalog for borrowing speakers, projectors, sports gear, tables etc.', icon: 'package' },
+  { key: 'fleaMarket',        label: 'Flea Market / Stalls',       desc: 'Interactive stall booking grid for vendors and student entrepreneurs', icon: 'layers' },
+  { key: 'sponsorship',       label: 'Sponsorship Tracker',        desc: 'Track brand sponsors, cash flow and social media deliverables', icon: 'dollar-sign' },
+  { key: 'mealPasses',        label: 'Mess / Meal Passes',         desc: 'Generate and track scannable meal passes for special feasts', icon: 'qr-code' },
+];
+const featureState = {};
+features.forEach(f => featureState[f.key] = false);
+let permRows = [];
+let templatePermRows = [];
+
+const DEFAULT_AUTO_SELECTED_CATEGORIES = [
+  'Graphic Designing Team',
+  'Video Editing Team',
+  'Social Media',
+  'Content',
+  'Mess'
+];
+
+// ── Icons ────────────────────────────────────────────────
+const ICONS = {
+  home: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  shield: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  package: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+  layers: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
+  'dollar-sign': `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+  'qr-code': `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/><rect x="16" y="16" width="3" height="3"/><rect x="5" y="16" width="3" height="3"/></svg>`,
+};
+
+// ── Init ─────────────────────────────────────────────────
+initAuthGuard({ requireLogin: true, onReady: async (user) => {
+  currentUser = user;
+  populateSidebarUser(user);
+
+  // Students cannot create events — hide header actions and Create tab
+  if (user.role === 'student') {
+    const headerActions = document.querySelector('.page-header > div:last-child');
+    if (headerActions) headerActions.style.display = 'none';
+    const createTab = document.getElementById('tab-create');
+    if (createTab) createTab.style.display = 'none';
+    const createPanel = document.getElementById('panel-create');
+    if (createPanel) createPanel.style.display = 'none';
+    document.getElementById('portal-subtitle').textContent = 'Browse upcoming campus events';
+  }
+
+  const isEventCategory = ['events', 'event'].includes((user.category || '').toLowerCase().trim());
+  const userPostLower   = (user.post || '').toLowerCase().trim();
+  const userTitleLower  = (user.title || '').toLowerCase().trim();
+  const isHeadOrAdmin   = user.role === 'admin' ||
+                          user.role === 'subadmin' ||
+                          userTitleLower.includes('event head') ||
+                          userTitleLower.includes('events head') ||
+                          userPostLower.includes('event head') ||
+                          userPostLower.includes('events head') ||
+                          (isEventCategory && ['head', 'poc', 'coordinator', 'lead'].includes(userPostLower));
+
+  if (isHeadOrAdmin) document.querySelectorAll('.admin-tab-only').forEach(el => el.classList.remove('hidden'));
+
+  // Load in parallel
+  const [events, members] = await Promise.all([
+    getAllCampusEvents().catch(() => []),
+    getAllMembers().catch(() => [])
+  ]);
+  allEvents = events;
+  allMembers = members;
+
+  renderEventsGrid(allEvents);
+  renderFeatureToggles();
+  renderNotificationCategories();
+  updateHeroStats();
+
+  if (isHeadOrAdmin) loadTemplates();
+}});
+
+// ── Render Notification Categories ─────────────────────────
+function renderNotificationCategories() {
+  const grid = document.getElementById('notify-categories-grid');
+  if (!grid) return;
+
+  // Build a case-insensitive deduplicated set.
+  // Prefer the canonical name from DEFAULT_AUTO_SELECTED_CATEGORIES when a match exists.
+  const canonicalLower = new Map(DEFAULT_AUTO_SELECTED_CATEGORIES.map(c => [c.toLowerCase(), c]));
+  const seen = new Set(DEFAULT_AUTO_SELECTED_CATEGORIES.map(c => c.toLowerCase()));
+  const categories = [...DEFAULT_AUTO_SELECTED_CATEGORIES];
+
+  allMembers.forEach(m => {
+    const raw = (m.category || '').trim();
+    if (!raw) return;
+    const lower = raw.toLowerCase();
+    if (!seen.has(lower)) {
+      seen.add(lower);
+      categories.push(raw);
+    }
+  });
+
+  grid.innerHTML = categories.map(cat => {
+    const isAutoSelected = canonicalLower.has(cat.toLowerCase());
+    return `
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;color:var(--text-primary);cursor:pointer">
+        <input type="checkbox" class="notify-cat-checkbox" value="${cat}" ${isAutoSelected ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--brand-primary)">
+        <span>${cat}</span>
+        ${isAutoSelected ? `<span style="font-size:0.65rem;color:var(--brand-secondary);background:rgba(108,99,255,0.12);padding:1px 6px;border-radius:4px;font-weight:700">Auto</span>` : ''}
+      </label>
+    `;
+  }).join('');
+}
+
+// ── Tab switching ─────────────────────────────────────────
+window.switchTab = function(tab) {
+  ['all','suggested','create','perms'].forEach(t => {
+    document.getElementById(`panel-${t}`)?.classList.toggle('active', t === tab);
+    document.getElementById(`tab-${t}`)?.classList.toggle('active', t === tab);
+  });
+  if (tab === 'suggested') {
+    renderSuggestedEvents();
+  }
+};
+
+// ── Suggested Events ──────────────────────────────────────
+// Store suggested item data in a Map keyed by a stable slug to avoid
+// JSON-in-HTML-attribute quoting issues that break onclick handlers.
+const suggestedItemMap = new Map();
+
+function makeSuggestedSlug(item) {
+  return encodeURIComponent(`${item.title}|${item.date || item.startDate || ''}`).replace(/%/g, '_');
+}
+
+async function renderSuggestedEvents() {
+  const container = document.getElementById('suggested-events-grid');
+  if (!container) return;
+  container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:var(--sp-8)"><div class="spinner" style="margin:0 auto"></div></div>`;
+
+  try {
+    const calendarEvents = await getCalendarEvents().catch(() => []);
+    const staticEvents = getStaticEvents();
+
+    // Combine and deduplicate by title+date (case-insensitive)
+    const combined = [...staticEvents];
+    calendarEvents.forEach(e => {
+      // Skip campus_events (prefix ce_) — those are already organised and live in All Events
+      if ((e.id || '').startsWith('ce_')) return;
+      if (!combined.some(c => c.title.toLowerCase() === e.title.toLowerCase() && c.date === (e.date || e.startDate))) {
+        combined.push(e);
+      }
+    });
+
+    // Build today's midnight for past-filtering
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Build a set of "organised" event signatures from allEvents (title+startDate)
+    const organisedSigs = new Set(
+      allEvents.map(ev => `${(ev.title || '').toLowerCase()}|${ev.startDate || ''}`)
+    );
+
+    // Filter: remove past events AND events already organised in All tab
+    const visible = combined.filter(item => {
+      const itemDate = new Date(item.date || item.startDate || '');
+      if (isNaN(itemDate) || itemDate < today) return false;          // past
+      const sig = `${(item.title || '').toLowerCase()}|${item.date || item.startDate || ''}`;
+      if (organisedSigs.has(sig)) return false;                       // already organised
+      return true;
+    });
+
+    // Sort ascending by date
+    visible.sort((a, b) => new Date(a.date || a.startDate) - new Date(b.date || b.startDate));
+
+    // Populate the item map
+    suggestedItemMap.clear();
+    visible.forEach(item => {
+      suggestedItemMap.set(makeSuggestedSlug(item), item);
+    });
+
+    if (!visible.length) {
+      container.innerHTML = `<div style="grid-column:1/-1"><div class="events-empty"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><h3>No upcoming suggested events</h3><p>All upcoming holidays and festivals have been organised, or none are upcoming yet.</p></div></div>`;
+      return;
+    }
+
+    container.innerHTML = visible.map(item => {
+      const slug = makeSuggestedSlug(item);
+      const color = eventTypeColor(item.type || 'festival');
+      const dateStr = formatEventDate(item.date || item.startDate);
+      const isHoliday = item.type === 'holiday';
+      const badgeCls = isHoliday ? 'badge-danger' : 'badge-warning';
+      const typeLabel = (item.type || 'festival').toUpperCase();
+
+      return `
+        <div class="event-card" id="sug-card-${slug}">
+          <div class="event-card-accent" style="background:${color}"></div>
+          <div class="event-card-header">
+            <div class="event-card-title">${item.title}</div>
+            <span class="badge ${badgeCls}" style="white-space:nowrap;flex-shrink:0">${typeLabel}</span>
+          </div>
+          <div class="event-card-meta">
+            <div class="event-card-meta-row">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              ${dateStr}
+            </div>
+            ${item.description ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;line-clamp:2;overflow:hidden">${item.description}</div>` : ''}
+          </div>
+          <div class="event-card-actions">
+            <button class="btn btn-sm btn-primary" onclick="organizeSuggestedEvent('${slug}')" style="width:100%;font-size:0.8rem;font-weight:700">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Organize Event
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    container.innerHTML = `<div style="grid-column:1/-1;color:var(--brand-danger);text-align:center">Failed to load suggested events: ${err.message}</div>`;
+  }
+}
+
+// Called when user clicks "Organize Event" on a suggested card.
+// Pre-fills the Create Event wizard and switches to the Create tab.
+window.organizeSuggestedEvent = function(slug) {
+  const item = suggestedItemMap.get(slug);
+  if (!item) { showToast('Event data not found. Please refresh the tab.', 'error'); return; }
+
+  document.getElementById('ev-title').value = item.title || '';
+
+  const evTypeSelect = document.getElementById('ev-type');
+  const validTypes = ['cultural','sports','academic','hostel','technical','festival'];
+  const targetType = validTypes.includes(item.type) ? item.type : 'festival';
+  if (evTypeSelect) evTypeSelect.value = targetType;
+
+  const startDate = item.date || item.startDate || '';
+  const endDate   = item.endDate || item.date || item.startDate || '';
+  document.getElementById('ev-start').value = startDate;
+  document.getElementById('ev-end').value   = endDate;
+  document.getElementById('ev-desc').value  = item.description || `Campus celebration and organisation for ${item.title}.`;
+
+  switchTab('create');
+  goToStep(1);
+  showToast(`Pre-filled details for "${item.title}" — complete the form and submit.`, 'info');
+};
+
+// Legacy alias kept for safety
+window.openCreateWithSuggested = window.organizeSuggestedEvent;
+
+// ── Event Grid ────────────────────────────────────────────
+function updateHeroStats() {
+  const live = allEvents.filter(e => e.status === 'live').length;
+  const upcoming = allEvents.filter(e => ['draft','pending','approved'].includes(e.status)).length;
+  document.getElementById('hero-live-count').textContent = `${live} Live Event${live !== 1 ? 's' : ''}`;
+  document.getElementById('hero-upcoming-count').textContent = `${upcoming} Upcoming`;
+}
+
+function renderEventsGrid(events) {
+  const grid = document.getElementById('events-grid');
+  if (!events.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1"><div class="events-empty"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><h3>No events yet</h3><p>Click "Create Event" to add your first campus event.</p></div></div>`;
+    return;
+  }
+  grid.innerHTML = events.map(ev => renderEventCard(ev)).join('');
+}
+
+function renderEventCard(ev) {
+  const badge = eventStatusBadge(ev.status);
+  const color = eventTypeColor(ev.type);
+  const enabledFeatures = ev.features ? Object.entries(ev.features).filter(([,v]) => v).map(([k]) => {
+    const f = features.find(x => x.key === k);
+    return f ? `<span class="feature-chip">${f.label}</span>` : '';
+  }).join('') : '';
+
+  return `
+  <div class="event-card" onclick="openEvent('${ev.id}')">
+    <div class="event-card-accent" style="background:${color}"></div>
+    <div class="event-card-header">
+      <div class="event-card-title">${ev.title || 'Untitled Event'}</div>
+      <span class="badge ${badge.cls}" style="white-space:nowrap;flex-shrink:0">
+        <span class="status-dot ${ev.status}"></span>${badge.label}
+      </span>
+    </div>
+    <div class="event-card-meta">
+      <div class="event-card-meta-row">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        ${formatEventDate(ev.startDate)}${ev.endDate && ev.endDate !== ev.startDate ? ` → ${formatEventDate(ev.endDate)}` : ''}
+      </div>
+      ${ev.venue ? `<div class="event-card-meta-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${ev.venue}</div>` : ''}
+      <div class="event-card-meta-row">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        ${(ev.type || 'other').charAt(0).toUpperCase() + (ev.type || 'other').slice(1)}
+      </div>
+    </div>
+    ${enabledFeatures ? `<div class="event-features">${enabledFeatures}</div>` : ''}
+    <div class="event-card-actions">
+      <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();openEvent('${ev.id}')" style="flex:1;font-size:0.75rem">Manage</button>
+      <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();shareRequestLink('${ev.id}')" title="Share external request link" style="font-size:0.75rem">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+      <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();generateQrCode('${ev.id}', '${(ev.title||'').replace(/'/g,"\\'")}')" title="Generate QR Code" style="font-size:0.75rem">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg>
+      </button>
+      ${currentUser?.role === 'admin' ? `<button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();confirmDeleteEvent('${ev.id}','${(ev.title||'').replace(/'/g,"\\'")}');" title="Delete" style="font-size:0.75rem;color:var(--brand-danger)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>` : ''}
+    </div>
+  </div>`;
+}
+
+window.openEvent = function(id) {
+  window.location.href = `event-detail.html?id=${id}`;
+};
+
+window.shareRequestLink = function(id) {
+  const url = new URL(`event-request.html?eventId=${id}`, window.location.href).href;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('Request link copied to clipboard!', 'success');
+    }).catch(() => {
+      fallbackCopyText(url);
+    });
+  } else {
+    fallbackCopyText(url);
+  }
+};
+
+function fallbackCopyText(text) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  textArea.style.left = "-999999px";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    showToast('Request link copied to clipboard!', 'success');
+  } catch (err) {
+    showToast('Link: ' + text, 'info');
+  }
+  document.body.removeChild(textArea);
+}
+
+window.confirmDeleteEvent = async function(id, title) {
+  if (!confirm(`Delete event "${title}"? This cannot be undone.`)) return;
+  try {
+    await deleteCampusEvent(id);
+    logAction({
+      action: 'Deleted Event',
+      department: 'Events',
+      details: `Deleted event "${title}"`,
+      user: currentUser
+    });
+    allEvents = allEvents.filter(e => e.id !== id);
+    renderEventsGrid(allEvents);
+    updateHeroStats();
+    // Refresh Suggested tab so the deleted event can reappear there
+    renderSuggestedEvents();
+    showToast('Event deleted.', 'success');
+  } catch(e) { showToast('Delete failed: ' + e.message, 'error'); }
+};
+
+window.filterEvents = function(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = status === 'all' ? allEvents : allEvents.filter(e => e.status === status);
+  const q = document.getElementById('events-search')?.value || '';
+  renderEventsGrid(q ? filtered.filter(e => (e.title||'').toLowerCase().includes(q.toLowerCase())) : filtered);
+};
+window.searchEvents = function(q) {
+  const base = currentFilter === 'all' ? allEvents : allEvents.filter(e => e.status === currentFilter);
+  renderEventsGrid(q ? base.filter(e => (e.title||'').toLowerCase().includes(q.toLowerCase())) : base);
+};
+
+// ── Feature Toggles ───────────────────────────────────────
+function renderFeatureToggles() {
+  document.getElementById('feature-toggles').innerHTML = features.map(f => `
+    <label class="feature-toggle-card ${featureState[f.key] ? 'enabled' : ''}" id="ftc-${f.key}" style="cursor:pointer">
+      <div class="feature-icon-box">${ICONS[f.icon] || ''}</div>
+      <div class="feature-toggle-info">
+        <div class="feature-toggle-name">${f.label}</div>
+        <div class="feature-toggle-desc">${f.desc}</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="ft-${f.key}" ${featureState[f.key] ? 'checked' : ''} onchange="toggleFeature('${f.key}', this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </label>
+  `).join('');
+}
+window.toggleFeature = function(key, val) {
+  featureState[key] = val;
+  document.getElementById(`ftc-${key}`)?.classList.toggle('enabled', val);
+};
+
+// ── Wizard ────────────────────────────────────────────────
+window.wizardNext = function(from) {
+  if (from === 1) {
+    if (!document.getElementById('ev-title').value.trim()) { showToast('Event title is required.', 'error'); return; }
+    if (!document.getElementById('ev-type').value) { showToast('Please select an event type.', 'error'); return; }
+    if (!document.getElementById('ev-start').value) { showToast('Start date is required.', 'error'); return; }
+  }
+  if (from === 3 && permRows.length === 0) addPermRow();
+  goToStep(from + 1);
+};
+window.wizardPrev = function(from) { goToStep(from - 1); };
+
+function goToStep(n) {
+  [1,2,3,4,5].forEach(i => {
+    document.getElementById(`step-${i}`)?.classList.toggle('hidden', i !== n);
+    const ws = document.getElementById(`ws-${i}`);
+    if (!ws) return;
+    ws.classList.remove('active','done');
+    if (i < n) ws.classList.add('done');
+    else if (i === n) ws.classList.add('active');
+    if (i < 5) document.getElementById(`wc-${i}`)?.classList.toggle('done', i < n);
+  });
+  wizardStep = n;
+  if (n === 5) buildReviewSummary();
+}
+
+// ── Permission Rows ───────────────────────────────────────
+window.addPermRow = function() {
+  const id = Date.now();
+  permRows.push(id);
+  const container = document.getElementById('perm-rows-container');
+  const div = document.createElement('div');
+  div.className = 'perm-row'; div.id = `prow-${id}`;
+  div.innerHTML = `
+    <input type="text" class="form-control" placeholder="Approval name (e.g. Fire Dept NOC)" id="pname-${id}" style="margin:0">
+    <input type="text" class="form-control" placeholder="Department / Authority" id="pdept-${id}" style="margin:0">
+    <button class="btn btn-sm btn-secondary" onclick="removePermRow(${id})" style="color:var(--brand-danger);padding:6px 10px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>`;
+  container.appendChild(div);
+};
+window.removePermRow = function(id) {
+  permRows = permRows.filter(r => r !== id);
+  document.getElementById(`prow-${id}`)?.remove();
+};
+
+// ── POC Search ────────────────────────────────────────────
+window.searchPOC = function(q) {
+  const results = document.getElementById('poc-search-results');
+  if (!q.trim()) { results.innerHTML = ''; return; }
+  const filtered = allMembers.filter(m =>
+    !selectedPOCs.find(p => p.uid === m.uid) &&
+    ((m.name||'').toLowerCase().includes(q.toLowerCase()) || (m.uniqueId||'').toLowerCase().includes(q.toLowerCase()))
+  ).slice(0, 5);
+  if (!filtered.length) { results.innerHTML = `<div style="font-size:0.8rem;color:var(--text-muted);padding:var(--sp-2)">No members found</div>`; return; }
+  results.innerHTML = filtered.map(m => `
+    <div onclick="addPOC('${m.uid}','${(m.name||'').replace(/'/g,"\\'")}','${m.uniqueId||''}')"
+      style="display:flex;align-items:center;gap:var(--sp-3);padding:8px 12px;border-radius:var(--radius-md);cursor:pointer;background:var(--bg-elevated);margin-bottom:6px;border:1px solid var(--border-subtle);transition:background 0.15s"
+      onmouseover="this.style.background='var(--bg-glass)'" onmouseout="this.style.background='var(--bg-elevated)'">
+      <div style="width:30px;height:30px;border-radius:50%;background:var(--brand-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;flex-shrink:0">${(m.name||'?')[0].toUpperCase()}</div>
+      <div><div style="font-size:0.82rem;font-weight:700;color:var(--text-primary)">${m.name}</div><div style="font-size:0.72rem;color:var(--text-muted)">${m.uniqueId||''} · ${m.post||'Member'}</div></div>
+    </div>`).join('');
+};
+window.addPOC = function(uid, name, id) {
+  selectedPOCs.push({ uid, name, uniqueId: id });
+  document.getElementById('poc-search').value = '';
+  document.getElementById('poc-search-results').innerHTML = '';
+  renderSelectedPOCs();
+};
+window.removePOC = function(uid) {
+  selectedPOCs = selectedPOCs.filter(p => p.uid !== uid);
+  renderSelectedPOCs();
+};
+function renderSelectedPOCs() {
+  const el = document.getElementById('poc-selected-list');
+  if (!selectedPOCs.length) {
+    el.innerHTML = `<div style="color:var(--text-muted);font-size:0.82rem;padding:var(--sp-3);border:1px dashed var(--border-subtle);border-radius:var(--radius-md);text-align:center">No POCs added yet</div>`;
+    return;
+  }
+  el.innerHTML = selectedPOCs.map(p => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--radius-md);background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.2);margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:var(--sp-2)">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--brand-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800">${(p.name||'?')[0].toUpperCase()}</div>
+        <div><div style="font-size:0.82rem;font-weight:700;color:var(--text-primary)">${p.name}</div><div style="font-size:0.72rem;color:var(--text-muted)">${p.uniqueId}</div></div>
+      </div>
+      <button onclick="removePOC('${p.uid}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`).join('');
+}
+
+// ── Review Summary ────────────────────────────────────────
+function buildReviewSummary() {
+  const title = document.getElementById('ev-title').value;
+  const type = document.getElementById('ev-type').value;
+  const desc = document.getElementById('ev-desc').value;
+  const start = document.getElementById('ev-start').value;
+  const end = document.getElementById('ev-end').value;
+  const venue = document.getElementById('ev-venue').value;
+  const attendees = document.getElementById('ev-attendees').value;
+  const budget = document.getElementById('ev-budget').value;
+  const enabledFeatures = features.filter(f => featureState[f.key]);
+  const permissionsCollected = permRows.map(id => ({
+    name: document.getElementById(`pname-${id}`)?.value || '',
+    dept: document.getElementById(`pdept-${id}`)?.value || ''
+  })).filter(p => p.name);
+
+  const selectedCategories = Array.from(document.querySelectorAll('.notify-cat-checkbox:checked')).map(el => el.value);
+
+  document.getElementById('review-summary').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+      <div class="card" style="background:var(--bg-elevated);border:1px solid var(--border-subtle)">
+        <div style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--brand-primary);margin-bottom:var(--sp-3)">Event Details</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);font-size:0.85rem">
+          <div><span style="color:var(--text-muted)">Title:</span> <strong>${title}</strong></div>
+          <div><span style="color:var(--text-muted)">Type:</span> <strong>${type}</strong></div>
+          <div><span style="color:var(--text-muted)">Start:</span> <strong>${formatEventDate(start)}</strong></div>
+          <div><span style="color:var(--text-muted)">End:</span> <strong>${formatEventDate(end)}</strong></div>
+          ${venue ? `<div><span style="color:var(--text-muted)">Venue:</span> <strong>${venue}</strong></div>` : ''}
+          ${attendees ? `<div><span style="color:var(--text-muted)">Attendees:</span> <strong>${attendees}</strong></div>` : ''}
+          ${budget ? `<div><span style="color:var(--text-muted)">Budget:</span> <strong>₹${Number(budget).toLocaleString()}</strong></div>` : ''}
+        </div>
+        ${desc ? `<div style="margin-top:var(--sp-3);font-size:0.82rem;color:var(--text-secondary)">${desc}</div>` : ''}
+      </div>
+      <div class="card" style="background:var(--bg-elevated);border:1px solid var(--border-subtle)">
+        <div style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--brand-primary);margin-bottom:var(--sp-3)">Enabled Features (${enabledFeatures.length})</div>
+        ${enabledFeatures.length ? `<div class="event-features">${enabledFeatures.map(f => `<span class="feature-chip">${f.label}</span>`).join('')}</div>` : '<div style="font-size:0.82rem;color:var(--text-muted)">No features enabled</div>'}
+      </div>
+      <div class="card" style="background:var(--bg-elevated);border:1px solid var(--border-subtle)">
+        <div style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--brand-primary);margin-bottom:var(--sp-3)">Notified Teams (${selectedCategories.length})</div>
+        ${selectedCategories.length ? `<div class="event-features">${selectedCategories.map(c => `<span class="feature-chip" style="border-color:rgba(34,197,94,0.4);color:#4ade80;background:rgba(34,197,94,0.1)">${c}</span>`).join('')}</div>` : '<div style="font-size:0.82rem;color:var(--text-muted)">No team notifications selected</div>'}
+      </div>
+      <div class="card" style="background:var(--bg-elevated);border:1px solid var(--border-subtle)">
+        <div style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--brand-primary);margin-bottom:var(--sp-3)">Required Approvals (${permissionsCollected.length})</div>
+        ${permissionsCollected.length ? permissionsCollected.map(p => `<div style="font-size:0.82rem;padding:6px 0;border-bottom:1px solid var(--border-subtle);display:flex;gap:var(--sp-3)"><span style="color:var(--text-primary);font-weight:600">${p.name}</span><span style="color:var(--text-muted)">${p.dept}</span></div>`).join('') : '<div style="font-size:0.82rem;color:var(--text-muted)">No approvals required</div>'}
+      </div>
+      ${selectedPOCs.length ? `<div class="card" style="background:var(--bg-elevated);border:1px solid var(--border-subtle)"><div style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--brand-primary);margin-bottom:var(--sp-3)">POCs (${selectedPOCs.length})</div>${selectedPOCs.map(p => `<div style="font-size:0.82rem;padding:4px 0;color:var(--text-primary)">${p.name} <span style="color:var(--text-muted)">(${p.uniqueId})</span></div>`).join('')}</div>` : ''}
+    </div>`;
+}
+
+// ── Submit Event ──────────────────────────────────────────
+window.submitEvent = async function() {
+  const btn = document.getElementById('submit-event-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const permissionsCollected = permRows.map(id => ({
+      name: document.getElementById(`pname-${id}`)?.value || '',
+      dept: document.getElementById(`pdept-${id}`)?.value || '',
+      status: 'pending', required: true
+    })).filter(p => p.name);
+
+    const checkedCatElements = document.querySelectorAll('.notify-cat-checkbox:checked');
+    const selectedCategories = Array.from(checkedCatElements).map(el => el.value);
+
+    const data = {
+      title: document.getElementById('ev-title').value.trim(),
+      type: document.getElementById('ev-type').value,
+      description: document.getElementById('ev-desc').value.trim(),
+      startDate: document.getElementById('ev-start').value,
+      endDate: document.getElementById('ev-end').value,
+      venue: document.getElementById('ev-venue').value.trim(),
+      expectedAttendees: parseInt(document.getElementById('ev-attendees').value) || 0,
+      budget: { allocated: parseInt(document.getElementById('ev-budget').value) || 0, spent: 0 },
+      features: { ...featureState },
+      permissions: permissionsCollected,
+      notifiedCategories: selectedCategories,
+      pocIds: selectedPOCs.map(p => p.uid),
+      pocNames: selectedPOCs.map(p => p.name),
+      createdBy: currentUser.uid,
+      createdByName: currentUser.name || currentUser.email || 'Event Coordinator',
+    };
+    const id = await createCampusEvent(data);
+
+    // Send notifications/reminders to global chat room for selected categories
+    if (selectedCategories.length > 0) {
+      for (const cat of selectedCategories) {
+        const reminderMsg = `@${cat} Event Reminder: "${data.title}" (${(data.type||'event').toUpperCase()})\nDates: ${formatEventDate(data.startDate)}${data.endDate && data.endDate !== data.startDate ? ' → ' + formatEventDate(data.endDate) : ''}${data.venue ? '\nVenue: ' + data.venue : ''}\n\nPlease get ready and organize the event!`;
+        try {
+          await sendChatMessage('global', {
+            senderUid: currentUser.uid,
+            senderName: currentUser.name || currentUser.email || 'Event Coordinator',
+            senderUniqueId: currentUser.uniqueId || 'HMC',
+            senderPicUrl: currentUser.profilePicUrl || null,
+            content: reminderMsg
+          });
+        } catch (err) {
+          console.warn(`Failed to send chat reminder to ${cat}:`, err);
+        }
+      }
+    }
+
+    allEvents.unshift({ id, ...data, status: 'draft' });
+    renderEventsGrid(allEvents);
+    updateHeroStats();
+    logAction({
+      action: 'Created Event',
+      department: 'Events',
+      details: `Created new event "${data.title}" (${(data.type||'event').toUpperCase()}). Reminders sent to: ${selectedCategories.join(', ') || 'None'}.`,
+      user: currentUser
+    });
+    // Refresh Suggested tab so the just-organised event disappears from there
+    renderSuggestedEvents();
+    showToast(`Event created! Sent reminders to ${selectedCategories.length} team(s).`, 'success');
+    switchTab('all');
+    // Reset form
+    goToStep(1);
+    features.forEach(f => { featureState[f.key] = false; });
+    renderFeatureToggles();
+    renderNotificationCategories();
+    permRows = [];
+    document.getElementById('perm-rows-container').innerHTML = '';
+    selectedPOCs = [];
+    renderSelectedPOCs();
+  } catch(e) {
+    showToast('Error creating event: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Submit Event';
+  }
+};
+
+// ── Permission Templates ──────────────────────────────────
+let cachedTemplates = [];
+
+async function loadTemplates() {
+  cachedTemplates = await getPermissionTemplates().catch(() => []);
+  renderTemplates(cachedTemplates);
+  populateTemplateDropdown(cachedTemplates);
+}
+
+function populateTemplateDropdown(templates) {
+  const sel = document.getElementById('perm-template-select');
+  if (!sel) return;
+  sel.innerHTML = `<option value="">Apply Template...</option>` +
+    templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+}
+
+window.applyPermissionTemplate = function(templateId) {
+  if (!templateId) return;
+  const tmpl = cachedTemplates.find(t => t.id === templateId);
+  if (!tmpl) return;
+  // Clear existing rows
+  permRows = [];
+  document.getElementById('perm-rows-container').innerHTML = '';
+  // Add rows from template
+  (tmpl.permissions || []).forEach(p => {
+    const id = Date.now() + Math.random();
+    permRows.push(id);
+    const container = document.getElementById('perm-rows-container');
+    const div = document.createElement('div');
+    div.className = 'perm-row'; div.id = `prow-${id}`;
+    div.innerHTML = `
+      <input type="text" class="form-control" placeholder="Approval name" id="pname-${id}" value="${p.name || ''}" style="margin:0">
+      <input type="text" class="form-control" placeholder="Department / Authority" id="pdept-${id}" value="${p.dept || ''}" style="margin:0">
+      <button class="btn btn-sm btn-secondary" onclick="removePermRow(${id})" style="color:var(--brand-danger);padding:6px 10px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>`;
+    container.appendChild(div);
+  });
+  // Reset dropdown
+  document.getElementById('perm-template-select').value = '';
+  showToast(`Template "${tmpl.name}" applied (${tmpl.permissions?.length || 0} approvals)`, 'success');
+};
+
+function renderTemplates(templates) {
+  const el = document.getElementById('templates-list');
+  if (!el) return;
+  if (!templates.length) {
+    el.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:var(--sp-6);text-align:center;border:1px dashed var(--border-subtle);border-radius:var(--radius-lg)">No templates yet. Create one above.</div>`;
+    return;
+  }
+  el.innerHTML = templates.map(t => `
+    <div class="perm-template-card">
+      <div class="perm-template-header">
+        <div style="font-size:0.95rem;font-weight:800;color:var(--text-primary)">${t.name}</div>
+        <div style="display:flex;gap:var(--sp-2)">
+          <button class="btn btn-sm btn-secondary" onclick="applyPermissionTemplate('${t.id}');switchTab('create')" style="font-size:0.75rem">Use in Event</button>
+          <button class="btn btn-sm btn-secondary" onclick="deleteTemplate('${t.id}')" style="color:var(--brand-danger);font-size:0.75rem">Delete</button>
+        </div>
+      </div>
+      <div>${(t.permissions||[]).map(p => `<div style="display:flex;gap:var(--sp-3);font-size:0.8rem;padding:5px 0;border-bottom:1px solid var(--border-subtle)"><span style="color:var(--text-primary);font-weight:600;flex:1">${p.name}</span><span style="color:var(--text-muted)">${p.dept||''}</span></div>`).join('') || '<div style="font-size:0.8rem;color:var(--text-muted)">No items</div>'}</div>
+    </div>`).join('');
+}
+
+window.showNewTemplateForm = function() { document.getElementById('new-template-form').classList.remove('hidden'); };
+window.hideNewTemplateForm = function() { document.getElementById('new-template-form').classList.add('hidden'); };
+
+window.addTemplatePermRow = function() {
+  const id = Date.now();
+  templatePermRows.push(id);
+  const container = document.getElementById('template-perm-rows');
+  const div = document.createElement('div');
+  div.className = 'perm-row'; div.id = `tprow-${id}`;
+  div.innerHTML = `
+    <input type="text" class="form-control" placeholder="Approval name" id="tpname-${id}" style="margin:0">
+    <input type="text" class="form-control" placeholder="Department" id="tpdept-${id}" style="margin:0">
+    <button class="btn btn-sm btn-secondary" onclick="removeTemplatePermRow(${id})" style="color:var(--brand-danger);padding:6px 10px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>`;
+  container.appendChild(div);
+};
+window.removeTemplatePermRow = function(id) {
+  templatePermRows = templatePermRows.filter(r => r !== id);
+  document.getElementById(`tprow-${id}`)?.remove();
+};
+window.saveTemplate = async function() {
+  const name = document.getElementById('tmpl-name').value.trim();
+  if (!name) { showToast('Template name is required.', 'error'); return; }
+  const perms = templatePermRows.map(id => ({
+    name: document.getElementById(`tpname-${id}`)?.value || '',
+    dept: document.getElementById(`tpdept-${id}`)?.value || ''
+  })).filter(p => p.name);
+  try {
+    await savePermissionTemplate(name, perms);
+    showToast('Template saved!', 'success');
+    hideNewTemplateForm();
+    document.getElementById('tmpl-name').value = '';
+    templatePermRows = [];
+    document.getElementById('template-perm-rows').innerHTML = '';
+    loadTemplates();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+};
+window.deleteTemplate = async function(id) {
+  if (!confirm('Delete this template?')) return;
+  await deletePermissionTemplate(id);
+  showToast('Template deleted.', 'success');
+  loadTemplates();
+};
+
+let currentQrUrl = '';
+let currentQrFilename = 'event-qr.png';
+
+window.generateQrCode = function(eventId, title) {
+  const url = `${window.location.origin}/events/event-request.html?eventId=${eventId}`;
+  currentQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+  currentQrFilename = `${(title || 'event').toLowerCase().replace(/[^a-z0-9]/g, '_')}_request_qr.png`;
+  
+  const titleEl = document.getElementById('qr-event-title');
+  const imgEl = document.getElementById('qr-code-img');
+  const linkEl = document.getElementById('qr-event-link');
+
+  if (titleEl) titleEl.textContent = title || 'Event Request QR Code';
+  if (imgEl) imgEl.src = currentQrUrl;
+  if (linkEl) linkEl.textContent = url;
+  
+  openModal('qr-modal');
+};
+
+window.closeQrModal = function() {
+  closeModal('qr-modal');
+};
+
+window.downloadQR = async function() {
+  if (!currentQrUrl) return;
+  try {
+    const res = await fetch(currentQrUrl);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = currentQrFilename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+    showToast('QR Code downloaded!', 'success');
+  } catch (err) {
+    const a = document.createElement('a');
+    a.href = currentQrUrl;
+    a.target = '_blank';
+    a.download = currentQrFilename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,309 @@
+/* ============================================================
+   DASHBOARD STYLES
+   ============================================================ */
+
+/* Welcome Banner Design & Animation */
+.welcome-banner {
+  background: linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 100%);
+  border-radius: var(--radius-xl);
+  padding: var(--sp-8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-6);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--sp-6);
+  box-shadow: 0 8px 24px -4px rgba(29, 78, 216, 0.25);
+  animation: bannerFadeIn 0.6s ease;
+}
+
+/* Dark mode: vivid gradient lifts cleanly off neutral charcoal background */
+[data-theme="dark"] .welcome-banner {
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 55%, #1E3A8A 100%);
+  box-shadow: 0 8px 32px -4px rgba(37, 99, 235, 0.55);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+@keyframes bannerFadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.welcome-banner::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -8%;
+  width: 280px;
+  height: 280px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: bannerOrbFloat 8s ease-in-out infinite alternate;
+}
+.welcome-banner::after {
+  content: '';
+  position: absolute;
+  bottom: -50%;
+  right: 18%;
+  width: 200px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: bannerOrbFloat 10s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes bannerOrbFloat {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(15px, -15px) scale(1.05); }
+  100% { transform: translate(-10px, 10px) scale(0.96); }
+}
+
+.welcome-info { position: relative; z-index: 1; }
+.welcome-greeting {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 500;
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
+}
+.welcome-name {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+.welcome-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.welcome-id {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 4px 14px;
+  border-radius: var(--radius-full);
+}
+.welcome-role {
+  font-size: 0.8rem;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 4px 14px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.welcome-avatar {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  animation: avatarFloat 4s ease-in-out infinite;
+}
+
+@keyframes avatarFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+
+.welcome-avatar img,
+.welcome-avatar .avatar-placeholder {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.welcome-avatar:hover img,
+.welcome-avatar:hover .avatar-placeholder {
+  transform: scale(1.05);
+  border-color: #ffffff;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+@media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .stats-grid { grid-template-columns: 1fr; } }
+
+/* Main dashboard grid */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: var(--sp-6);
+  align-items: start;
+}
+@media (max-width: 1100px) { .dash-grid { grid-template-columns: 1fr; } }
+
+/* Activity Feed */
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.activity-text {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.activity-text strong { color: var(--text-primary); }
+.activity-time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* Member Directory */
+.member-dir-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--radius-md);
+  transition: var(--transition-fast);
+  cursor: pointer;
+}
+.member-dir-item:hover {
+  background: var(--bg-elevated);
+}
+.member-dir-info { flex: 1; min-width: 0; }
+.member-dir-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.member-dir-post {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.member-dir-id {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--brand-primary);
+}
+
+/* Custom scrollbar for HMC Directory */
+#member-directory-list::-webkit-scrollbar {
+  width: 5px;
+}
+#member-directory-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+#member-directory-list::-webkit-scrollbar-thumb {
+  background: var(--border-normal);
+  border-radius: 4px;
+}
+#member-directory-list::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-primary);
+}
+
+/* Upcoming Events */
+.event-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.event-item:last-child { border-bottom: none; }
+.event-date-badge {
+  width: 48px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: var(--font-primary);
+  border: 1px solid var(--border-normal);
+  background: var(--bg-surface);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.event-date-badge .day   { font-size: 1.15rem; font-weight: 800; line-height: 1; color: var(--text-primary); }
+.event-date-badge .month { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-top: 2px; }
+
+.event-college  { background: #EFF6FF; border-color: #BFDBFE; }
+.event-college .day   { color: #2563EB; }
+.event-college .month { color: #1D4ED8; }
+
+.event-holiday  { background: #FEF2F2; border-color: #FECACA; }
+.event-holiday .day   { color: #DC2626; }
+.event-holiday .month { color: #B91C1C; }
+
+.event-festival { background: #FFFBEB; border-color: #FDE68A; }
+.event-festival .day   { color: #D97706; }
+.event-festival .month { color: #B45309; }
+
+/* Dark mode date badges — vivid colors on near-black */
+[data-theme="dark"] .event-college  { background: #111111; border-color: #2563EB; }
+[data-theme="dark"] .event-college .day   { color: #60A5FA; }
+[data-theme="dark"] .event-college .month { color: #93C5FD; }
+
+[data-theme="dark"] .event-holiday  { background: #111111; border-color: #EF4444; }
+[data-theme="dark"] .event-holiday .day   { color: #F87171; }
+[data-theme="dark"] .event-holiday .month { color: #FCA5A5; }
+
+[data-theme="dark"] .event-festival { background: #111111; border-color: #D97706; }
+[data-theme="dark"] .event-festival .day   { color: #FBBF24; }
+[data-theme="dark"] .event-festival .month { color: #FDE68A; }
+
+.event-info { flex: 1; }
+.event-name { font-size: 0.875rem; font-weight: 600; color: var(--text-primary); }
+.event-type { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; text-transform: capitalize; }
+
+/* Mobile Nav Toggle */
+.mobile-nav-toggle {
+  display: none;
+  position: fixed;
+  top: var(--sp-4);
+  left: var(--sp-4);
+  z-index: calc(var(--z-sidebar) + 1);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-normal);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+@media (max-width: 768px) {
+  .mobile-nav-toggle { display: flex; }
+  .welcome-banner {
+    padding: var(--sp-5) !important;
+    gap: var(--sp-4) !important;
+  }
+  .welcome-greeting { font-size: 0.8rem; }
+  .welcome-name { font-size: 1.5rem !important; }
+}

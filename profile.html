@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Profile — HMC Portal</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <script type="module">import { initTheme } from './js/theme.js'; initTheme();</script>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" id="page-main-title">Member Profile</h1>
+        <p class="page-subtitle" id="page-main-subtitle">View and manage profile information</p>
+      </div>
+      <button class="btn btn-primary hidden" id="edit-btn" onclick="toggleEdit()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit Profile
+      </button>
+    </div>
+
+    <div class="page-body">
+      <div class="grid-2" id="profile-grid-container" style="align-items:start">
+
+        <!-- Profile Card -->
+        <div class="card">
+          <div style="text-align:center;padding-bottom:var(--sp-5);border-bottom:1px solid var(--border-subtle);margin-bottom:var(--sp-5)">
+            <!-- Avatar with upload -->
+            <div style="position:relative;display:inline-block;margin-bottom:var(--sp-4)">
+              <div id="profile-avatar-lg" style="width:110px;height:110px;margin:0 auto"></div>
+              <label id="avatar-upload-label" class="hidden" style="position:absolute;bottom:0;right:0;background:var(--brand-primary);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg-surface)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="handleAvatarChange(this)">
+              </label>
+            </div>
+            <div id="avatar-error-box" style="display:none;margin:0 auto 8px;max-width:300px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);border-radius:8px;padding:8px 12px;font-size:0.78rem;color:#f87171;word-break:break-word;text-align:left"></div>
+
+            <h2 id="p-name" style="font-size:1.75rem; font-weight:800; margin-bottom:8px; letter-spacing:-0.01em">—</h2>
+            
+            <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:16px; flex-wrap:wrap">
+              <span id="p-header-title" style="font-weight:700; color:var(--brand-primary); font-size:0.92rem; text-transform:uppercase; letter-spacing:0.05em">—</span>
+              <span style="color:var(--text-muted); font-size:0.8rem">•</span>
+              <span id="p-uniqueid" style="font-family:var(--font-mono); color:var(--text-secondary); font-size:0.92rem; font-weight:600">—</span>
+              <span style="color:var(--text-muted); font-size:0.8rem">•</span>
+              <span id="p-role-badge" class="badge badge-primary" style="margin:0; font-size:0.7rem; padding: 3px 8px"></span>
+            </div>
+          </div>
+
+          <!-- Info Fields (View) -->
+          <div id="profile-view-fields">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp-4)">
+              
+              <!-- Post Card -->
+              <div id="p-post-container" style="display:flex; align-items:center; gap:var(--sp-3); background:rgba(255,255,255,0.01); padding:10px 14px; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.03)">
+                <svg width="18" height="18" style="color:var(--brand-primary);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <div>
+                  <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Post / Designation</div>
+                  <div id="p-post" style="font-weight:600;font-size:0.9rem;margin-top:2px;color:var(--text-normal)">—</div>
+                </div>
+              </div>
+
+              <!-- Category Card -->
+              <div id="p-category-container" style="display:flex; align-items:center; gap:var(--sp-3); background:rgba(255,255,255,0.01); padding:10px 14px; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.03)">
+                <svg width="18" height="18" style="color:var(--brand-primary);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <div>
+                  <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Category / Department</div>
+                  <div id="p-category" style="font-weight:600;font-size:0.9rem;margin-top:2px;color:var(--text-normal)">—</div>
+                </div>
+              </div>
+
+              <!-- DOB Card -->
+              <div style="display:flex; align-items:center; gap:var(--sp-3); background:rgba(255,255,255,0.01); padding:10px 14px; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.03)">
+                <svg width="18" height="18" style="color:var(--brand-primary);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <div>
+                  <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Date of Birth</div>
+                  <div id="p-dob" style="font-weight:600;font-size:0.9rem;margin-top:2px;color:var(--text-normal)">—</div>
+                </div>
+              </div>
+
+              <!-- Age Card -->
+              <div style="display:flex; align-items:center; gap:var(--sp-3); background:rgba(255,255,255,0.01); padding:10px 14px; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.03)">
+                <svg width="18" height="18" style="color:var(--brand-primary);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <div>
+                  <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Age</div>
+                  <div id="p-age" style="font-weight:600;font-size:0.9rem;margin-top:2px;color:var(--text-normal)">—</div>
+                </div>
+              </div>
+
+              <!-- Contact Card -->
+              <div style="display:flex; align-items:center; gap:var(--sp-3); background:rgba(255,255,255,0.01); padding:10px 14px; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.03)">
+                <svg width="18" height="18" style="color:var(--brand-primary);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.92z"/></svg>
+                <div>
+                  <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Contact Number</div>
+                  <div id="p-contact" style="font-weight:600;font-size:0.9rem;margin-top:2px;color:var(--text-normal)">—</div>
+                </div>
+              </div>
+
+              <!-- Email Card -->
+              <div style="display:flex; align-items:center; gap:var(--sp-3); background:rgba(255,255,255,0.01); padding:10px 14px; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.03)">
+                <svg width="18" height="18" style="color:var(--brand-primary);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <div>
+                  <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Official Email</div>
+                  <div id="p-email" style="font-weight:600;font-size:0.9rem;margin-top:2px;color:var(--text-normal)">—</div>
+                </div>
+              </div>
+
+              <!-- Graduation Year Card -->
+              <div style="display:flex; align-items:center; gap:var(--sp-3); background:rgba(255,255,255,0.01); padding:10px 14px; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.03)">
+                <svg width="18" height="18" style="color:var(--brand-primary);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                <div>
+                  <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Year of Graduation</div>
+                  <div id="p-grad-year" style="font-weight:600;font-size:0.9rem;margin-top:2px;color:var(--text-normal)">—</div>
+                </div>
+              </div>
+
+              <!-- Hostel Name Card -->
+              <div style="display:flex; align-items:center; gap:var(--sp-3); background:rgba(255,255,255,0.01); padding:10px 14px; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.03)">
+                <svg width="18" height="18" style="color:var(--brand-primary);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <div>
+                  <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Hostel Name</div>
+                  <div id="p-hostel-name" style="font-weight:600;font-size:0.9rem;margin-top:2px;color:var(--text-normal)">Not Allocated</div>
+                </div>
+              </div>
+
+              <!-- Room No Card -->
+              <div style="display:flex; align-items:center; gap:var(--sp-3); background:rgba(255,255,255,0.01); padding:10px 14px; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.03)">
+                <svg width="18" height="18" style="color:var(--brand-primary);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/></svg>
+                <div>
+                  <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Room No</div>
+                  <div id="p-room-no" style="font-weight:600;font-size:0.9rem;margin-top:2px;color:var(--text-normal)">—</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Edit Form (hidden by default) -->
+          <form id="profile-edit-form" class="hidden" onsubmit="saveProfile(event)">
+            <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+              <div class="form-group" id="fg-edit-name">
+                <label class="form-label">Full Name</label>
+                <input type="text" id="edit-name" class="form-control" required>
+              </div>
+              <div class="form-group" id="fg-edit-post">
+                <label class="form-label">Post / Designation</label>
+                <input type="text" id="edit-post" class="form-control" required>
+              </div>
+              <div class="form-group" id="fg-edit-dob">
+                <label class="form-label">Date of Birth</label>
+                <input type="date" id="edit-dob" class="form-control">
+              </div>
+              <div class="form-group" id="fg-edit-contact">
+                <label class="form-label">Contact / Mobile Number</label>
+                <input type="tel" id="edit-contact" class="form-control" placeholder="e.g. 9876543210">
+              </div>
+              <div class="form-group" id="fg-edit-grad-year">
+                <label class="form-label">Year of Graduation</label>
+                <input type="number" id="edit-grad-year" class="form-control" min="2024" max="2040">
+              </div>
+              <div class="form-group" id="fg-edit-hostel-name">
+                <label class="form-label">Hostel Name <span style="font-size:0.7rem;color:var(--text-muted)">(Auto-assigned by Hostel Record)</span></label>
+                <input type="text" id="edit-hostel-name" class="form-control" disabled style="opacity:0.7;cursor:not-allowed;background:rgba(255,255,255,0.03)">
+              </div>
+              <div class="form-group" id="fg-edit-room-no">
+                <label class="form-label">Room No <span style="font-size:0.7rem;color:var(--text-muted)">(Auto-assigned by Hostel Record)</span></label>
+                <input type="text" id="edit-room-no" class="form-control" disabled style="opacity:0.7;cursor:not-allowed;background:rgba(255,255,255,0.03)">
+              </div>
+              <div class="flex gap-3">
+                <button type="submit" class="btn btn-primary flex-1">Save Changes</button>
+                <button type="button" class="btn btn-secondary" onclick="toggleEdit()">Cancel</button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Track Record & Task History Cards (HMC Members only) -->
+        <div id="member-work-stats" style="display:flex;flex-direction:column;gap:var(--sp-5)">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Track Record</h3>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-4);margin-bottom:var(--sp-5)">
+              <div style="text-align:center;padding:var(--sp-4);background:rgba(108,99,255,0.08);border-radius:var(--radius-md)">
+                <div style="font-size:2rem;font-weight:800;color:var(--brand-primary)" id="tr-assigned">0</div>
+                <div style="font-size:0.72rem;color:var(--text-muted)">Assigned</div>
+              </div>
+              <div style="text-align:center;padding:var(--sp-4);background:rgba(16,185,129,0.08);border-radius:var(--radius-md)">
+                <div style="font-size:2rem;font-weight:800;color:var(--brand-success)" id="tr-completed">0</div>
+                <div style="font-size:0.72rem;color:var(--text-muted)">Completed</div>
+              </div>
+              <div style="text-align:center;padding:var(--sp-4);background:rgba(245,158,11,0.08);border-radius:var(--radius-md)">
+                <div id="tr-rating-display" style="font-size:1.2rem">—</div>
+                <div style="font-size:0.72rem;color:var(--text-muted)">Avg Rating</div>
+              </div>
+            </div>
+
+
+          </div>
+
+          <!-- Task History -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Task History</h3>
+            </div>
+            <div id="task-history-list">
+              <div class="empty-state" style="padding:var(--sp-6)">
+                <p style="font-size:0.85rem">No task history</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+          <!-- Danger Zone -->
+          <div class="card hidden" id="danger-zone-card" style="border-color:rgba(239,68,68,0.25)">
+            <div class="card-header">
+              <h3 class="card-title" style="color:var(--brand-danger)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Danger Zone
+              </h3>
+            </div>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:var(--sp-4)">
+              Permanently delete your account and all associated data. This action cannot be undone.
+            </p>
+            <button class="btn"
+              style="background:rgba(239,68,68,0.1);color:var(--brand-danger);border:1px solid rgba(239,68,68,0.3);width:100%"
+              onclick="openDeleteModal()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              Delete My Account
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Delete Account Confirmation Modal -->
+<div class="modal-overlay" id="delete-account-modal">
+  <div class="modal" style="max-width:420px">
+    <div style="text-align:center;margin-bottom:var(--sp-5)">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto var(--sp-4)">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--brand-danger)" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </div>
+      <h3 style="color:var(--brand-danger);font-size:1.2rem;margin-bottom:var(--sp-2)">Delete Account?</h3>
+      <p style="color:var(--text-secondary);font-size:0.85rem">This will permanently delete your account and all associated data. <strong>This action cannot be undone.</strong></p>
+    </div>
+    <div id="delete-reauth-section">
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:var(--sp-3)">Please enter your password to confirm:</p>
+      <div class="input-wrapper" style="margin-bottom:var(--sp-3)">
+        <svg class="input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <input type="password" id="delete-confirm-password" class="form-control" placeholder="Enter your current password">
+      </div>
+      <div id="delete-error" class="hidden" style="font-size:0.8rem;color:var(--brand-danger);margin-bottom:var(--sp-3)"></div>
+    </div>
+    <div style="display:flex;gap:var(--sp-3)">
+      <button class="btn flex-1" id="confirm-delete-btn"
+        style="background:var(--brand-danger);color:#fff;border:none;"
+        onclick="confirmDeleteAccount()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
+        Yes, Delete My Account
+      </button>
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initAuthGuard, getCachedUser, populateSidebarUser, deleteAccount, syncHostelRoomForUser } from './js/auth.js';
+  import { renderSidebar, initSidebarTheme } from './js/sidebar.js';
+  import { getMemberByUid, updateMember } from './js/members.js';
+  import { getTasksForUser } from './js/tasks.js';
+  import { renderAvatar, avatarPlaceholder, calcAge, starsHTML, formatDate, showToast } from './js/utils.js';
+  import { reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { auth, db } from './js/firebase-config.js';
+  import { doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('profile.html');
+  initSidebarTheme();
+
+  let profileUser = null;
+  let isOwnProfile = true;
+  let newAvatarFile = null;
+  let currentUser = null;
+
+  initAuthGuard({
+    requireLogin: true,
+    onReady: async (user) => {
+      currentUser = user;
+      populateSidebarUser(currentUser);
+
+      // Determine whose profile to show
+      const params = new URLSearchParams(window.location.search);
+      const uid = params.get('uid') || currentUser.uid;
+      isOwnProfile = uid === currentUser.uid;
+
+      const profileData = await getMemberByUid(uid);
+      if (!profileData) { showToast('Member not found', 'error'); return; }
+
+      profileUser = await syncHostelRoomForUser(profileData);
+      renderProfile(profileUser);
+
+      // Show edit profile for own profile (Admin full edit, Student DOB & mobile only)
+      if (isOwnProfile) {
+        if (currentUser.role === 'admin' || currentUser.role === 'student') {
+          document.getElementById('edit-btn').classList.remove('hidden');
+        }
+        if (currentUser.role === 'admin') {
+          document.getElementById('danger-zone-card')?.classList.remove('hidden');
+        }
+        document.getElementById('avatar-upload-label').classList.remove('hidden');
+      }
+
+      // Load tasks
+      const tasks = await getTasksForUser(uid);
+      renderTaskHistory(tasks);
+
+      // Reset stale trackRecord if no completed tasks exist
+      const completedTasks = tasks.filter(t => t.status === 'completed').length;
+      let tr = user.trackRecord || {};
+      if (completedTasks === 0 && (tr.avgRating || tr.ratings?.length || tr.completed)) {
+        tr = { assigned: tasks.length, completed: 0, avgRating: 0, ratings: [] };
+        if (isOwnProfile) {
+          updateDoc(doc(db, 'users', uid), {
+            'trackRecord.assigned': tasks.length,
+            'trackRecord.completed': 0,
+            'trackRecord.avgRating': 0,
+            'trackRecord.ratings': []
+          }).catch(() => {});
+        }
+      }
+      renderTrackRecord(tr, completedTasks);
+    }
+  });
+
+  function renderProfile(user) {
+    const isStudent = user.role === 'student';
+    document.title = `${user.name} — ${isStudent ? 'Student' : 'HMC'} Profile`;
+
+    const mainTitleEl = document.getElementById('page-main-title');
+    const mainSubtitleEl = document.getElementById('page-main-subtitle');
+    const workStatsEl = document.getElementById('member-work-stats');
+    const gridContainer = document.getElementById('profile-grid-container');
+
+    if (isStudent) {
+      if (mainTitleEl) mainTitleEl.textContent = 'Student Profile';
+      if (mainSubtitleEl) mainSubtitleEl.textContent = 'View and manage student profile information';
+      if (workStatsEl) workStatsEl.style.display = 'none';
+      if (gridContainer) gridContainer.style.gridTemplateColumns = '1fr';
+    } else {
+      if (mainTitleEl) mainTitleEl.textContent = 'Member Profile';
+      if (mainSubtitleEl) mainSubtitleEl.textContent = 'View and manage profile information';
+      if (workStatsEl) workStatsEl.style.display = 'flex';
+      if (gridContainer) gridContainer.style.gridTemplateColumns = '';
+    }
+
+    // Big avatar
+    const avatarEl = document.getElementById('profile-avatar-lg');
+    if (user.profilePicUrl) {
+      avatarEl.innerHTML = `<img src="${user.profilePicUrl}" style="width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid var(--border-normal)">`;
+    } else {
+      const parts = (user.name || 'U').split(' ');
+      const initials = parts.length >= 2 ? parts[0][0] + parts[parts.length-1][0] : parts[0][0];
+      avatarEl.innerHTML = `<div class="avatar-placeholder" style="width:110px;height:110px;font-size:36px;margin:0 auto">${initials.toUpperCase()}</div>`;
+    }
+
+    document.getElementById('p-name').textContent      = user.name || '—';
+    document.getElementById('p-uniqueid').textContent  = user.uniqueId || '';
+    document.getElementById('p-role-badge').textContent= (user.role || 'member').toUpperCase();
+    document.getElementById('p-role-badge').className  = `badge badge-${user.role === 'admin' ? 'danger' : user.role === 'subadmin' ? 'warning' : 'primary'}`;
+    let titleText = '';
+    if (user.role === 'student') {
+      titleText = 'Student';
+      document.getElementById('p-post-container')?.classList.add('hidden');
+      document.getElementById('p-category-container')?.classList.add('hidden');
+      const editPostGroup = document.getElementById('edit-post')?.closest('.form-group');
+      if (editPostGroup) editPostGroup.style.display = 'none';
+      document.getElementById('edit-post')?.removeAttribute('required');
+    } else {
+      document.getElementById('p-post-container')?.classList.remove('hidden');
+      document.getElementById('p-category-container')?.classList.remove('hidden');
+      // 1. Computed Title
+      const catText = user.category || '';
+      const postText = user.post || '';
+      
+      function formatCategory(ct) {
+        if (!ct) return '';
+        const lower = ct.toLowerCase().trim();
+        if (lower === 'hmc') return 'HMC';
+        if (lower.startsWith('laund')) return 'Laundry';
+        return ct.charAt(0).toUpperCase() + ct.slice(1);
+      }
+
+      const catCap = formatCategory(catText);
+      const postCap = postText.charAt(0) ? (postText.charAt(0).toUpperCase() + postText.slice(1)) : '';
+      
+      const computedTitle = postText === 'Chairperson' ? 'Chairperson' : 
+        ((catCap && postCap && catCap !== '—') ? `${catCap} ${postCap}` : user.post || 'HMC Member');
+      titleText = user.title || computedTitle;
+      if (titleText) {
+        titleText = titleText.replace(/\bHmc\b/g, 'HMC');
+      }
+      
+      // 2. Post/Designation shows ONLY post capitalized
+      document.getElementById('p-post').textContent = postCap || '—';
+      
+      // 3. Category/Department shows formatted category
+      document.getElementById('p-category').textContent = catCap || '—';
+    }
+    
+    const headerTitleEl = document.getElementById('p-header-title');
+    if (headerTitleEl) headerTitleEl.textContent = titleText;
+    document.getElementById('p-dob').textContent       = user.dob || '—';
+    document.getElementById('p-age').textContent       = user.dob ? `${calcAge(user.dob)} years` : '—';
+    document.getElementById('p-contact').textContent   = user.contact || '—';
+    document.getElementById('p-email').textContent     = user.email || '—';
+    document.getElementById('p-grad-year').textContent = user.graduationYear || '—';
+    document.getElementById('p-hostel-name').textContent = user.hostelName || 'Not Allocated';
+    document.getElementById('p-room-no').textContent     = user.roomNo || '—';
+  }
+
+  function renderTrackRecord(tr, completedCount) {
+    document.getElementById('tr-assigned').textContent  = tr.assigned  || 0;
+    document.getElementById('tr-completed').textContent = tr.completed || 0;
+    const showRating = tr.avgRating && (completedCount === undefined ? tr.completed > 0 : completedCount > 0);
+    document.getElementById('tr-rating-display').innerHTML = showRating
+      ? `<span style="color:var(--brand-accent);font-size:1.5rem;font-weight:800">${Number(tr.avgRating).toFixed(1)} <span style="font-size:1rem">/ 5</span></span>`
+      : '—';
+  }
+
+  function renderTaskHistory(tasks) {
+    const el = document.getElementById('task-history-list');
+    if (!tasks || !tasks.length) {
+      el.innerHTML = `<div class="empty-state" style="padding:var(--sp-6)"><p style="font-size:0.85rem">No task history</p></div>`;
+      return;
+    }
+    const statusColor = { assigned: 'info', in_progress: 'warning', completed: 'success' };
+    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:var(--sp-2)">` +
+      tasks.slice(0, 10).map(t => {
+        const cleanTaskId = (t.taskId && t.taskId !== 'undefined') ? t.taskId : `#T_${(t.id || 'N/A').slice(0, 4).toUpperCase()}`;
+        return `
+        <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3);background:rgba(255,255,255,0.02);border-radius:var(--radius-md)">
+          <div style="flex:1">
+            <div style="font-size:0.82rem;font-weight:600">${cleanTaskId} — ${t.category || '—'}</div>
+            <div style="font-size:0.72rem;color:var(--text-muted)">${formatDate(t.assignedDate)}</div>
+          </div>
+          <span class="badge badge-${statusColor[t.status] || 'muted'}" style="font-size:0.65rem">${t.status?.replace('_',' ') || '—'}</span>
+          ${t.qualityRating ? `<span style="color:var(--brand-accent);font-size:0.8rem;font-weight:700">${t.qualityRating}/5</span>` : ''}
+        </div>
+        `;
+      }).join('') + `</div>`;
+  }
+
+  window.toggleEdit = function() {
+    const viewEl = document.getElementById('profile-view-fields');
+    const formEl = document.getElementById('profile-edit-form');
+    const btnEl  = document.getElementById('edit-btn');
+    const isEditing = !formEl.classList.contains('hidden');
+
+    if (isEditing) {
+      viewEl.classList.remove('hidden');
+      formEl.classList.add('hidden');
+      btnEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit Profile`;
+    } else {
+      const isStudent = (profileUser?.role === 'student' || currentUser?.role === 'student');
+      const isCurrentUserAdmin = (currentUser && currentUser.role === 'admin');
+
+      // If student, hide name, post, grad year, hostel, room so they can ONLY edit DOB and Mobile Number
+      if (isStudent) {
+        document.getElementById('fg-edit-name').style.display = 'none';
+        document.getElementById('edit-name').removeAttribute('required');
+        document.getElementById('fg-edit-post').style.display = 'none';
+        document.getElementById('edit-post').removeAttribute('required');
+        document.getElementById('fg-edit-grad-year').style.display = 'none';
+        document.getElementById('fg-edit-hostel-name').style.display = 'none';
+        document.getElementById('fg-edit-room-no').style.display = 'none';
+      } else {
+        document.getElementById('fg-edit-name').style.display = 'block';
+        document.getElementById('edit-name').setAttribute('required', 'true');
+        document.getElementById('fg-edit-post').style.display = isCurrentUserAdmin ? 'block' : 'none';
+        if (isCurrentUserAdmin) document.getElementById('edit-post').setAttribute('required', 'true');
+        document.getElementById('fg-edit-grad-year').style.display = 'block';
+        document.getElementById('fg-edit-hostel-name').style.display = 'block';
+        document.getElementById('fg-edit-room-no').style.display = 'block';
+      }
+
+      document.getElementById('edit-name').value = profileUser.name || '';
+      document.getElementById('edit-post').value = profileUser.post || '';
+      document.getElementById('edit-dob').value  = profileUser.dob  || '';
+      document.getElementById('edit-contact').value = profileUser.contact || '';
+      document.getElementById('edit-grad-year').value = profileUser.graduationYear || '';
+      document.getElementById('edit-hostel-name').value = profileUser.hostelName || 'Not Allocated';
+      document.getElementById('edit-room-no').value     = profileUser.roomNo || '—';
+
+      viewEl.classList.add('hidden');
+      formEl.classList.remove('hidden');
+      btnEl.innerHTML = `Cancel Edit`;
+    }
+  };
+
+  window.handleAvatarChange = async function(input) {
+    if (!input.files[0]) return;
+    const file = input.files[0];
+
+    // Show a local preview immediately (no network needed)
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const avatarEl = document.getElementById('profile-avatar-lg');
+      if (avatarEl) avatarEl.innerHTML = `<img src="${e.target.result}" style="width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid var(--border-normal)">`;
+    };
+    reader.readAsDataURL(file);
+
+    showToast('Saving profile picture...', 'info');
+    try {
+      const targetUid = profileUser?.uid || currentUser?.uid;
+      if (!targetUid) throw new Error('User account not loaded — please refresh and try again');
+
+      await updateMember(targetUid, {}, file);   // compresses → base64 → saves to Firestore
+      showToast('Profile picture saved!', 'success');
+
+      const refreshed = await getMemberByUid(targetUid);
+      if (refreshed) {
+        profileUser = refreshed;
+        renderProfile(refreshed);
+        if (isOwnProfile && currentUser) {
+          currentUser.profilePicUrl = refreshed.profilePicUrl;
+          populateSidebarUser(currentUser);
+        }
+      }
+    } catch (err) {
+      console.error('Avatar save failed:', err);
+      const errBox = document.getElementById('avatar-error-box');
+      if (errBox) {
+        errBox.textContent = 'Error: ' + (err.message || String(err));
+        errBox.style.display = 'block';
+        setTimeout(() => { errBox.style.display = 'none'; }, 12000);
+      }
+      showToast('Failed to save picture: ' + (err.message || 'Unknown error'), 'error');
+    }
+  };
+
+  window.saveProfile = async function(e) {
+    e.preventDefault();
+    try {
+      const isStudent = (profileUser?.role === 'student' || currentUser?.role === 'student');
+      const isCurrentUserAdmin = (currentUser && currentUser.role === 'admin');
+      
+      let updates = {};
+      if (isStudent) {
+        // Students can ONLY update Date of Birth and Contact/Mobile number
+        updates = {
+          dob:     document.getElementById('edit-dob').value,
+          contact: document.getElementById('edit-contact').value.trim()
+        };
+      } else {
+        const gradYearVal = parseInt(document.getElementById('edit-grad-year').value);
+        updates = {
+          name:           document.getElementById('edit-name').value.trim(),
+          dob:            document.getElementById('edit-dob').value,
+          contact:        document.getElementById('edit-contact').value.trim()
+        };
+        if (!isNaN(gradYearVal)) {
+          updates.graduationYear = gradYearVal;
+        }
+        if (isCurrentUserAdmin) {
+          updates.post = document.getElementById('edit-post').value.trim();
+        }
+      }
+
+      await updateMember(profileUser.uid, updates, newAvatarFile);
+      Object.assign(profileUser, updates);
+      if (newAvatarFile) {
+        const refreshed = await getMemberByUid(profileUser.uid);
+        if (refreshed) {
+          profileUser = refreshed;
+          if (isOwnProfile && currentUser) {
+            currentUser.profilePicUrl = refreshed.profilePicUrl;
+            populateSidebarUser(currentUser);
+          }
+        }
+      }
+      renderProfile(profileUser);
+      toggleEdit();
+      showToast('Profile updated successfully!', 'success');
+      newAvatarFile = null;
+    } catch (err) {
+      console.error(err);
+      showToast('Error saving profile: ' + err.message, 'error');
+    }
+  };
+
+  // Delete account
+  window.openDeleteModal = function() {
+    document.getElementById('delete-confirm-password').value = '';
+    document.getElementById('delete-error').classList.add('hidden');
+    document.getElementById('delete-account-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeDeleteModal = function() {
+    document.getElementById('delete-account-modal').classList.remove('show');
+    document.body.style.overflow = '';
+  };
+
+  window.confirmDeleteAccount = async function() {
+    const password = document.getElementById('delete-confirm-password').value;
+    const errEl    = document.getElementById('delete-error');
+    const btn      = document.getElementById('confirm-delete-btn');
+
+    errEl.classList.add('hidden');
+
+    if (!password) {
+      errEl.textContent = 'Please enter your password to confirm.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Deleting…';
+
+    try {
+      // Re-authenticate first (required by Firebase for sensitive operations)
+      const user = auth.currentUser;
+      const credential = EmailAuthProvider.credential(user.email, password);
+      await reauthenticateWithCredential(user, credential);
+
+      // Get current cached profile (has uid)
+      const cachedUser = profileUser || getCachedUser();
+      await deleteAccount(cachedUser);
+      // deleteAccount redirects to /index.html
+    } catch (err) {
+      const msg = err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password'
+        ? 'Incorrect password. Please try again.'
+        : (err.message || 'Failed to delete account.');
+      errEl.textContent = msg;
+      errEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg> Yes, Delete My Account`;
+    }
+  };
+</script>
+</body>
+</html>

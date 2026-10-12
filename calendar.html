@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Calendar — HMC Portal</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/calendar.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css">
+  <script type="module">import { initTheme } from './js/theme.js'; initTheme();</script>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Calendar</h1>
+        <p class="page-subtitle">College events, national holidays &amp; religious festivals</p>
+      </div>
+      <div class="flex gap-3 admin-only hidden">
+        <button class="btn btn-secondary" onclick="openModal('import-modal')" title="Import Holiday List">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Import Holidays
+        </button>
+        <button class="btn btn-primary" onclick="openModal('add-event-modal')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Event
+        </button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="calendar-layout">
+        <!-- Main Calendar -->
+        <div class="card" style="padding:var(--sp-5)">
+          <div id="fullcalendar"></div>
+        </div>
+
+        <!-- Sidebar -->
+        <div style="display:flex;flex-direction:column;gap:var(--sp-5)">
+          <div class="card">
+            <div class="card-header"><h3 class="card-title">Legend</h3></div>
+            <div class="calendar-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#FB923C"></div><span>Festivals</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div><span>College Events</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#A78BFA"></div><span>Cultural</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#34D399"></div><span>Sports</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#EF4444"></div><span>National Holidays</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3 class="card-title">Upcoming Events</h3></div>
+            <div id="upcoming-events-sidebar">
+              <div class="empty-state" style="padding:var(--sp-6)"><div class="spinner"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Add Event Modal -->
+<div class="modal-overlay" id="add-event-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Add Calendar Event</h3>
+      <button class="modal-close" onclick="closeModal('add-event-modal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <form id="add-event-form" onsubmit="handleAddEvent(event)">
+      <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+        <div class="form-group">
+          <label class="form-label">Event Title *</label>
+          <input type="text" id="ev-title" class="form-control" required placeholder="e.g. Mid-Semester Exams">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Event Type</label>
+          <select id="ev-type" class="form-control">
+            <option value="college">College Event</option>
+            <option value="holiday">National Holiday</option>
+            <option value="festival">Festival</option>
+          </select>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Start Date *</label>
+            <input type="date" id="ev-start" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">End Date (optional)</label>
+            <input type="date" id="ev-end" class="form-control">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description (optional)</label>
+          <textarea id="ev-desc" class="form-control" placeholder="Brief description…" rows="2"></textarea>
+        </div>
+        <div class="flex gap-3">
+          <button type="submit" class="btn btn-primary flex-1">Add Event</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('add-event-modal')">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Import Holiday Modal -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal modal-lg">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-4)">
+      <h3 class="modal-title" style="display:flex;align-items:center;gap:8px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Import Holiday List
+      </h3>
+      <button class="modal-close" onclick="closeModal('import-modal')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+
+    <div class="tabs" style="margin-bottom:var(--sp-4)">
+      <button class="tab active" onclick="switchImportTab('csv', this)">CSV Upload</button>
+      <button class="tab" onclick="switchImportTab('paste', this)">Paste JSON</button>
+    </div>
+
+    <!-- CSV Tab -->
+    <div id="import-csv-tab">
+      <div style="background:rgba(108,99,255,0.06);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:var(--sp-3) var(--sp-4);font-size:0.8rem;color:var(--text-secondary);margin-bottom:var(--sp-4)">
+        <strong>CSV Format:</strong> Each row: <code>Title, Date (YYYY-MM-DD), Type (holiday/festival/college)</code><br>
+        Example: <code>Republic Day, 2026-01-26, holiday</code>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Upload CSV File</label>
+        <input type="file" id="csv-file-input" accept=".csv,.txt" class="form-control" onchange="parseCsvFile(this)">
+      </div>
+    </div>
+
+    <!-- Paste Tab -->
+    <div id="import-paste-tab" class="hidden">
+      <div style="background:rgba(108,99,255,0.06);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:var(--sp-3) var(--sp-4);font-size:0.8rem;color:var(--text-secondary);margin-bottom:var(--sp-4)">
+        <strong>JSON Format:</strong> Array of <code>{"title":"...","date":"YYYY-MM-DD","type":"holiday"}</code>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Paste JSON</label>
+        <textarea id="json-paste" class="form-control" rows="6" placeholder='[{"title":"Republic Day","date":"2026-01-26","type":"holiday"},...]'></textarea>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="parseJsonPaste()">Parse Preview</button>
+    </div>
+
+    <!-- Preview -->
+    <div id="import-preview" class="hidden" style="margin-top:var(--sp-4)">
+      <div class="card-header">
+        <h4 class="card-title">Preview (<span id="preview-count">0</span> events)</h4>
+        <span style="font-size:0.78rem;color:var(--text-muted)">Scroll to review before importing</span>
+      </div>
+      <div id="preview-list" style="max-height:220px;overflow-y:auto;font-size:0.82rem;margin:var(--sp-3) 0">
+      </div>
+    </div>
+
+    <div class="flex gap-3" style="margin-top:var(--sp-4)">
+      <button class="btn btn-primary flex-1" id="import-confirm-btn" onclick="confirmImport()" disabled>
+        Import Events
+      </button>
+      <button class="btn btn-secondary" onclick="closeModal('import-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Event Popover -->
+<div class="event-popover hidden" id="event-popover">
+  <div class="event-popover-header">
+    <div>
+      <div class="event-popover-title" id="pop-title"></div>
+      <div class="event-popover-date"  id="pop-date"></div>
+    </div>
+    <button onclick="document.getElementById('event-popover').classList.add('hidden')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;width:24px;height:24px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <p class="event-popover-desc" id="pop-desc"></p>
+  <div id="pop-actions" style="margin-top:var(--sp-3)">
+    <button class="btn btn-danger btn-sm admin-only hidden" id="pop-delete-btn">Delete Event</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from './js/auth.js';
+  import { renderSidebar, initSidebarTheme } from './js/sidebar.js';
+  import { getAllEvents, addEvent, deleteEvent, toCalendarEvents } from './js/calendar.js';
+  import { showToast, openModal, closeModal } from './js/utils.js';
+
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('calendar.html');
+  initSidebarTheme();
+
+  window.openModal  = openModal;
+  window.closeModal = closeModal;
+
+  let calendarInstance = null;
+  let allEvents = [];
+  let currentUser = null;
+  let pendingImport = [];
+
+  const typeColor = { college: '#3B82F6', holiday: '#EF4444', festival: '#F59E0B' };
+
+  initAuthGuard({
+    requireLogin: true,
+    onReady: async (user) => {
+      currentUser = user;
+      populateSidebarUser(user);
+      if (user.role === 'admin') {
+        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+      }
+      allEvents = await getAllEvents();
+      initCalendar(allEvents);
+      renderUpcomingSidebar(allEvents);
+    }
+  });
+
+  function initCalendar(events) {
+    const el = document.getElementById('fullcalendar');
+    const isMobile = window.innerWidth <= 768;
+    calendarInstance = new FullCalendar.Calendar(el, {
+      initialView: isMobile ? 'listMonth' : 'dayGridMonth',
+      headerToolbar: isMobile 
+        ? { left: 'prev,next', center: 'title', right: 'listMonth,dayGridMonth' }
+        : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listMonth' },
+      events: toCalendarEvents(events),
+      height: 'auto',
+      eventClick(info) {
+        const ev = info.event;
+        showPopover(info.el, ev);
+      }
+    });
+    calendarInstance.render();
+  }
+
+
+  function showPopover(el, ev) {
+    const pop = document.getElementById('event-popover');
+    document.getElementById('pop-title').textContent = ev.title;
+    document.getElementById('pop-date').textContent  = ev.startStr;
+    document.getElementById('pop-desc').textContent  = ev.extendedProps.description || '—';
+    const isStatic = !ev.id || ev.id.startsWith('f') || ev.id.startsWith('online_') || ev.id.startsWith('gen_');
+    const deleteBtn = document.getElementById('pop-delete-btn');
+    if (currentUser?.role === 'admin' && !isStatic) {
+      deleteBtn.classList.remove('hidden');
+      deleteBtn.onclick = () => handleDeleteEvent(ev.id);
+    } else {
+      deleteBtn.classList.add('hidden');
+    }
+    const rect = el.getBoundingClientRect();
+    pop.style.left = Math.min(rect.left, window.innerWidth - 340) + 'px';
+    pop.style.top  = (rect.bottom + 8 + window.scrollY) + 'px';
+    pop.classList.remove('hidden');
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('event-popover').contains(e.target) && !e.target.closest('.fc-event')) {
+      document.getElementById('event-popover').classList.add('hidden');
+    }
+  });
+
+  function renderUpcomingSidebar(events) {
+    const el = document.getElementById('upcoming-events-sidebar');
+    const today = new Date(); today.setHours(0,0,0,0);
+    const sorted = events.filter(e => new Date(e.date) >= today)
+      .sort((a,b) => new Date(a.date) - new Date(b.date)).slice(0, 10);
+    if (!sorted.length) { el.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;padding:var(--sp-3)">No upcoming events</p>'; return; }
+    el.innerHTML = sorted.map(e => {
+      const d = new Date(e.date);
+      return `
+        <div class="upcoming-event-item">
+          <div class="upcoming-event-dot" style="background:${typeColor[e.type] || '#6C63FF'}"></div>
+          <div class="upcoming-event-info">
+            <div class="upcoming-event-name">${e.title}</div>
+            <div class="upcoming-event-date">${d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  window.handleAddEvent = async function(e) {
+    e.preventDefault();
+    const title = document.getElementById('ev-title').value.trim();
+    const type  = document.getElementById('ev-type').value;
+    const start = document.getElementById('ev-start').value;
+    const end   = document.getElementById('ev-end').value;
+    const desc  = document.getElementById('ev-desc').value.trim();
+    try {
+      const newEvent = await addEvent({ title, date: start, endDate: end || null, type, description: desc });
+      allEvents.push(newEvent);
+      calendarInstance.addEvent({
+        id: newEvent.id, title, start, end: end || start,
+        color: typeColor[type] || '#3B82F6',
+        extendedProps: { type, description: desc }
+      });
+      renderUpcomingSidebar(allEvents);
+      closeModal('add-event-modal');
+      document.getElementById('add-event-form').reset();
+      showToast('Event added!', 'success');
+    } catch (err) { showToast(err.message || 'Failed to add event', 'error'); }
+  };
+
+  window.handleDeleteEvent = async function(eventId) {
+    if (!confirm('Delete this event?')) return;
+    try {
+      await deleteEvent(eventId);
+      calendarInstance.getEventById(eventId)?.remove();
+      allEvents = allEvents.filter(e => e.id !== eventId);
+      renderUpcomingSidebar(allEvents);
+      document.getElementById('event-popover').classList.add('hidden');
+      showToast('Event deleted', 'info');
+    } catch (err) { showToast(err.message || 'Delete failed', 'error'); }
+  };
+
+  // ── IMPORT SYSTEM ──────────────────────────────────────────
+  window.switchImportTab = function(tab, btn) {
+    document.getElementById('import-csv-tab').classList.toggle('hidden', tab !== 'csv');
+    document.getElementById('import-paste-tab').classList.toggle('hidden', tab !== 'paste');
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    resetImportPreview();
+  };
+
+  window.parseCsvFile = function(input) {
+    if (!input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const lines = e.target.result.split('\n').filter(l => l.trim());
+      const parsed = [];
+      lines.forEach((line, idx) => {
+        if (idx === 0 && line.toLowerCase().includes('title')) return; // skip header
+        const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g,''));
+        if (parts.length >= 2 && parts[1]) {
+          parsed.push({
+            title: parts[0] || 'Untitled',
+            date: parts[1].trim(),
+            type: (parts[2] || 'holiday').toLowerCase()
+          });
+        }
+      });
+      showImportPreview(parsed);
+    };
+    reader.readAsText(input.files[0]);
+  };
+
+  window.parseJsonPaste = function() {
+    try {
+      const data = JSON.parse(document.getElementById('json-paste').value);
+      if (!Array.isArray(data)) throw new Error('Must be an array');
+      showImportPreview(data);
+    } catch (err) {
+      showToast('Invalid JSON: ' + err.message, 'error');
+    }
+  };
+
+  function showImportPreview(events) {
+    pendingImport = events.filter(e => e.title && e.date);
+    document.getElementById('preview-count').textContent = pendingImport.length;
+    document.getElementById('preview-list').innerHTML = pendingImport.map(e => `
+      <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) 0;border-bottom:1px solid var(--border-subtle)">
+        <div style="width:10px;height:10px;border-radius:2px;background:${typeColor[e.type]||'#6C63FF'};flex-shrink:0"></div>
+        <div style="flex:1">${e.title}</div>
+        <div style="color:var(--text-muted)">${e.date}</div>
+        <span class="badge badge-${e.type==='holiday'?'danger':e.type==='festival'?'warning':'info'}" style="font-size:0.65rem">${e.type||'holiday'}</span>
+      </div>
+    `).join('');
+    document.getElementById('import-preview').classList.toggle('hidden', !pendingImport.length);
+    document.getElementById('import-confirm-btn').disabled = !pendingImport.length;
+  }
+
+  function resetImportPreview() {
+    pendingImport = [];
+    document.getElementById('import-preview').classList.add('hidden');
+    document.getElementById('import-confirm-btn').disabled = true;
+  }
+
+  window.confirmImport = async function() {
+    if (!pendingImport.length) return;
+    const btn = document.getElementById('import-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = `Importing ${pendingImport.length} events…`;
+    let count = 0;
+    try {
+      for (const ev of pendingImport) {
+        const newEvent = await addEvent({ title: ev.title, date: ev.date, type: ev.type || 'holiday', description: ev.description || '' });
+        calendarInstance.addEvent({
+          id: newEvent.id, title: ev.title, start: ev.date,
+          color: typeColor[ev.type] || '#EF4444',
+          extendedProps: { type: ev.type || 'holiday', description: '' }
+        });
+        allEvents.push(newEvent);
+        count++;
+      }
+      renderUpcomingSidebar(allEvents);
+      closeModal('import-modal');
+      showToast(`Imported ${count} events to calendar!`, 'success');
+      resetImportPreview();
+    } catch (err) {
+      showToast('Import error: ' + (err.message || '—'), 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Import Events';
+    }
+  };
+</script>
+</body>
+</html>

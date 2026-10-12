@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Hygiene &amp; Cleanliness — HMC Portal</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <script type="module">import { initTheme } from './js/theme.js'; initTheme();</script>
+  <style>
+    .hostel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--sp-4);
+    }
+    .hostel-card {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      border: 1.5px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-5);
+      cursor: pointer;
+      transition: var(--transition-normal);
+      position: relative;
+      overflow: hidden;
+    }
+    .hostel-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-glow-sm); }
+    .hostel-card.pending { border-color: rgba(251,191,36,0.5); background: rgba(251,191,36,0.05); }
+    .hostel-card.in_progress { border-color: rgba(99,102,241,0.5); background: rgba(99,102,241,0.05); }
+    .hostel-card.completed { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.04); }
+    .hostel-card-name { font-size: 1rem; font-weight: 800; color: var(--text-normal); margin-bottom: var(--sp-2); }
+    .hostel-card-code { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+    .hostel-week-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: var(--radius-full);
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      margin-top: var(--sp-3);
+    }
+    .badge-pending    { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .badge-in-progress{ background: rgba(99,102,241,0.15); color: #818cf8; }
+    .badge-completed  { background: rgba(34,197,94,0.15);  color: #4ade80; }
+    .badge-incomplete { background: rgba(239,68,68,0.12);  color: #f87171; }
+    .section-divider {
+      font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-muted); padding: var(--sp-2) 0; margin-bottom: var(--sp-3);
+      display: flex; align-items: center; gap: var(--sp-3);
+    }
+    .section-divider::after { content:''; flex:1; height:1px; background:var(--border-subtle); }
+    /* Slide Panel */
+    .slide-panel-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(4px); z-index: 400; display: none;
+      align-items: stretch; justify-content: flex-end;
+    }
+    .slide-panel-overlay.open { display: flex; }
+    .slide-panel {
+      width: min(640px, 100vw);
+      background: var(--bg-elevated);
+      border-left: 1px solid var(--border-subtle);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      animation: slideIn 0.25s ease;
+    }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    .slide-panel-header {
+      padding: var(--sp-5) var(--sp-6);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-card);
+    }
+    .slide-panel-body { flex: 1; overflow-y: auto; padding: var(--sp-5) var(--sp-6); }
+    .slide-panel-footer {
+      padding: var(--sp-4) var(--sp-6);
+      border-top: 1px solid var(--border-subtle);
+      display: flex; gap: var(--sp-3); justify-content: flex-end;
+      background: var(--bg-card);
+    }
+    /* Floor section */
+    .floor-section {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: var(--sp-4);
+    }
+    .floor-section-header {
+      background: rgba(255,255,255,0.03);
+      padding: var(--sp-3) var(--sp-4);
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--border-subtle);
+      cursor: pointer;
+    }
+    .floor-section-header:hover { background: rgba(255,255,255,0.05); }
+    .floor-section-body { padding: var(--sp-4); }
+    /* Inspection row */
+    .inspection-row {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--sp-3);
+      margin-bottom: var(--sp-3);
+      background: rgba(255,255,255,0.02);
+    }
+    .inspection-row-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-3);
+    }
+    .star-rating { display: flex; gap: 4px; }
+    .star-btn {
+      font-size: 1.4rem; color: var(--text-muted);
+      cursor: pointer; transition: var(--transition-fast);
+      background: none; border: none; padding: 0;
+    }
+    .star-btn:hover, .star-btn.active { color: #fbbf24; transform: scale(1.15); }
+    .hygiene-badge {
+      display: inline-block; padding: 3px 8px; border-radius: var(--radius-sm);
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .badge-clean    { background: rgba(34,197,94,0.12); color: #4ade80; }
+    .badge-attention{ background: rgba(245,158,11,0.12); color: #fbbf24; }
+    .badge-dirty    { background: rgba(239,68,68,0.12); color: #f87171; }
+    .remove-insp-btn {
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; padding: 4px; border-radius: var(--radius-sm);
+      transition: var(--transition-fast);
+    }
+    .remove-insp-btn:hover { color: var(--brand-danger); background: rgba(239,68,68,0.1); }
+    .tab-btn {
+      background: transparent; border: none; color: var(--text-muted);
+      padding: var(--sp-2) var(--sp-4); font-size: 0.88rem; font-weight: 600;
+      cursor: pointer; border-radius: var(--radius-md); transition: var(--transition-fast);
+    }
+    .tab-btn:hover { color: var(--text-normal); background: rgba(255,255,255,0.03); }
+    .tab-btn.active { color: var(--brand-primary); background: rgba(124,58,237,0.12); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .status-badge {
+      display: inline-block; padding: 3px 9px; border-radius: var(--radius-full);
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .status-caution { background: rgba(245,158,11,0.12); color: #fbbf24; }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Hygiene &amp; Cleanliness</h1>
+        <p class="page-subtitle" id="week-label">Track cleanliness audits, washroom inspections, and cleaning schedules</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn btn-secondary hmc-head-action hidden" onclick="downloadWeeklyReport()" style="font-size:0.82rem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Weekly Report
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:var(--sp-4);border-bottom:1px solid var(--border-subtle);padding-bottom:var(--sp-1)">
+      <button class="tab-btn active" id="tab-hostels-btn" onclick="switchTab('hostels')">This Week's Inspections</button>
+      <button class="tab-btn" id="tab-logs-btn" onclick="switchTab('logs')">Inspection Logs</button>
+      <button class="tab-btn hmc-head-action hidden" id="tab-assign-btn" onclick="switchTab('assign')">Duty Assignment</button>
+    </div>
+
+    <!-- Tab: Hostels Weekly View -->
+    <div id="tab-hostels" class="tab-content active">
+      <div id="pending-section">
+        <div class="section-divider" style="color:#fbbf24">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Pending This Week
+        </div>
+        <div class="hostel-grid" id="pending-grid">
+          <div style="grid-column:1/-1;text-align:center;padding:var(--sp-6)"><div class="spinner" style="margin:0 auto"></div></div>
+        </div>
+      </div>
+      <div id="inspected-section" style="margin-top:var(--sp-6)">
+        <div class="section-divider" style="color:#4ade80">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Inspected This Week
+        </div>
+        <div class="hostel-grid" id="inspected-grid">
+          <div style="grid-column:1/-1;text-align:center;padding:var(--sp-4);color:var(--text-muted);font-size:0.85rem">No hostels inspected yet this week.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Logs -->
+    <div id="tab-logs" class="tab-content">
+      <div class="card">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--sp-2)">
+          <h3 class="card-title" style="margin:0">Cleanliness Session History</h3>
+          <select class="form-control" id="log-filter" style="width:180px;margin-bottom:0" onchange="renderLogsTable()">
+            <option value="all">All Hostels</option>
+          </select>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Week Starting</th>
+                <th>Hostel</th>
+                <th>Status</th>
+                <th>Inspections</th>
+                <th>Avg Score</th>
+                <th>Inspected By</th>
+                <th>Last Updated</th>
+              </tr>
+            </thead>
+            <tbody id="logs-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:var(--sp-8)"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Duty Assignment -->
+    <div id="tab-assign" class="tab-content">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-6)">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Assign Hygiene Duty</h3></div>
+          <div style="padding:var(--sp-4)">
+            <div class="form-group">
+              <label class="form-label">Select Member</label>
+              <div style="position:relative">
+                <input type="text" id="assign-member-search" class="form-control" placeholder="Search member name…" oninput="filterMemberDropdown()" onfocus="showMemberDropdown()">
+                <div id="assign-member-list" style="display:none;position:absolute;top:100%;left:0;width:100%;z-index:1000;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);max-height:200px;overflow-y:auto;box-shadow:var(--shadow-md)"></div>
+              </div>
+              <input type="hidden" id="assign-member-uid">
+              <div id="assign-member-preview" style="font-size:0.8rem;color:var(--text-muted);margin-top:4px"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Assign For Date</label>
+              <input type="date" id="assign-date" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hostel to Inspect</label>
+              <select id="assign-hostel" class="form-control">
+                <option value="">All Hostels</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Task Note (optional)</label>
+              <input type="text" id="assign-note" class="form-control" placeholder="e.g. Check washrooms on 2nd floor">
+            </div>
+            <button class="btn btn-primary" style="width:100%" onclick="saveAssignment()">Assign Duty</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Active Assignments</h3></div>
+          <div id="active-assignments-list" style="padding:var(--sp-4)">
+            <div class="spinner" style="margin:0 auto"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:var(--sp-6)">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+          <h3 class="card-title">HMC Members Track Record</h3>
+          <span style="font-size:0.78rem;color:var(--text-muted)">Bonus points for extra/ad-hoc audits</span>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>#</th><th>Member</th><th>Assigned</th><th>Completed</th><th>Bonus Points</th><th>Total Score</th></tr></thead>
+            <tbody id="leaderboard-tbody">
+              <tr><td colspan="6" style="text-align:center;padding:var(--sp-6)"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Slide Panel: Per-Hostel Hygiene Inspection Form ─── -->
+<div class="slide-panel-overlay" id="hygiene-panel-overlay" onclick="closePanelOverlay(event)">
+  <div class="slide-panel" id="hygiene-panel">
+    <div class="slide-panel-header">
+      <div>
+        <div style="font-weight:800;font-size:1.1rem" id="panel-hostel-name">Hostel Name</div>
+        <div style="font-size:0.78rem;color:var(--text-muted)" id="panel-week-label"></div>
+      </div>
+      <button class="modal-close" onclick="closePanelDirect()">&times;</button>
+    </div>
+    <div class="slide-panel-body" id="panel-body"></div>
+    <div class="slide-panel-footer">
+      <button class="btn btn-secondary" onclick="closePanelDirect()">Close</button>
+      <button class="btn btn-secondary" id="panel-save-btn" onclick="saveHygieneSession(false)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save (In Progress)
+      </button>
+      <button class="btn btn-primary" id="panel-complete-btn" onclick="saveHygieneSession(true)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Mark as Complete
+      </button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from './js/auth.js';
+  import { renderSidebar, initSidebarTheme } from './js/sidebar.js';
+  import { showToast } from './js/utils.js';
+  import { db } from './js/firebase-config.js';
+  import { logAction } from './js/audit-logger.js';
+  import {
+    doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc, query, where, orderBy
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('hygiene-clean.html');
+  initSidebarTheme();
+
+  // ── Globals ──────────────────────────────────────────────
+  let currentUser = null;
+  let allHostels = [];
+  let allMembers = [];
+  let allAssignments = [];
+  let allSessions = [];
+  let allLogsHistory = [];
+  let weekResetConfig = { day: 1, time: '21:00' };
+  let currentWeekStart = null;
+  let isHead = false;
+  let activeHostelId = null;
+  let activeSession = null;
+  let hygieneAreas = ['Washroom / Toilet','Corridor','Common Room','Hostel Room','Staircase','Water Cooler Area','Mess / Dining','Entrance / Gate','Other'];
+
+  // ── Week Calculation ──────────────────────────────────────
+  function getWeekStart(config = weekResetConfig, now = new Date()) {
+    const resetDay = parseInt(config.day ?? 1);
+    const [rH, rM] = (config.time || '21:00').split(':').map(Number);
+    const istNow = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+    const day = istNow.getUTCDay();
+    const daysSince = (day - resetDay + 7) % 7;
+    let candidate = new Date(istNow);
+    candidate.setUTCDate(istNow.getUTCDate() - daysSince);
+    candidate.setUTCHours(rH - 5, rM - 30, 0, 0);
+    if (candidate.getTime() > now.getTime()) candidate.setUTCDate(candidate.getUTCDate() - 7);
+    return candidate;
+  }
+
+  function formatWeekLabel(dt) {
+    const opts = { day: '2-digit', month: 'short', year: 'numeric' };
+    const end = new Date(dt.getTime() + 7 * 24 * 3600 * 1000);
+    return `Week: ${dt.toLocaleDateString('en-IN', opts)} – ${end.toLocaleDateString('en-IN', opts)}`;
+  }
+
+  // ── Auth ─────────────────────────────────────────────────
+  initAuthGuard({
+    requireLogin: true,
+    onReady: async (user) => {
+      currentUser = user;
+      populateSidebarUser(user);
+      const isHostelAuthority = ['chief_warden', 'hostel_warden', 'hostel_supervisor'].includes(user.role);
+      const isHostelCategory = user.role === 'admin' || isHostelAuthority ||
+        (user.role !== 'student' && (user.category || '').toLowerCase().trim() === 'hostel');
+      if (!isHostelCategory) {
+        showToast('Access Denied: Only HMC Hostel category members and authorities can view this page.', 'error');
+        window.location.href = 'dashboard.html';
+        return;
+      }
+      isHead = user.role === 'admin' ||
+        user.role === 'chief_warden' ||
+        user.role === 'hostel_warden' ||
+        (user.category || '').toLowerCase().trim() === 'hostel' && user.post === 'Head' ||
+        (user.title || '').toLowerCase().includes('hostel head') ||
+        (user.post || '').toLowerCase().includes('hostel head');
+      if (isHead) document.querySelectorAll('.hmc-head-action').forEach(el => el.classList.remove('hidden'));
+
+      await Promise.all([loadSettings(), loadHostels()]);
+      await Promise.all([loadSessions(), loadMembers(), loadAssignments()]);
+
+      // Check for assignmentId in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const assignmentId = urlParams.get('assignmentId');
+      if (assignmentId) {
+        window.activeAssignmentId = assignmentId;
+        const assSnap = await getDoc(doc(db, 'hygiene_assignments', assignmentId));
+        if (assSnap.exists()) {
+          const assData = assSnap.data();
+          const hostelId = assData.hostelId;
+          const h = allHostels.find(x => x.id === hostelId);
+          if (h) {
+            openHygienePanel(h.id);
+          }
+        }
+      }
+    }
+  });
+
+  window.switchTab = function(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('tab-' + tab + '-btn').classList.add('active');
+  };
+
+  async function loadSettings() {
+    try {
+      const snap = await getDoc(doc(db, 'meta', 'hostel'));
+      if (snap.exists()) {
+        const d = snap.data();
+        weekResetConfig = d.weekResetConfig || weekResetConfig;
+        if (d.hygieneAreas && d.hygieneAreas.length) hygieneAreas = d.hygieneAreas;
+      }
+    } catch (e) { console.warn('Could not load settings:', e.message); }
+    currentWeekStart = getWeekStart();
+    document.getElementById('week-label').textContent = formatWeekLabel(currentWeekStart);
+    document.getElementById('panel-week-label').textContent = formatWeekLabel(currentWeekStart);
+  }
+
+  async function loadHostels() {
+    try {
+      const snap = await getDocs(collection(db, 'hostels'));
+      allHostels = [];
+      snap.forEach(d => allHostels.push({ id: d.id, ...d.data() }));
+      allHostels.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } catch (e) { console.warn('Could not load hostels:', e.message); }
+    const logFilter = document.getElementById('log-filter');
+    const assignHostel = document.getElementById('assign-hostel');
+    logFilter.innerHTML = '<option value="all">All Hostels</option>';
+    assignHostel.innerHTML = '<option value="">All Hostels</option>';
+
+    let displayHostels = allHostels;
+    if (currentUser?.role === 'hostel_warden') {
+      const assigned = Array.isArray(currentUser.assignedHostels) && currentUser.assignedHostels.length ? currentUser.assignedHostels : (currentUser.assignedHostel ? [currentUser.assignedHostel] : []);
+      displayHostels = allHostels.filter(h => assigned.includes(h.name));
+    } else if (currentUser?.role === 'hostel_supervisor') {
+      const assigned = currentUser.assignedHostel || (Array.isArray(currentUser.assignedHostels) ? currentUser.assignedHostels[0] : null);
+      if (assigned) displayHostels = allHostels.filter(h => h.name === assigned);
+    }
+
+    displayHostels.forEach(h => {
+      logFilter.innerHTML += `<option value="${h.id}">${h.name}</option>`;
+      assignHostel.innerHTML += `<option value="${h.id}">${h.name}</option>`;
+    });
+  }
+
+  async function loadSessions() {
+    try {
+      const weekStr = currentWeekStart.toISOString();
+      const q = query(collection(db, 'hostel_hygiene_sessions'), where('weekStart', '==', weekStr));
+      const snap = await getDocs(q);
+      allSessions = [];
+      snap.forEach(d => allSessions.push({ id: d.id, ...d.data() }));
+      const allSnap = await getDocs(query(collection(db, 'hostel_hygiene_sessions'), orderBy('weekStart', 'desc')));
+      allLogsHistory = [];
+      allSnap.forEach(d => allLogsHistory.push({ id: d.id, ...d.data() }));
+    } catch (e) { console.warn('Could not load sessions:', e.message); }
+    renderHostelCards();
+    renderLogsTable();
+    // Mark stale in-progress as incomplete
+    const weekStr = currentWeekStart.toISOString();
+    const stale = allLogsHistory.filter(s => s.weekStart !== weekStr && s.status === 'in_progress');
+    for (const s of stale) {
+      try { await updateDoc(doc(db, 'hostel_hygiene_sessions', s.id), { status: 'incomplete' }); } catch (e) { /* silent */ }
+    }
+  }
+
+  function renderHostelCards() {
+    const pendingGrid = document.getElementById('pending-grid');
+    const inspectedGrid = document.getElementById('inspected-grid');
+    const pendingCards = [], inspectedCards = [];
+
+    allHostels.forEach(h => {
+      const session = allSessions.find(s => s.hostelId === h.id);
+      const status = session?.status || 'pending';
+      const count = session?.inspections?.length || 0;
+
+      let badgeClass, badgeLabel;
+      if (status === 'completed')   { badgeClass = 'badge-completed';  badgeLabel = 'Inspected ✓'; }
+      else if (status === 'in_progress') { badgeClass = 'badge-in-progress'; badgeLabel = 'In Progress'; }
+      else { badgeClass = 'badge-pending'; badgeLabel = 'Pending'; }
+
+      const card = `<div class="hostel-card ${status}" onclick="openHygienePanel('${h.id}')">
+        <div class="hostel-card-name">${h.name}</div>
+        <div class="hostel-card-code">${h.code || h.id}</div>
+        ${count > 0 ? `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:var(--sp-2)">${count} area${count !== 1 ? 's' : ''} inspected</div>` : ''}
+        <div><span class="hostel-week-badge ${badgeClass}">${badgeLabel}</span></div>
+      </div>`;
+
+      if (status === 'pending') pendingCards.push(card);
+      else inspectedCards.push(card);
+    });
+
+    pendingGrid.innerHTML = pendingCards.length
+      ? pendingCards.join('')
+      : `<div style="grid-column:1/-1;text-align:center;padding:var(--sp-4);color:var(--brand-success);font-weight:600"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px"><polyline points="20 6 9 17 4 12"/></svg>All hostels have been inspected this week!</div>`;
+
+    inspectedGrid.innerHTML = inspectedCards.length
+      ? inspectedCards.join('')
+      : `<div style="grid-column:1/-1;text-align:center;padding:var(--sp-4);color:var(--text-muted);font-size:0.85rem">No hostels inspected yet this week.</div>`;
+  }
+
+  window.renderLogsTable = function() {
+    const tbody = document.getElementById('logs-tbody');
+    const filter = document.getElementById('log-filter').value;
+    let logs = filter === 'all' ? allLogsHistory : allLogsHistory.filter(s => s.hostelId === filter);
+    if (!logs.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:var(--sp-6)">No hygiene sessions logged yet.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = logs.map(s => {
+      const hostel = allHostels.find(h => h.id === s.hostelId) || { name: s.hostelName || '—' };
+      const insp = s.inspections || [];
+      const avgScore = insp.length ? (insp.reduce((a, i) => a + (parseInt(i.score) || 0), 0) / insp.length).toFixed(1) : null;
+      const weekStr = new Date(s.weekStart).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+      const updatedStr = s.updatedAt ? new Date(s.updatedAt).toLocaleString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+      let statusBadge;
+      if (s.status === 'completed')   statusBadge = `<span class="hostel-week-badge badge-completed">Inspected</span>`;
+      else if (s.status === 'in_progress') statusBadge = `<span class="hostel-week-badge badge-in-progress">In Progress</span>`;
+      else if (s.status === 'incomplete') statusBadge = `<span class="hostel-week-badge badge-incomplete">Incomplete</span>`;
+      else statusBadge = `<span class="hostel-week-badge badge-pending">Pending</span>`;
+      return `<tr>
+        <td style="font-size:0.82rem">${weekStr}</td>
+        <td><strong>${hostel.name}</strong></td>
+        <td>${statusBadge}</td>
+        <td style="text-align:center">${insp.length}</td>
+        <td>${avgScore != null ? `<strong>${avgScore} / 5</strong>` : '—'}</td>
+        <td><div style="font-size:0.85rem;font-weight:600">${s.creatorName || '—'}</div><div style="font-size:0.72rem;color:var(--text-muted)">${s.creatorUniqueId || ''}</div></td>
+        <td style="font-size:0.8rem;color:var(--text-secondary)">${updatedStr}</td>
+      </tr>`;
+    }).join('');
+  };
+
+  // ── Open Hygiene Panel ────────────────────────────────────
+  window.openHygienePanel = function(hostelId) {
+    const hostel = allHostels.find(h => h.id === hostelId);
+    if (!hostel) return;
+    activeHostelId = hostelId;
+    activeSession = allSessions.find(s => s.hostelId === hostelId) || null;
+    document.getElementById('panel-hostel-name').textContent = hostel.name + (hostel.code ? ` (${hostel.code})` : '');
+    renderPanelBody(hostel, activeSession);
+    document.getElementById('hygiene-panel-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+
+  const FLOOR_NAMES = ['Ground Floor','1st Floor','2nd Floor','3rd Floor','4th Floor','5th Floor','6th Floor','7th Floor','8th Floor','9th Floor','10th Floor'];
+
+  function renderPanelBody(hostel, session) {
+    const floors = parseInt(hostel.floors || 4);
+    const inspections = session?.inspections || [];
+    // Group by floorIndex
+    const byFloor = {};
+    inspections.forEach(ins => {
+      const fi = ins.floorIndex ?? 0;
+      if (!byFloor[fi]) byFloor[fi] = [];
+      byFloor[fi].push(ins);
+    });
+
+    let html = `<div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:var(--sp-4)">Log cleanliness inspections for each floor. Each entry covers one area. Rate from 1–5 stars.</div>`;
+
+    for (let i = 0; i < floors; i++) {
+      const fname = FLOOR_NAMES[i] || `Floor ${i}`;
+      const floorInspections = byFloor[i] || [{ area: '', score: 0, auditStatus: 'Clean', details: '' }];
+
+      const inspRows = floorInspections.map((ins, ci) => renderInspRow(i, ci, ins)).join('');
+
+      html += `<div class="floor-section">
+        <div class="floor-section-header" onclick="toggleFloorSection(this)">
+          <span style="font-weight:700;font-size:0.9rem">${fname}</span>
+          <span style="font-size:0.78rem;color:var(--text-muted)">${floorInspections.filter(r => r.area).length} area(s) logged</span>
+        </div>
+        <div class="floor-section-body">
+          <div id="inspections-${i}">${inspRows}</div>
+          <button class="btn btn-secondary" style="width:100%;margin-top:var(--sp-3);font-size:0.8rem" onclick="addInspectionRow(${i})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Area Inspection
+          </button>
+        </div>
+      </div>`;
+    }
+    document.getElementById('panel-body').innerHTML = html;
+  }
+
+  function renderInspRow(floorIdx, ci, ins) {
+    const areaOpts = hygieneAreas.map(a =>
+      `<option value="${a}" ${ins.area === a ? 'selected' : ''}>${a}</option>`
+    ).join('');
+    const starsHtml = [1,2,3,4,5].map(v =>
+      `<button class="star-btn ${(ins.score||0) >= v ? 'active' : ''}" data-val="${v}" onclick="setInspStar(this, ${floorIdx}, ${ci}, ${v})">★</button>`
+    ).join('');
+    return `<div class="inspection-row" data-floor="${floorIdx}" data-ci="${ci}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3)">
+        <strong style="font-size:0.85rem;color:var(--text-primary)">Inspection ${ci+1}</strong>
+        <button class="remove-insp-btn" onclick="removeInspRow(this, ${floorIdx})">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="inspection-row-grid">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Area Inspected</label>
+          <select class="form-control insp-area" data-floor="${floorIdx}" data-ci="${ci}">
+            <option value="">Select area…</option>${areaOpts}
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Status</label>
+          <select class="form-control insp-status" data-floor="${floorIdx}" data-ci="${ci}">
+            <option value="Clean" ${(ins.auditStatus||'Clean')==='Clean'?'selected':''}>Clean</option>
+            <option value="Needs Attention" ${ins.auditStatus==='Needs Attention'?'selected':''}>Needs Attention</option>
+            <option value="Dirty" ${ins.auditStatus==='Dirty'?'selected':''}>Dirty</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Cleanliness Rating</label>
+          <div class="star-rating" id="stars-${floorIdx}-${ci}">${starsHtml}</div>
+          <input type="hidden" class="insp-score" data-floor="${floorIdx}" data-ci="${ci}" value="${ins.score || 0}">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Issues / Details</label>
+          <input type="text" class="form-control insp-details" data-floor="${floorIdx}" data-ci="${ci}" placeholder="e.g. Wet floor, soaps refilled" value="${ins.details || ''}">
+        </div>
+      </div>
+    </div>`;
+  }
+
+  window.setInspStar = function(btn, floorIdx, ci, val) {
+    const container = document.getElementById(`stars-${floorIdx}-${ci}`);
+    if (!container) return;
+    container.querySelectorAll('.star-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.val) <= val);
+    });
+    const scoreInput = document.querySelector(`.insp-score[data-floor="${floorIdx}"][data-ci="${ci}"]`);
+    if (scoreInput) scoreInput.value = val;
+  };
+
+  window.addInspectionRow = function(floorIdx) {
+    const container = document.getElementById(`inspections-${floorIdx}`);
+    const ci = container.querySelectorAll('.inspection-row').length;
+    const div = document.createElement('div');
+    div.innerHTML = renderInspRow(floorIdx, ci, { area: '', score: 0, auditStatus: 'Clean', details: '' });
+    container.appendChild(div.firstElementChild);
+  };
+
+  window.removeInspRow = function(btn, floorIdx) {
+    const container = document.getElementById(`inspections-${floorIdx}`);
+    if (container.querySelectorAll('.inspection-row').length <= 1) {
+      showToast('At least one inspection row must remain per floor.', 'warning');
+      return;
+    }
+    btn.closest('.inspection-row').remove();
+  };
+
+  window.toggleFloorSection = function(header) {
+    const body = header.nextElementSibling;
+    body.style.display = body.style.display === 'none' ? '' : 'none';
+  };
+
+  function collectInspectionsFromPanel(hostel) {
+    const floors = parseInt(hostel.floors || 4);
+    const inspections = [];
+    for (let i = 0; i < floors; i++) {
+      const container = document.getElementById(`inspections-${i}`);
+      if (!container) continue;
+      container.querySelectorAll('.inspection-row').forEach(row => {
+        const area = row.querySelector('.insp-area')?.value || '';
+        const status = row.querySelector('.insp-status')?.value || 'Clean';
+        const score = parseInt(row.querySelector('.insp-score')?.value) || 0;
+        const details = row.querySelector('.insp-details')?.value?.trim() || '';
+        const fname = FLOOR_NAMES[i] || `Floor ${i}`;
+        if (area || score) {
+          inspections.push({ floorIndex: i, floorName: fname, area, auditStatus: status, score, details, loggedAt: new Date().toISOString() });
+        }
+      });
+    }
+    return inspections;
+  }
+
+  window.saveHygieneSession = async function(markComplete) {
+    const hostel = allHostels.find(h => h.id === activeHostelId);
+    if (!hostel) return;
+    const inspections = collectInspectionsFromPanel(hostel);
+    if (inspections.length === 0 && markComplete) {
+      showToast('Please log at least one inspection before marking complete.', 'warning');
+      return;
+    }
+    const btn = markComplete ? document.getElementById('panel-complete-btn') : document.getElementById('panel-save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    const weekStr = currentWeekStart.toISOString();
+    const sessionData = {
+      hostelId: hostel.id, hostelName: hostel.name, weekStart: weekStr,
+      status: markComplete ? 'completed' : 'in_progress',
+      inspections,
+      creatorUid: currentUser.uid, creatorName: currentUser.name || currentUser.email,
+      creatorUniqueId: currentUser.uniqueId || '—',
+      updatedAt: new Date().toISOString()
+    };
+    try {
+      if (activeSession?.id) {
+        await updateDoc(doc(db, 'hostel_hygiene_sessions', activeSession.id), sessionData);
+      } else {
+        sessionData.createdAt = new Date().toISOString();
+        const ref = await addDoc(collection(db, 'hostel_hygiene_sessions'), sessionData);
+        activeSession = { id: ref.id, ...sessionData };
+      }
+
+      if (markComplete) {
+        // Search for any active assignment matching this user and hostel
+        const qAss = query(
+          collection(db, 'hygiene_assignments'),
+          where('assignedTo', '==', currentUser.uid),
+          where('hostelId', '==', hostel.id),
+          where('status', '==', 'assigned')
+        );
+        const assSnap = await getDocs(qAss);
+        let matchAssignmentId = window.activeAssignmentId;
+        if (!matchAssignmentId && !assSnap.empty) {
+          matchAssignmentId = assSnap.docs[0].id;
+        }
+
+        if (matchAssignmentId) {
+          // Update the assignment status to completed
+          await updateDoc(doc(db, 'hygiene_assignments', matchAssignmentId), { status: 'completed' });
+          // Update the task status to completed
+          const tasksQ = query(collection(db, 'tasks'), where('assignmentId', '==', matchAssignmentId));
+          const tasksSnap = await getDocs(tasksQ);
+          for (const tDoc of tasksSnap.docs) {
+            await updateDoc(doc(db, 'tasks', tDoc.id), { status: 'completed', completedDate: new Date().toISOString() });
+          }
+          // Increment completed count
+          const userRef = doc(db, 'users', currentUser.uid);
+          const uSnap = await getDoc(userRef);
+          const tr = uSnap.exists() ? (uSnap.data().trackRecordHygiene || {}) : {};
+          tr.completed = (tr.completed || 0) + 1;
+          await updateDoc(userRef, { trackRecordHygiene: tr });
+        } else {
+          // Bonus (completed without assignment)
+          const userRef = doc(db, 'users', currentUser.uid);
+          const uSnap = await getDoc(userRef);
+          const tr = uSnap.exists() ? (uSnap.data().trackRecordHygiene || {}) : {};
+          tr.bonus = (tr.bonus || 0) + 1;
+          await updateDoc(userRef, { trackRecordHygiene: tr });
+        }
+      }
+
+      showToast(markComplete ? `${hostel.name} marked as Inspected!` : `Progress saved for ${hostel.name}`, 'success');
+      logAction({
+        action: markComplete ? 'Completed Hygiene Inspection' : 'Saved Hygiene Progress',
+        department: 'Cleanliness',
+        details: `${markComplete ? 'Marked cleanliness inspection complete' : 'Saved inspection progress'} for ${hostel.name} (${inspections.length} area inspection(s) recorded)`,
+        user: currentUser
+      });
+      await loadSessions();
+      if (markComplete) closePanelDirect();
+    } catch (err) {
+      showToast('Error: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = markComplete ? 'Mark as Complete' : 'Save (In Progress)';
+    }
+  };
+
+  window.closePanelOverlay = function(e) {
+    if (e.target === document.getElementById('hygiene-panel-overlay')) closePanelDirect();
+  };
+  window.closePanelDirect = function() {
+    document.getElementById('hygiene-panel-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+    activeHostelId = null;
+    activeSession = null;
+  };
+
+  // ── Members & Assignments ─────────────────────────────────
+  async function loadMembers() {
+    try {
+      const snap = await getDocs(collection(db, 'users'));
+      allMembers = [];
+      snap.forEach(d => { const data = d.data(); if (data.role !== 'student' && data.role !== 'laundry_worker') allMembers.push({ uid: d.id, ...data }); });
+      allMembers.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      renderMemberDropdown(allMembers);
+      renderLeaderboard();
+    } catch (e) { console.warn('Could not load members:', e.message); }
+  }
+
+  function renderMemberDropdown(members) {
+    const list = document.getElementById('assign-member-list');
+    list.innerHTML = members.map(m =>
+      `<div style="padding:8px 16px;cursor:pointer;font-size:0.88rem" onclick="selectMember('${m.uid}','${(m.name||m.email||'').replace(/'/g,"\\'")}')">
+        <strong>${m.name || m.email}</strong> <span style="font-size:0.75rem;color:var(--text-muted)">${m.uniqueId || m.post || ''}</span>
+      </div>`
+    ).join('');
+  }
+  window.filterMemberDropdown = function() {
+    const q = document.getElementById('assign-member-search').value.toLowerCase();
+    renderMemberDropdown(allMembers.filter(m => (m.name||'').toLowerCase().includes(q) || (m.uniqueId||'').toLowerCase().includes(q)));
+    document.getElementById('assign-member-list').style.display = 'block';
+  };
+  window.showMemberDropdown = function() { document.getElementById('assign-member-list').style.display = 'block'; };
+  window.selectMember = function(uid, name) {
+    document.getElementById('assign-member-search').value = name;
+    document.getElementById('assign-member-uid').value = uid;
+    document.getElementById('assign-member-preview').textContent = `Selected: ${name}`;
+    document.getElementById('assign-member-list').style.display = 'none';
+  };
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#assign-member-list') && !e.target.closest('#assign-member-search')) {
+      document.getElementById('assign-member-list').style.display = 'none';
+    }
+  });
+
+  async function loadAssignments() {
+    try {
+      const snap = await getDocs(collection(db, 'hygiene_assignments'));
+      allAssignments = [];
+      snap.forEach(d => allAssignments.push({ id: d.id, ...d.data() }));
+      allAssignments.sort((a, b) => new Date(b.assignedDate || b.createdAt) - new Date(a.assignedDate || a.createdAt));
+      renderActiveAssignments();
+    } catch (e) { console.warn('Could not load assignments:', e.message); }
+  }
+
+  function renderActiveAssignments() {
+    const container = document.getElementById('active-assignments-list');
+    const active = allAssignments.filter(a => a.status === 'assigned');
+    if (!active.length) { container.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem">No active assignments.</p>`; return; }
+    container.innerHTML = active.map(a => {
+      const hostel = allHostels.find(h => h.id === a.hostelId) || { name: a.hostelId || 'All Hostels' };
+      return `<div style="padding:var(--sp-3);border:1px solid var(--border-subtle);border-radius:var(--radius-md);margin-bottom:var(--sp-3)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-weight:600;font-size:0.88rem">${a.memberName || '—'}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted)">${hostel.name} · ${a.assignedDate || ''}</div>
+            ${a.note ? `<div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px">${a.note}</div>` : ''}
+          </div>
+          <span class="status-badge status-caution">Pending</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  window.saveAssignment = async function() {
+    if (!isHead) { showToast('Only heads can assign duties.', 'error'); return; }
+    const uid = document.getElementById('assign-member-uid').value;
+    const name = document.getElementById('assign-member-search').value;
+    const date = document.getElementById('assign-date').value;
+    const hostelId = document.getElementById('assign-hostel').value;
+    const note = document.getElementById('assign-note').value.trim();
+    if (!uid || !date) { showToast('Please select a member and date.', 'error'); return; }
+    try {
+      const docRef = await addDoc(collection(db, 'hygiene_assignments'), {
+        assignedTo: uid, memberName: name, hostelId: hostelId || 'all',
+        assignedDate: date, note, status: 'assigned',
+        assignedBy: currentUser.uid, assignedByName: currentUser.name || currentUser.email,
+        createdAt: new Date().toISOString()
+      });
+
+      const selectedHostel = allHostels.find(h => h.id === hostelId);
+      const hostelName = selectedHostel ? selectedHostel.name : 'All Hostels';
+      const selectedMember = allMembers.find(m => m.uid === uid);
+      const memberUniqueId = selectedMember ? (selectedMember.uniqueId || '—') : '—';
+
+      // Create Task in tasks collection
+      const taskId = `#HY_${Date.now().toString().slice(-5)}`;
+      await addDoc(collection(db, 'tasks'), {
+        taskId,
+        title: `Hygiene inspection: ${hostelName} on ${date}`,
+        description: `Perform hygiene and cleanliness inspection for ${hostelName} hostel on ${date}. Note: ${note || 'None'}. Click Open to submit report.`,
+        category: 'Cleanliness Operations',
+        assignedByUid: currentUser.uid,
+        assignedByName: currentUser.name || currentUser.email,
+        assignedByUniqueId: currentUser.uniqueId || '—',
+        assignedToUid: uid,
+        assignedToName: name,
+        assignedToUniqueId: memberUniqueId,
+        assignedDate: new Date().toISOString(),
+        deadline: date,
+        status: 'assigned',
+        dueDate: date,
+        type: 'hygiene_clean',
+        assignmentId: docRef.id,
+        link: `../hygiene-clean.html?assignmentId=${docRef.id}`,
+        createdAt: new Date().toISOString()
+      });
+
+      const userRef = doc(db, 'users', uid);
+      const uSnap = await getDoc(userRef);
+      const tr = uSnap.exists() ? (uSnap.data().trackRecordHygiene || {}) : {};
+      tr.assigned = (tr.assigned || 0) + 1;
+      await updateDoc(userRef, { trackRecordHygiene: tr });
+
+      showToast(`Hygiene duty assigned to ${name} for ${date}!`, 'success');
+      document.getElementById('assign-member-search').value = '';
+      document.getElementById('assign-member-uid').value = '';
+      document.getElementById('assign-member-preview').textContent = '';
+      document.getElementById('assign-note').value = '';
+      await loadAssignments();
+      renderLeaderboard();
+    } catch (err) { showToast('Error: ' + err.message, 'error'); }
+  };
+
+  function renderLeaderboard() {
+    const tbody = document.getElementById('leaderboard-tbody');
+    if (!allMembers.length) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">No members found.</td></tr>`; return; }
+    const rows = allMembers.map(m => {
+      const tr = m.trackRecordHygiene || {};
+      return { ...m, assigned: tr.assigned||0, completed: tr.completed||0, bonus: tr.bonus||0, total: (tr.completed||0)+(tr.bonus||0) };
+    }).sort((a, b) => b.total - a.total || b.completed - a.completed);
+    tbody.innerHTML = rows.map((m, i) => `
+      <tr>
+        <td><strong>#${i+1}</strong></td>
+        <td><div style="font-weight:600">${m.name||m.email}</div><div style="font-size:0.72rem;color:var(--text-muted)">${m.uniqueId||m.post||''}</div></td>
+        <td style="text-align:center">${m.assigned}</td>
+        <td style="text-align:center;color:var(--brand-success)">${m.completed}</td>
+        <td style="text-align:center;color:#fbbf24">${m.bonus}</td>
+        <td style="text-align:center"><strong style="font-size:1rem">${m.total}</strong></td>
+      </tr>`
+    ).join('');
+  }
+
+  window.downloadWeeklyReport = function() {
+    const weekStr = currentWeekStart.toISOString();
+    const weekly = allLogsHistory.filter(s => s.weekStart === weekStr);
+    if (!weekly.length) { showToast('No sessions this week.', 'error'); return; }
+    const headers = ['Hostel','Status','Inspections','Avg Score','Inspected By','Updated At'];
+    const rows = weekly.map(s => {
+      const hostel = allHostels.find(h => h.id === s.hostelId)?.name || s.hostelName || '';
+      const insp = s.inspections || [];
+      const avgScore = insp.length ? (insp.reduce((a, i) => a + (parseInt(i.score)||0), 0) / insp.length).toFixed(1) : '';
+      return [hostel, s.status, insp.length, avgScore, s.creatorName||'', s.updatedAt||'']
+        .map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type:'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = `Hygiene_Report_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click(); URL.revokeObjectURL(url);
+  };
+</script>
+</body>
+</html>

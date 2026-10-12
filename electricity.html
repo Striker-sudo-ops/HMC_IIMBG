@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Electricity & Outage Logs — HMC Portal</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <script type="module">import { initTheme } from './js/theme.js'; initTheme();</script>
+  <style>
+    .elect-container {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-6);
+    }
+    .elect-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-resolved { background: rgba(34, 197, 94, 0.12); color: #4ade80; }
+    .badge-pending { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
+    .badge-escalated { background: rgba(239, 68, 68, 0.12); color: #f87171; }
+    
+    .badge-outage { background: rgba(239, 68, 68, 0.08); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .badge-fault { background: rgba(245, 158, 11, 0.08); color: #fde047; border: 1px solid rgba(245, 158, 11, 0.2); }
+    .badge-routine { background: rgba(59, 130, 246, 0.08); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.2); }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Electricity & Power Logs</h1>
+        <p class="page-subtitle">Track power outages, backup generator checks, and electrical faults</p>
+      </div>
+      <button class="btn btn-primary hmc-action hidden" onclick="openModal('elect-modal')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Log Event / Check
+      </button>
+    </div>
+
+    <div class="page-body">
+      <!-- Dashboard Section -->
+      <div id="electricity-dashboard-section">
+        <div class="elect-container">
+          
+          <!-- Stats Banner -->
+          <div style="display:flex; gap:var(--sp-4); flex-wrap:wrap; margin-bottom:var(--sp-2)">
+            <div class="card" style="flex:1; min-width:180px; padding: var(--sp-4) var(--sp-5); display: flex; align-items: center; gap: var(--sp-4)">
+              <div style="background: var(--bg-glass); color: var(--brand-primary); padding: 12px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); line-height: 1.2" id="stat-total">0</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em">Total Events</div>
+              </div>
+            </div>
+            <div class="card" style="flex:1; min-width:180px; padding: var(--sp-4) var(--sp-5); display: flex; align-items: center; gap: var(--sp-4)">
+              <div style="background: rgba(245, 158, 11, 0.12); color: #fbbf24; padding: 12px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); line-height: 1.2" id="stat-pending">0</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em">Active Issues</div>
+              </div>
+            </div>
+            <div class="card" style="flex:1; min-width:180px; padding: var(--sp-4) var(--sp-5); display: flex; align-items: center; gap: var(--sp-4)">
+              <div style="background: rgba(34, 197, 94, 0.12); color: var(--brand-success); padding: 12px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); line-height: 1.2" id="stat-resolved">0</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em">Resolved</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- History Log -->
+          <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--sp-2)">
+              <h3 class="card-title" style="margin:0">Electrical Check & Incident Logs</h3>
+              <div style="display:flex; gap:10px">
+                <select class="form-control" id="status-filter" style="width: 140px; margin-bottom:0" onchange="renderEventsTable()">
+                  <option value="all">All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Escalated">Escalated</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date & Time</th>
+                    <th>Block / Location</th>
+                    <th>Event Type</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Logged By</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="events-tbody">
+                  <tr><td colspan="7" style="text-align:center;padding:var(--sp-8)"><div class="spinner" style="margin:0 auto"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Electrical Event Modal -->
+<div class="modal-overlay" id="elect-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h3 class="modal-title">Log Electrical Check / Event</h3>
+      <button class="modal-close" onclick="closeElectModal()">&times;</button>
+    </div>
+    <form id="elect-form" onsubmit="handleSaveEvent(event)" style="padding-top:var(--sp-2)">
+      <div class="form-group">
+        <label class="form-label" for="elect-date">Date & Time *</label>
+        <input type="datetime-local" id="elect-date" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="elect-block">Location / Block *</label>
+        <select id="elect-block" class="form-control premium-form-control premium-select" required>
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="elect-type">Event Type *</label>
+        <select id="elect-type" class="form-control premium-form-control premium-select" required>
+          <option value="Power Outage">Power Outage</option>
+          <option value="Electrical Fault">Electrical Fault</option>
+          <option value="Routine Check">Routine Check / Verification</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="elect-status">Status *</label>
+        <select id="elect-status" class="form-control premium-form-control premium-select" required>
+          <option value="Pending">Pending / Unresolved</option>
+          <option value="Escalated">Escalated / Called Electrician</option>
+          <option value="Resolved">Resolved / Functional</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="elect-desc">Detailed Description *</label>
+        <textarea id="elect-desc" class="form-control" rows="3" placeholder="Describe the fault, outage duration, or verification details..." required></textarea>
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit" id="submit-btn" class="btn btn-primary flex-1" style="font-weight:700">Save Log</button>
+        <button type="button" class="btn btn-secondary" onclick="closeElectModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from './js/auth.js';
+  import { renderSidebar, initSidebarTheme } from './js/sidebar.js';
+  import { showToast, openModal, closeModal } from './js/utils.js';
+  import { db } from './js/firebase-config.js';
+  import { 
+    doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, serverTimestamp 
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('electricity.html');
+  initSidebarTheme();
+
+  // Globals
+  let currentUser = null;
+  let allEvents = [];
+  let hostelBlocks = ['Block A', 'Block B', 'Block C', 'Mess'];
+  let allowedElectricity = [];
+  let hasLogAccess = false;
+
+  // Set default datetime
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('elect-date').value = now.toISOString().slice(0, 16);
+
+  initAuthGuard({
+    requireLogin: true,
+    onReady: async (user) => {
+      currentUser = user;
+      populateSidebarUser(user);
+
+      const isHostelAuthority = ['chief_warden', 'hostel_warden', 'hostel_supervisor'].includes(user.role);
+      const isHostelCategory = user.role === 'admin' || isHostelAuthority || (user.role !== 'student' && (user.category || '').toLowerCase().trim() === 'hostel');
+      if (!isHostelCategory) {
+        showToast("Access Denied: Only HMC Hostel category members and authorities can view this dashboard.", "error");
+        window.location.href = 'dashboard.html';
+        return;
+      }
+
+      await loadHostelConfiguration();
+
+      const isHostelHead = user.role === 'admin' || 
+                           isHostelAuthority ||
+                           user.title?.toLowerCase().includes('hostel head') || 
+                           user.post?.toLowerCase().includes('hostel head') ||
+                           ((user.category || '').toLowerCase().trim() === 'hostel' && user.post === 'Head');
+
+      hasLogAccess = isHostelHead || allowedElectricity.includes(user.uid);
+      if (hasLogAccess) {
+        document.querySelectorAll('.hmc-action').forEach(el => el.classList.remove('hidden'));
+      }
+
+      await loadEvents();
+    }
+  });
+
+  async function loadHostelConfiguration() {
+    try {
+      const configSnap = await getDoc(doc(db, 'meta', 'hostel'));
+      if (configSnap.exists()) {
+        const data = configSnap.data();
+        hostelBlocks = data.blocks || ['Block A', 'Block B', 'Block C', 'Mess'];
+        allowedElectricity = data.allowedElectricity || [];
+      } else {
+        const initialConfig = {
+          blocks: ['Block A', 'Block B', 'Block C', 'Mess'],
+          hygieneAreas: ['Washroom / Toilet', 'Corridor', 'Common Room', 'Hostel Room', 'Staircase', 'Water Cooler Area', 'Mess / Dining', 'Entrance / Gate', 'Other'],
+          tdsThresholds: { excellent: 150, good: 300, fair: 500 },
+          allowedElectricity: []
+        };
+        await setDoc(doc(db, 'meta', 'hostel'), initialConfig);
+      }
+      
+      const formSel = document.getElementById('elect-block');
+      formSel.innerHTML = '';
+      hostelBlocks.forEach(b => {
+        formSel.innerHTML += `<option value="${b}">${b}</option>`;
+      });
+    } catch (err) {
+      console.warn("Could not load hostel config:", err.message);
+    }
+  }
+
+  async function loadEvents() {
+    try {
+      const snap = await getDocs(collection(db, 'hostel_electricity'));
+      allEvents = [];
+      snap.forEach(d => {
+        allEvents.push({ id: d.id, ...d.data() });
+      });
+
+      // Sort by date descending
+      allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      renderStats();
+      renderEventsTable();
+    } catch (err) {
+      showToast("Error loading electricity logs: " + err.message, "error");
+    }
+  }
+
+  function renderStats() {
+    document.getElementById('stat-total').textContent = allEvents.length;
+    document.getElementById('stat-pending').textContent = allEvents.filter(e => e.status !== 'Resolved').length;
+    document.getElementById('stat-resolved').textContent = allEvents.filter(e => e.status === 'Resolved').length;
+  }
+
+  window.renderEventsTable = function() {
+    const tbody = document.getElementById('events-tbody');
+    const filter = document.getElementById('status-filter').value;
+    
+    let filtered = allEvents;
+    if (filter !== 'all') {
+      filtered = filtered.filter(e => e.status === filter);
+    }
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:var(--sp-6)">No events logged.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(e => {
+      const dateFormatted = new Date(e.date).toLocaleString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      
+      const typeBadgeCls = e.type === 'Power Outage' ? 'badge-outage' : e.type === 'Electrical Fault' ? 'badge-fault' : 'badge-routine';
+      const statusBadgeCls = e.status === 'Resolved' ? 'badge-resolved' : e.status === 'Escalated' ? 'badge-escalated' : 'badge-pending';
+      
+      // Resolve action button for Admins and Hostel members
+      const actionBtn = (e.status !== 'Resolved') 
+        ? `<button class="btn btn-sm btn-success" onclick="resolveIncident('${e.id}')" style="padding: 4px 8px; font-size: 0.72rem">Resolve</button>`
+        : `<span style="font-size:0.75rem;color:var(--brand-success);font-weight:700;display:inline-flex;align-items:center;gap:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Completed</span>`;
+
+      return `
+        <tr>
+          <td style="font-weight:600">${dateFormatted}</td>
+          <td><strong>${e.block}</strong></td>
+          <td><span class="elect-badge ${typeBadgeCls}">${e.type}</span></td>
+          <td style="font-size:0.8rem;color:var(--text-secondary);max-width:240px;overflow:hidden;text-overflow:ellipsis">${e.desc}</td>
+          <td><span class="elect-badge ${statusBadgeCls}">${e.status}</span></td>
+          <td>
+            <div style="font-size:0.82rem;font-weight:600">${e.creatorName}</div>
+            <div style="font-size:0.7rem;color:var(--text-muted)">${e.creatorUniqueId}</div>
+          </td>
+          <td>${actionBtn}</td>
+        </tr>
+      `;
+    }).join('');
+  };
+
+  window.resolveIncident = async function(id) {
+    if (!confirm("Mark this electrical issue as resolved?")) return;
+    try {
+      await updateDoc(doc(db, 'hostel_electricity', id), { status: 'Resolved' });
+      showToast("Electrical incident marked as resolved!", "success");
+      await loadEvents();
+    } catch (err) {
+      showToast("Error updating incident: " + err.message, "error");
+    }
+  };
+
+  window.closeElectModal = function() {
+    closeModal('elect-modal');
+    document.getElementById('elect-form').reset();
+  };
+
+  window.handleSaveEvent = async function(e) {
+    e.preventDefault();
+    if (!hasLogAccess) {
+      showToast("Access Denied: You do not have permission to log electrical checks.", "error");
+      return;
+    }
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    const dateVal = document.getElementById('elect-date').value;
+    const block = document.getElementById('elect-block').value;
+    const type = document.getElementById('elect-type').value;
+    const status = document.getElementById('elect-status').value;
+    const desc = document.getElementById('elect-desc').value.trim();
+
+    try {
+      await addDoc(collection(db, 'hostel_electricity'), {
+        date: dateVal,
+        block,
+        type,
+        status,
+        desc,
+        creatorUid: currentUser.uid,
+        creatorName: currentUser.name,
+        creatorUniqueId: currentUser.uniqueId || '—',
+        createdAt: new Date().toISOString()
+      });
+
+      showToast(`Electrical event successfully logged!`, "success");
+      closeElectModal();
+      await loadEvents();
+    } catch (err) {
+      showToast("Error saving electrical log: " + err.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save Log';
+    }
+  };
+</script>
+</body>
+</html>

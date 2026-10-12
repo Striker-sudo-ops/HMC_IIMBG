@@ -1,0 +1,2777 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Mess Menu — HMC Portal</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <script type="module">import { initTheme } from './js/theme.js'; initTheme();</script>
+  <style>
+    /* Premium glassmorphism and layouts for Mess Menu */
+    .menu-container {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-6);
+    }
+    
+    .tab-nav {
+      display: flex;
+      gap: var(--sp-2);
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: var(--sp-2);
+      margin-bottom: var(--sp-4);
+    }
+    
+    .tab-btn {
+      padding: var(--sp-2) var(--sp-4);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+    
+    .tab-btn:hover {
+      color: var(--text-normal);
+    }
+    
+    .tab-btn.active {
+      color: var(--brand-primary);
+      border-bottom-color: var(--brand-primary);
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Grid/Table styles */
+    .menu-grid-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: var(--sp-4);
+    }
+
+    .menu-grid-table th, .menu-grid-table td {
+      border: 1px solid var(--border-subtle);
+      padding: var(--sp-3);
+      vertical-align: top;
+      text-align: left;
+      transition: var(--transition-fast);
+    }
+
+    .menu-grid-table th {
+      background: rgba(255, 255, 255, 0.03);
+      font-weight: 700;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-align: center; /* Centered headers */
+    }
+
+    .day-column {
+      width: 140px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-normal);
+      text-align: center !important;
+      vertical-align: middle !important;
+      padding: var(--sp-3) var(--sp-2) !important;
+    }
+
+    /* Column and row click headers style */
+    .header-col-btn, .header-row-btn, .day-column {
+      transition: var(--transition-fast);
+      position: relative;
+      cursor: pointer !important;
+      user-select: none;
+    }
+    
+    .header-col-btn:hover, .header-row-btn:hover, .day-column:hover {
+      background: rgba(124, 58, 237, 0.08) !important;
+      color: var(--brand-primary) !important;
+    }
+    
+    .selected-hdr {
+      background: rgba(124, 58, 237, 0.2) !important;
+      color: #ffffff !important;
+      box-shadow: inset 0 0 0 1px var(--brand-primary) !important;
+    }
+
+    /* Customizer classes for Edit Mode grid */
+    .edit-grid-theme-glass {
+      background: var(--glass-bg) !important;
+      backdrop-filter: var(--glass-blur) !important;
+    }
+    .edit-grid-theme-transparent {
+      background: transparent !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border: 1px solid var(--border-subtle) !important;
+    }
+    .edit-grid-theme-white {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+    }
+    .edit-grid-theme-white th {
+      background: #f1f5f9 !important;
+      color: #475569 !important;
+      border-color: #cbd5e1 !important;
+    }
+    .edit-grid-theme-white td {
+      border-color: #e2e8f0 !important;
+    }
+    .edit-grid-theme-white .day-column {
+      background: #f8fafc !important;
+      color: #0f172a !important;
+    }
+    .edit-grid-theme-white .food-tag {
+      background: #e2e8f0 !important;
+      border-color: #cbd5e1 !important;
+      color: #1e293b !important;
+    }
+    .edit-grid-theme-white .design-cell:hover {
+      background: #f1f5f9 !important;
+    }
+    .edit-grid-theme-dark {
+      background: #1e293b !important;
+    }
+    .edit-grid-theme-navy {
+      background: #0f172a !important;
+      border-color: #1e293b !important;
+    }
+    .edit-grid-theme-forest {
+      background: #064e3b !important;
+    }
+    .edit-grid-theme-maroon {
+      background: #4c0519 !important;
+    }
+
+    /* Heading Colors Presets */
+    .edit-hdr-color-default th, .edit-hdr-color-default .day-column {
+      color: var(--text-secondary) !important;
+    }
+    .edit-hdr-color-golden th, .edit-hdr-color-golden .day-column {
+      color: #fbbf24 !important;
+    }
+    .edit-hdr-color-skyblue th, .edit-hdr-color-skyblue .day-column {
+      color: #38bdf8 !important;
+    }
+    .edit-hdr-color-orange th, .edit-hdr-color-orange .day-column {
+      color: #fb923c !important;
+    }
+    .edit-hdr-color-violet th, .edit-hdr-color-violet .day-column {
+      color: #c084fc !important;
+    }
+    .edit-hdr-color-white th, .edit-hdr-color-white .day-column {
+      color: #ffffff !important;
+    }
+
+    .edit-text-color-default {
+      color: var(--text-normal) !important;
+    }
+    .edit-text-color-golden {
+      color: #fbbf24 !important;
+    }
+    .edit-text-color-skyblue {
+      color: #38bdf8 !important;
+    }
+    .edit-text-color-orange {
+      color: #fb923c !important;
+    }
+
+    .edit-text-size-small {
+      font-size: 0.78rem !important;
+    }
+    .edit-text-size-medium {
+      font-size: 0.86rem !important;
+    }
+    .edit-text-size-large {
+      font-size: 0.98rem !important;
+    }
+
+    .edit-padding-compact td {
+      padding: 6px var(--sp-2) !important;
+      min-height: 55px !important;
+    }
+    .edit-padding-standard td {
+      padding: var(--sp-3) !important;
+      min-height: 80px !important;
+    }
+    .edit-padding-spacious td {
+      padding: var(--sp-5) !important;
+      min-height: 120px !important;
+    }
+
+    /* Editor Layout */
+    .editor-layout {
+      display: grid;
+      grid-template-columns: 210px 1fr 230px;
+      gap: var(--sp-4);
+      align-items: start;
+    }
+
+    @media (max-width: 1200px) {
+      .editor-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .editor-panel {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-4);
+      height: 650px;
+      overflow-y: auto;
+    }
+
+    /* Cell styles */
+    .design-cell {
+      cursor: pointer !important;
+      user-select: none;
+      min-height: 80px;
+      transition: var(--transition-fast);
+      position: relative;
+      border-radius: 0;
+    }
+
+    .design-cell:hover {
+      background: rgba(124, 58, 237, 0.05);
+    }
+
+    .cell-inner-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      width: 100%;
+      height: 100%;
+      min-height: 60px;
+      pointer-events: none;
+    }
+
+    .cell-inner-wrapper .food-tag {
+      pointer-events: auto;
+    }
+
+    /* Text & badge formatting for selected cell state */
+    .design-cell.selected {
+      background: rgba(124, 58, 237, 0.15) !important;
+      box-shadow: inset 0 0 0 1px var(--brand-primary) !important;
+    }
+    .design-cell.selected .food-tag {
+      background: rgba(124, 58, 237, 0.25) !important;
+      border-color: var(--brand-primary) !important;
+      color: #ffffff !important;
+    }
+
+    /* Food badge tags in Design Menu */
+    .food-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #7c3aed !important;
+      border: 1px solid #9333ea !important;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      margin: 3px 2px;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+      transition: var(--transition-fast);
+      cursor: pointer !important;
+      user-select: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .food-tag .remove-btn {
+      cursor: pointer !important;
+      font-weight: bold;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25) !important;
+      color: #ffffff !important;
+      line-height: 1;
+      margin-left: 2px;
+      transition: var(--transition-fast);
+    }
+
+    .food-tag .remove-btn:hover {
+      background: #ef4444 !important;
+      color: #ffffff !important;
+    }
+
+    /* Accordion styles */
+    .category-group {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: var(--sp-2);
+    }
+
+    .category-header {
+      background: rgba(255, 255, 255, 0.02);
+      padding: var(--sp-2) var(--sp-3);
+      font-weight: 600;
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      transition: var(--transition-fast);
+    }
+
+    .category-header:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .category-items {
+      padding: var(--sp-2);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--sp-2);
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-base);
+    }
+
+    .food-selector-item {
+      padding: var(--sp-1) var(--sp-2) !important;
+      font-size: 0.75rem !important;
+      cursor: pointer;
+      border: 1px solid var(--border-subtle);
+      background: var(--card-bg);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      transition: var(--transition-fast);
+      user-select: none;
+    }
+
+    .food-selector-item:hover {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+      background: rgba(124, 58, 237, 0.05);
+    }
+
+    /* Right Panel checkmark group */
+    .control-group {
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: var(--sp-3);
+      margin-bottom: var(--sp-3);
+    }
+
+    .control-title {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: var(--sp-2);
+      letter-spacing: 0.05em;
+    }
+
+    .radio-label, .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: var(--sp-1) 0;
+      color: var(--text-secondary);
+    }
+
+    /* Saved menus styles */
+    .menu-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: var(--sp-4);
+    }
+
+    .menu-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-4);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: var(--sp-3);
+      transition: var(--transition-normal);
+    }
+
+    .menu-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-glow-sm);
+    }
+
+    .menu-card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-normal);
+    }
+
+    .menu-card-meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Current Menu Header and Footer */
+    .current-menu-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--sp-4);
+    }
+
+    .current-menu-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--brand-primary);
+    }
+
+    .current-menu-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding: var(--sp-3);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .current-menu-footer span {
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-left: 4px;
+    }
+
+    /* Improved Search box UI */
+    .search-container {
+      position: relative;
+      margin-bottom: var(--sp-3);
+    }
+    
+    .premium-search-input {
+      width: 100%;
+      padding: var(--sp-2) var(--sp-3);
+      background: var(--bg-base);
+      border: 1px solid var(--border-normal);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.8rem;
+      transition: var(--transition-fast);
+      box-sizing: border-box;
+    }
+    
+    .premium-search-input:focus {
+      background: var(--bg-surface);
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+      outline: none;
+    }
+
+    /* Customizer top panel wrapper styling */
+    .customizer-top-row {
+      display: flex; 
+      gap: var(--sp-2); 
+      align-items: center; 
+      background: rgba(255,255,255,0.03); 
+      padding: 4px 12px; 
+      border-radius: var(--radius-md); 
+      border: 1px solid var(--border-subtle);
+    }
+    
+    .customizer-top-row select {
+      padding: 4px var(--sp-2);
+      font-size: 0.78rem;
+      border-radius: var(--radius-sm);
+      background: var(--card-bg);
+      color: var(--text-normal);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+    }
+
+    /* Premium Menu Name input styling */
+    .premium-name-input {
+      width: 100%;
+      min-width: 320px;
+      padding: 10px 16px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-normal);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: var(--transition-fast);
+      box-sizing: border-box;
+    }
+    .premium-name-input::placeholder {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .premium-name-input:focus {
+      background: var(--bg-surface);
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+      outline: none;
+    }
+
+    /* Fixing page header page actions spacing */
+    .page-header {
+      padding-top: var(--sp-6) !important;
+      padding-bottom: var(--sp-4) !important;
+    }
+
+    /* Mess Feedback Form & Rating Styles */
+    .rating-star-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--border-normal);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      font-weight: 800;
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .rating-star-btn:hover {
+      border-color: #f59e0b;
+      color: #f59e0b;
+      transform: scale(1.1);
+    }
+    .rating-star-btn.selected {
+      background: #f59e0b;
+      border-color: #f59e0b;
+      color: #ffffff;
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);
+      transform: scale(1.1);
+    }
+
+    .cell-feedback-opts {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .fb-pill-btn {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .fb-pill-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+    }
+    .fb-pill-btn.opt-satisfied.selected {
+      background: rgba(34, 197, 94, 0.22);
+      border-color: #22c55e;
+      color: #4ade80;
+      box-shadow: 0 0 6px rgba(34, 197, 94, 0.25);
+    }
+    .fb-pill-btn.opt-improvement.selected {
+      background: rgba(245, 158, 11, 0.22);
+      border-color: #f59e0b;
+      color: #fbbf24;
+      box-shadow: 0 0 6px rgba(245, 158, 11, 0.25);
+    }
+    .fb-pill-btn.opt-change.selected {
+      background: rgba(239, 68, 68, 0.22);
+      border-color: #ef4444;
+      color: #f87171;
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.25);
+    }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Mess Menu Board</h1>
+        <p class="page-subtitle">View, design, and manage the campus mess menus</p>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="menu-container">
+        <!-- Navigation Tabs -->
+        <div class="tab-nav">
+          <button class="tab-btn active" onclick="switchMenuTab('tab-current')">Current Menu</button>
+          <button class="tab-btn" id="feedback-tab-btn" onclick="switchMenuTab('tab-feedback')">Mess Feedback</button>
+          <button class="tab-btn" id="saved-tab-btn" onclick="switchMenuTab('tab-saved')">Saved Menus</button>
+          <button class="tab-btn hidden" id="designer-tab-btn" onclick="switchMenuTab('tab-design')">Design Menu</button>
+        </div>
+
+        <!-- Tab 1: Current Menu -->
+        <div id="tab-current" class="tab-content active">
+          <div id="current-menu-header" class="current-menu-meta">
+            <div class="current-menu-title" id="active-menu-title">No Active Menu Selected</div>
+            <!-- Download Options for active menu -->
+            <div id="active-menu-downloads" style="display:none; gap: var(--sp-2)">
+              <button class="btn btn-sm btn-secondary" onclick="downloadActiveCSV()">CSV</button>
+              <button class="btn btn-sm btn-secondary" onclick="downloadActivePDF()">PDF</button>
+              <button class="btn btn-sm btn-primary" onclick="downloadActivePNG()">PNG Image</button>
+            </div>
+          </div>
+          
+          <table class="menu-grid-table">
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Breakfast</th>
+                <th>Lunch</th>
+                <th>Snacks</th>
+                <th>Dinner</th>
+              </tr>
+            </thead>
+            <tbody id="current-menu-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+
+          <div class="current-menu-footer" id="active-menu-creator">
+            <!-- Creator name rendered here -->
+          </div>
+        </div>
+
+        <!-- Tab: Mess Feedback -->
+        <div id="tab-feedback" class="tab-content">
+          <div style="background: var(--glass-bg); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: var(--sp-6); margin-bottom: var(--sp-6);">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-5); flex-wrap: wrap; gap: var(--sp-3);">
+              <div>
+                <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-normal); margin: 0;">Mess Feedback Form</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 4px 0 0 0;">Share your thoughts and rate the current mess menu items to help improve daily food quality.</p>
+              </div>
+              <div id="admin-feedback-toggle-container" class="hidden" style="display:flex; gap:8px;">
+                <button class="btn btn-sm btn-secondary" id="toggle-feedback-view-btn" onclick="toggleFeedbackAdminView()">
+                  View Submitted Feedbacks
+                </button>
+                <button class="btn btn-sm btn-primary" onclick="openFeedbackQRModal()">
+                  View QR Code
+                </button>
+              </div>
+            </div>
+
+            <!-- FEEDBACK CLOSED BANNER (Shown when closed) -->
+            <div id="feedback-closed-banner" class="hidden" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-md); padding: var(--sp-5) var(--sp-6); margin-bottom: var(--sp-6); display: flex; align-items: center; gap: var(--sp-6);">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" style="flex-shrink:0; margin-right: var(--sp-2);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div>
+                <strong style="color: #f87171; font-size: 0.95rem;">Mess Feedback Window Currently Closed</strong>
+                <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-secondary);">
+                  The Mess Menu Feedback Form automatically opens from the <strong>20th to 24th of each month</strong> (or when manually enabled by the Mess Committee).
+                </p>
+              </div>
+            </div>
+
+            <!-- FEEDBACK FORM (User View) -->
+            <div id="feedback-form-section">
+              <!-- 1. User Info Fields -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4); background: rgba(255,255,255,0.02); padding: var(--sp-4); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-bottom: var(--sp-6);">
+                <div>
+                  <label class="form-label" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Name *</label>
+                  <input type="text" id="fb-name" class="form-control" placeholder="Your Full Name" style="margin-bottom:0" required>
+                </div>
+                <div>
+                  <label class="form-label" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Batch *</label>
+                  <input type="text" id="fb-batch" class="form-control" placeholder="e.g. 2024-26" style="margin-bottom:0" required>
+                </div>
+                <div>
+                  <label class="form-label" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Roll Number *</label>
+                  <input type="text" id="fb-roll" class="form-control" placeholder="e.g. MBA01001" style="margin-bottom:0" required>
+                </div>
+              </div>
+
+              <!-- 2. Overall Satisfaction Question (1-5) -->
+              <div style="background: rgba(124, 58, 237, 0.04); border: 1px solid rgba(124, 58, 237, 0.15); border-radius: var(--radius-md); padding: var(--sp-5); margin-bottom: var(--sp-6); text-align: center;">
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: var(--sp-1);">
+                  How satisfied are you with the current mess menu? *
+                </h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: var(--sp-4);">Rate your overall experience on a scale of 1 to 5</p>
+                
+                <div id="star-rating-container" style="display: inline-flex; gap: var(--sp-3); align-items: center; justify-content: center;">
+                  <button type="button" class="rating-star-btn" data-rating="1" onclick="setFeedbackRating(1)">1</button>
+                  <button type="button" class="rating-star-btn" data-rating="2" onclick="setFeedbackRating(2)">2</button>
+                  <button type="button" class="rating-star-btn" data-rating="3" onclick="setFeedbackRating(3)">3</button>
+                  <button type="button" class="rating-star-btn" data-rating="4" onclick="setFeedbackRating(4)">4</button>
+                  <button type="button" class="rating-star-btn" data-rating="5" onclick="setFeedbackRating(5)">5</button>
+                </div>
+                <div id="rating-label-text" style="font-size: 0.85rem; font-weight: 700; color: var(--brand-primary); margin-top: var(--sp-3); min-height: 20px;">
+                  Select a rating
+                </div>
+              </div>
+
+              <!-- 3. Current Mess Menu Item Wise Evaluation -->
+              <div style="margin-bottom: var(--sp-6);">
+                <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-normal); margin-bottom: var(--sp-1);">
+                  Menu Item Wise Evaluation
+                </h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: var(--sp-4);">
+                  Select <strong>Satisfied</strong>, <strong>Need Improvement</strong>, or <strong>Change</strong> for any specific cell block in the current active menu.
+                </p>
+
+                <div style="overflow-x: auto;">
+                  <table class="menu-grid-table">
+                    <thead>
+                      <tr>
+                        <th>Day</th>
+                        <th>Breakfast</th>
+                        <th>Lunch</th>
+                        <th>Snacks</th>
+                        <th>Dinner</th>
+                      </tr>
+                    </thead>
+                    <tbody id="feedback-menu-tbody">
+                      <!-- Rendered dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- 4. Suggestions Input Box (Optional) -->
+              <div style="margin-bottom: var(--sp-6);">
+                <label class="form-label" style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: var(--sp-2); display: flex; justify-content: space-between; align-items: center;">
+                  <span>More Suggestions, Improvements or Addition of New Food Items</span>
+                  <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); font-style: italic;">Optional</span>
+                </label>
+                <textarea id="fb-suggestions" class="form-control" rows="4" placeholder="Write any additional suggestions, recipe ideas, or dishes you'd like to see added to the menu..." style="resize: vertical; font-size: 0.88rem; line-height: 1.5;"></textarea>
+              </div>
+
+              <!-- Submit Button -->
+              <div style="display: flex; justify-content: flex-end; gap: var(--sp-3);">
+                <button type="button" id="submit-feedback-btn" class="btn btn-primary btn-lg" onclick="submitMessFeedback()" style="font-weight: 800; min-width: 180px;">
+                  Submit Feedback
+                </button>
+              </div>
+            </div>
+
+            <!-- ADMIN / MEMBER FEEDBACK VIEW SECTION -->
+            <div id="feedback-admin-section" class="hidden">
+              <div id="feedback-stats-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-6);">
+                <!-- Summary cards injected dynamically -->
+              </div>
+
+              <!-- Cell-by-Cell Percentage Voting Breakdown Grid -->
+              <div style="margin-bottom: var(--sp-8);">
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: var(--sp-2);">
+                  Cell-Wise Percentage Voting Breakdown
+                </h3>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: var(--sp-4);">
+                  Voting percentages for Satisfied, Need Improvement, and Change for each meal item block in the active mess menu.
+                </p>
+
+                <div style="overflow-x: auto;">
+                  <table class="menu-grid-table">
+                    <thead>
+                      <tr>
+                        <th>Day</th>
+                        <th>Breakfast</th>
+                        <th>Lunch</th>
+                        <th>Snacks</th>
+                        <th>Dinner</th>
+                      </tr>
+                    </thead>
+                    <tbody id="feedback-admin-breakdown-tbody">
+                      <!-- Rendered dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Individual Student Suggestions & Submissions List -->
+              <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: var(--sp-4);">
+                  Student Submissions & Suggestions
+                </h3>
+                <div id="feedback-submissions-list">
+                  <!-- Submissions list injected dynamically -->
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab 2: Saved Menus -->
+        <div id="tab-saved" class="tab-content">
+          <div class="menu-card-grid" id="saved-menus-grid">
+            <div class="empty-state"><div class="spinner" style="margin: 0 auto"></div></div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Design Menu -->
+        <div id="tab-design" class="tab-content">
+          <!-- Line 1: Input Box and Save/Update Menu Button -->
+          <div style="display: flex; gap: var(--sp-3); align-items: center; width: 100%; margin-bottom: var(--sp-3); flex-wrap: wrap">
+            <input type="text" id="menu-name-input" class="premium-name-input" placeholder="Enter Menu Name" style="width: 320px; max-width: 340px; margin-bottom: 0">
+            <button class="btn btn-primary" id="save-menu-btn" onclick="saveDesignMenu()" style="white-space: nowrap">Save Menu</button>
+            <button class="btn btn-danger hidden" id="discard-menu-btn" onclick="discardMenuEdits()" style="white-space: nowrap">Discard Changes</button>
+          </div>
+
+          <!-- Line 2: Clear Grid Button next to Table Display Formatting Strip -->
+          <div style="display: flex; align-items: center; width: 100%; margin-bottom: var(--sp-4); gap: var(--sp-3); flex-wrap: wrap">
+            <button class="btn btn-secondary" onclick="clearFullDesignGrid()" style="white-space: nowrap">Clear Grid</button>
+
+            <div class="customizer-top-row">
+              <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap">Style Format:</span>
+              <select id="opt-grid-theme" onchange="applyDesignStyles()">
+                <option value="glass">Glass Theme</option>
+                <option value="transparent">Transparent Theme</option>
+                <option value="white">White Theme</option>
+                <option value="dark">Dark Theme</option>
+                <option value="navy">Navy Theme</option>
+                <option value="forest">Forest Theme</option>
+                <option value="maroon">Maroon Theme</option>
+              </select>
+              <select id="opt-hdr-color" onchange="applyDesignStyles()">
+                <option value="default">Default Headings</option>
+                <option value="golden">Golden Headings</option>
+                <option value="skyblue">Sky Blue Headings</option>
+                <option value="orange">Orange Headings</option>
+                <option value="violet">Violet Headings</option>
+                <option value="white">White Headings</option>
+              </select>
+              <select id="opt-text-color" onchange="applyDesignStyles()">
+                <option value="default">Default Cells Text</option>
+                <option value="golden">Golden Cells Text</option>
+                <option value="skyblue">Sky Blue Cells Text</option>
+                <option value="orange">Orange Cells Text</option>
+              </select>
+              <select id="opt-text-size" onchange="applyDesignStyles()">
+                <option value="small">Small Font</option>
+                <option value="medium" selected>Medium Font</option>
+                <option value="large">Large Font</option>
+              </select>
+              <select id="opt-padding" onchange="applyDesignStyles()">
+                <option value="compact">Compact Row</option>
+                <option value="standard" selected>Standard Row</option>
+                <option value="spacious">Spacious Row</option>
+              </select>
+            </div>
+          </div>
+
+
+          <div class="editor-layout">
+            <!-- Left Panel: Food Selector Accordion -->
+            <div class="editor-panel" style="height: 700px">
+              <div class="control-title">Food Selector</div>
+              
+              <!-- Improved Search Box UI -->
+              <div class="search-container">
+                <input type="text" id="food-search-input" class="premium-search-input" placeholder="Search food items..." oninput="filterSelectorItems()">
+              </div>
+              
+              <div id="category-accordion" style="display: flex; flex-direction: column; gap: var(--sp-2)">
+                <!-- Dynamic accordion list -->
+              </div>
+            </div>
+
+            <!-- Center Panel: Grid Editor -->
+            <div style="overflow-x: auto;">
+              <table class="menu-grid-table" id="design-editor-table" style="margin-bottom: 0">
+                <thead>
+                  <tr>
+                    <th class="header-col-btn" id="hdr-col-all" onclick="toggleSelectAllTable()" style="cursor: pointer !important; user-select: none;" title="Click to select/deselect entire menu">Day</th>
+                    <!-- Checkbox removed, direct clicking selects column cells under it -->
+                    <th class="header-col-btn" id="hdr-col-breakfast" onclick="selectColumnHeader('breakfast', event)" style="cursor: pointer !important; user-select: none;">Breakfast</th>
+                    <th class="header-col-btn" id="hdr-col-lunch" onclick="selectColumnHeader('lunch', event)" style="cursor: pointer !important; user-select: none;">Lunch</th>
+                    <th class="header-col-btn" id="hdr-col-snacks" onclick="selectColumnHeader('snacks', event)" style="cursor: pointer !important; user-select: none;">Snacks</th>
+                    <th class="header-col-btn" id="hdr-col-dinner" onclick="selectColumnHeader('dinner', event)" style="cursor: pointer !important; user-select: none;">Dinner</th>
+                  </tr>
+                </thead>
+                <tbody id="design-editor-tbody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Right Panel: Selection Control & Utilities -->
+            <div class="editor-panel" style="height: 700px">
+              <div class="control-group">
+                <div class="control-title">Selection Mode</div>
+                <button class="btn btn-secondary" style="width: 100%; font-weight: 600;" onclick="toggleSelectAllTable()">Select Entire Table</button>
+              </div>
+
+              <!-- Note showing how header selections work -->
+              <div class="control-group">
+                <div class="control-title">Group Selection</div>
+                <p style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.4">
+                  Directly **click on header cells** (e.g. <b>Monday</b> or <b>Lunch</b>) in the table to select/deselect the entire row or column cells at once!
+                </p>
+              </div>
+
+              <div class="control-group" style="border-bottom: none; margin-bottom: 0">
+                <button class="btn btn-danger" style="width: 100%; font-weight: 700;" onclick="clearSelectedCells()">Remove Multiple Items</button>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: var(--sp-2); line-height: 1.4; text-align: center;">
+                  This will delete all food items inside the currently selected cell(s).
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Preview Modal Overlay (Fixed structure for show/hide) -->
+<div class="modal-overlay" id="preview-modal-overlay">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 class="modal-title" id="preview-modal-title" style="text-align: center; width: 100%">Menu Preview</h3>
+      <button class="modal-close" onclick="closePreviewModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <table class="menu-grid-table">
+        <thead>
+          <tr>
+            <th>Day</th>
+            <th>Breakfast</th>
+            <th>Lunch</th>
+            <th>Snacks</th>
+            <th>Dinner</th>
+          </tr>
+        </thead>
+        <tbody id="preview-menu-tbody"></tbody>
+      </table>
+      
+      <!-- Download Controls inside Saved Menu Preview Modal -->
+      <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end">
+        <span style="align-self: center; font-size: 0.8rem; color: var(--text-muted); margin-right: auto">Export Options:</span>
+        <button class="btn btn-secondary" onclick="downloadPreviewCSV()">CSV</button>
+        <button class="btn btn-secondary" onclick="downloadPreviewPDF()">PDF</button>
+        <button class="btn btn-primary" onclick="downloadPreviewPNG()">PNG Image</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Unsaved Changes Modal -->
+<div class="modal-overlay" id="unsaved-changes-modal">
+  <div class="modal" style="max-width: 480px">
+    <div class="modal-header">
+      <h3 class="modal-title" style="text-align: center; width: 100%">Unsaved Changes</h3>
+      <button class="modal-close" onclick="resolveUnsavedChanges('cancel')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" style="padding-top: var(--sp-2)">
+      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5; margin-bottom: var(--sp-5); text-align: center">
+        You have unsaved changes in your menu design. What would you like to do before leaving this page?
+      </p>
+      <div style="display: flex; flex-direction: column; gap: var(--sp-2)">
+        <button class="btn btn-primary" onclick="resolveUnsavedChanges('save')" style="width: 100%; font-weight:700">Save & Exit</button>
+        <button class="btn btn-danger" onclick="resolveUnsavedChanges('discard')" style="width: 100%; font-weight:700">Discard Changes & Exit</button>
+        <button class="btn btn-secondary" onclick="resolveUnsavedChanges('cancel')" style="width: 100%">Keep Editing</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback QR Code Modal -->
+<div class="modal-overlay" id="feedback-qr-modal-overlay">
+  <div class="modal" style="max-width: 440px; text-align: center;">
+    <div class="modal-header">
+      <h3 class="modal-title" style="text-align: center; width: 100%">Mess Feedback QR Code</h3>
+      <button class="modal-close" onclick="closeFeedbackQRModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" style="padding: var(--sp-6); text-align: center;">
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: var(--sp-4);">
+        Scan this QR code to open the Mess Menu Feedback Form directly on your mobile device.
+      </p>
+      <div style="background: #ffffff; padding: 16px; border-radius: 16px; display: inline-block; box-shadow: var(--shadow-sm); margin-bottom: var(--sp-4);">
+        <img id="modal-feedback-qr-img" src="" alt="Feedback QR Code" style="width: 200px; height: 200px; display: block;">
+      </div>
+      <div style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--brand-primary); word-break: break-all; margin-bottom: var(--sp-5);" id="modal-feedback-url-text"></div>
+      <div style="display: flex; gap: var(--sp-3); justify-content: center;">
+        <button class="btn btn-primary" onclick="printFeedbackQRCode()" style="font-weight: 700;">Print Poster QR</button>
+        <button class="btn btn-secondary" onclick="copyFeedbackUrl()">Copy Link</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from './js/auth.js';
+  import { renderSidebar, initSidebarTheme } from './js/sidebar.js';
+  import { getAllMembers } from './js/members.js';
+  import { showToast, showLoading, hideLoading } from './js/utils.js';
+  import { logAction } from './js/audit-logger.js';
+  import { db } from './js/firebase-config.js';
+  import { 
+    doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc, deleteDoc, writeBatch, serverTimestamp 
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // Inject sidebar
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('menu.html');
+  initSidebarTheme();
+
+  // Days and Meals mapping
+  const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const MEALS = ['Breakfast', 'Lunch', 'Snacks', 'Dinner'];
+
+  // Global States
+  let currentUser = null;
+  let foodCategories = {};
+  let allowedDesigners = [];
+  let currentActiveMenuId = null;
+  let currentActiveMenuObj = null; // Storing active menu doc
+  let currentPreviewMenuObj = null; // Storing preview menu doc
+  let allMembersList = [];
+  let isMessHead = false;
+  let designGridState = {}; // Key: "day_meal", Value: Array of items
+  let editingMenuId = null; // ID of the menu currently being edited
+
+  // Snapshots for detecting dirty changes in editor
+  let originalEditGridStateJSON = '';
+  let originalEditMenuName = '';
+
+  // Active designer cells array
+  let selectedCells = [];
+
+  // Default seeded food categories if meta/menu does not exist
+  const DEFAULT_CATEGORIES = {
+    'Beverages': ['Milk', 'Tea', 'Coffee', 'Mango Juice', 'Butter Milk', 'Lemonade'],
+    'Daal': ['Moong Daal', 'Masoor Daal', 'Chana Chana', 'Toor Daal', 'Makhani Daal', 'Kadhei Daal'],
+    'Rotis': ['Tandoori Roti', 'Butter Roti', 'Naan', 'Missi Roti', 'Plain Chapati', 'Aloo Paratha'],
+    'Sides': ['Green Salad', 'Mix Veg Raita', 'Boondi Raita', 'Mixed Pickle', 'Papad', 'Green Chutney'],
+    'Dessert': ['Kheer', 'Gulab Jamun', 'Vanilla Ice Cream', 'Moong Dal Halwa', 'Rasgulla', 'Jalebi'],
+    'Main Course': ['Paneer Butter Masala', 'Mix Veg Dry', 'Aloo Gobhi', 'Rajma Masala', 'Chole Masala', 'Kadhi Pakoda']
+  };
+
+  let pendingTabId = null;
+
+  window.resolveUnsavedChanges = async function(action) {
+    const modal = document.getElementById('unsaved-changes-modal');
+    if (modal) modal.classList.remove('show');
+    
+    if (action === 'save') {
+      const nameInputVal = document.getElementById('menu-name-input').value.trim();
+      if (!nameInputVal) {
+        showToast("Please enter a menu name to save.", "warning");
+        return; // stay on design tab
+      }
+      
+      await saveDesignMenu();
+      resetDesignEditorState();
+      if (pendingTabId) {
+        performTabSwitch(pendingTabId);
+      }
+    } else if (action === 'discard') {
+      resetDesignEditorState();
+      if (pendingTabId) {
+        performTabSwitch(pendingTabId);
+      }
+    }
+    // 'cancel' keeps them on the Design Menu tab
+  };
+
+  window.switchMenuTab = function(tabId) {
+    const currentActiveTab = document.querySelector('.tab-btn.active');
+    const leavingDesignTab = currentActiveTab && currentActiveTab.id === 'designer-tab-btn';
+    
+    if (leavingDesignTab && tabId !== 'tab-design') {
+      const nameInputVal = document.getElementById('menu-name-input').value.trim();
+      const hasGridData = Object.values(designGridState).some(arr => arr && arr.length > 0);
+      
+      let isDirty = false;
+      if (editingMenuId) {
+        const currentStateJSON = JSON.stringify(designGridState);
+        if (currentStateJSON !== originalEditGridStateJSON || nameInputVal !== originalEditMenuName) {
+          isDirty = true;
+        }
+      } else {
+        if (nameInputVal || hasGridData) {
+          isDirty = true;
+        }
+      }
+      
+      if (isDirty) {
+        pendingTabId = tabId;
+        const modal = document.getElementById('unsaved-changes-modal');
+        if (modal) {
+          modal.classList.add('show');
+        } else {
+          if (confirm("You have unsaved changes. Switch tabs anyway?")) {
+            resetDesignEditorState();
+            performTabSwitch(tabId);
+          }
+        }
+        return; // wait for modal action
+      }
+      
+      resetDesignEditorState();
+    }
+
+    performTabSwitch(tabId);
+  };
+
+  function performTabSwitch(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    
+    const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
+    if (targetBtn) targetBtn.classList.add('active');
+    
+    document.getElementById(tabId).classList.add('active');
+
+    if (tabId === 'tab-feedback') {
+      populateFeedbackUserInfo();
+      renderFeedbackMenuTable();
+      checkAdminFeedbackAccess();
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // MESS FEEDBACK MODULE LOGIC
+  // ══════════════════════════════════════════════════════════
+  let selectedFeedbackRating = 0;
+  let cellFeedbackState = {}; // { "monday_breakfast": "satisfied" | "need_improvement" | "change" }
+  let showingAdminFeedbackView = false;
+
+  window.setFeedbackRating = function(score) {
+    selectedFeedbackRating = score;
+    const labels = {
+      1: '1 — Very Dissatisfied',
+      2: '2 — Dissatisfied',
+      3: '3 — Neutral',
+      4: '4 — Satisfied',
+      5: '5 — Very Satisfied'
+    };
+    document.querySelectorAll('.rating-star-btn').forEach(btn => {
+      const r = parseInt(btn.getAttribute('data-rating'));
+      btn.classList.toggle('selected', r === score);
+    });
+    const labelEl = document.getElementById('rating-label-text');
+    if (labelEl) labelEl.textContent = labels[score] || '';
+  };
+
+  window.selectCellFeedback = function(cellKey, option) {
+    if (cellFeedbackState[cellKey] === option) {
+      delete cellFeedbackState[cellKey];
+    } else {
+      cellFeedbackState[cellKey] = option;
+    }
+    
+    const container = document.querySelector(`.cell-feedback-opts[data-cell="${cellKey}"]`);
+    if (container) {
+      container.querySelectorAll('.fb-pill-btn').forEach(btn => {
+        btn.classList.remove('selected');
+      });
+      if (cellFeedbackState[cellKey]) {
+        const targetClass = cellFeedbackState[cellKey] === 'need_improvement' ? 'improvement' : cellFeedbackState[cellKey];
+        const selBtn = container.querySelector(`.opt-${targetClass}`);
+        if (selBtn) selBtn.classList.add('selected');
+      }
+    }
+  };
+
+  let feedbackMode = 'auto'; // 'auto', 'force_on', 'force_off'
+  let feedbackStartDay = 20;
+  let feedbackEndDay   = 24;
+
+  function checkIsFeedbackActive() {
+    if (feedbackMode === 'force_on') return true;
+    if (feedbackMode === 'force_off') return false;
+    const day = new Date().getDate();
+    return (day >= feedbackStartDay && day <= feedbackEndDay);
+  }
+
+  function updateFeedbackScheduleUI() {
+    const isActive = checkIsFeedbackActive();
+    const closedBanner = document.getElementById('feedback-closed-banner');
+    const formSection  = document.getElementById('feedback-form-section');
+    const submitBtn    = document.getElementById('submit-feedback-btn');
+
+    if (closedBanner) {
+      closedBanner.classList.toggle('hidden', isActive);
+      // Update the dynamic date range text in the banner
+      const noticeText = closedBanner.querySelector('p');
+      if (noticeText) {
+        noticeText.innerHTML = `The Mess Menu Feedback Form automatically opens from the <strong>${feedbackStartDay}th to ${feedbackEndDay}th of each month</strong> (or when manually enabled by the Mess Committee).`;
+      }
+    }
+
+    if (formSection) {
+      if (!isActive && !showingAdminFeedbackView) {
+        formSection.style.display = 'none';
+      } else if (isActive && !showingAdminFeedbackView) {
+        formSection.style.display = 'block';
+      }
+    }
+
+    if (submitBtn) {
+      if (!isActive) {
+        submitBtn.disabled = true;
+        submitBtn.title = `Mess Feedback Form is currently closed (Active ${feedbackStartDay}th–${feedbackEndDay}th of each month)`;
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.title = "";
+      }
+    }
+  }
+
+  function populateFeedbackUserInfo() {
+    if (!currentUser) return;
+    const nameInput  = document.getElementById('fb-name');
+    const batchInput = document.getElementById('fb-batch');
+    const rollInput  = document.getElementById('fb-roll');
+
+    if (nameInput  && !nameInput.value)  nameInput.value  = currentUser.name || '';
+    if (batchInput && !batchInput.value) batchInput.value = currentUser.batch || '2024-26';
+    if (rollInput  && !rollInput.value)  rollInput.value  = currentUser.uniqueId || currentUser.rollNo || '';
+
+    updateFeedbackScheduleUI();
+  }
+
+  function renderFeedbackMenuTable() {
+    const tbody = document.getElementById('feedback-menu-tbody');
+    if (!tbody) return;
+
+    if (!currentActiveMenuObj || !currentActiveMenuObj.grid) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:var(--sp-6); color:var(--text-muted)">No active mess menu is currently set. You can still submit general feedback and suggestions below.</td></tr>`;
+      return;
+    }
+
+    let html = '';
+    DAYS.forEach(day => {
+      html += `<tr>`;
+      html += `<td class="day-column">${day}</td>`;
+      MEALS.forEach(meal => {
+        const cellKey = `${day.toLowerCase()}_${meal.toLowerCase()}`;
+        const items = currentActiveMenuObj.grid[cellKey] || [];
+        const currentSel = cellFeedbackState[cellKey] || '';
+
+        html += `<td>`;
+        if (items.length === 0) {
+          html += `<span style="color:var(--text-muted);font-size:0.75rem">—</span>`;
+        } else {
+          html += `<div style="font-size: 0.82rem; line-height: 1.3; color: var(--text-normal); font-weight: 600;">${items.join(', ')}</div>`;
+        }
+
+        html += `
+          <div class="cell-feedback-opts" data-cell="${cellKey}">
+            <button type="button" class="fb-pill-btn opt-satisfied ${currentSel === 'satisfied' ? 'selected' : ''}" onclick="selectCellFeedback('${cellKey}', 'satisfied')">Satisfied</button>
+            <button type="button" class="fb-pill-btn opt-improvement ${currentSel === 'need_improvement' ? 'selected' : ''}" onclick="selectCellFeedback('${cellKey}', 'need_improvement')">Need Improvement</button>
+            <button type="button" class="fb-pill-btn opt-change ${currentSel === 'change' ? 'selected' : ''}" onclick="selectCellFeedback('${cellKey}', 'change')">Change</button>
+          </div>
+        `;
+        html += `</td>`;
+      });
+      html += `</tr>`;
+    });
+
+    tbody.innerHTML = html;
+  }
+
+  window.submitMessFeedback = async function() {
+    if (!checkIsFeedbackActive()) {
+      showToast("Mess Feedback Form is currently closed (Active 20th–24th of each month).", "error");
+      return;
+    }
+
+    const name  = document.getElementById('fb-name')?.value.trim();
+    const batch = document.getElementById('fb-batch')?.value.trim();
+    const roll  = document.getElementById('fb-roll')?.value.trim();
+    const suggestions = document.getElementById('fb-suggestions')?.value.trim();
+
+    if (!name || !batch || !roll) {
+      showToast("Please fill in your Name, Batch, and Roll Number.", "warning");
+      return;
+    }
+
+    if (selectedFeedbackRating < 1 || selectedFeedbackRating > 5) {
+      showToast("Please select your overall satisfaction rating (1 to 5).", "warning");
+      return;
+    }
+
+    try {
+      showLoading();
+      const payload = {
+        userId: currentUser?.uid || 'anonymous',
+        name,
+        batch,
+        rollNo: roll,
+        overallRating: selectedFeedbackRating,
+        cellFeedback: { ...cellFeedbackState },
+        suggestions: suggestions || '',
+        menuId: currentActiveMenuId || 'none',
+        menuName: currentActiveMenuObj?.name || 'Active Menu',
+        createdAt: new Date().toISOString()
+      };
+
+      await addDoc(collection(db, 'mess_feedback'), payload);
+      hideLoading();
+
+      showToast("Thank you! Your mess feedback has been submitted successfully.", "success");
+
+      // Reset form options
+      selectedFeedbackRating = 0;
+      cellFeedbackState = {};
+      document.querySelectorAll('.rating-star-btn').forEach(b => b.classList.remove('selected'));
+      const labelEl = document.getElementById('rating-label-text');
+      if (labelEl) labelEl.textContent = 'Select a rating';
+      if (document.getElementById('fb-suggestions')) document.getElementById('fb-suggestions').value = '';
+      
+      renderFeedbackMenuTable();
+
+    } catch (err) {
+      hideLoading();
+      console.error(err);
+      showToast("Error submitting feedback: " + err.message, "error");
+    }
+  };
+
+  function checkAdminFeedbackAccess() {
+    const toggleContainer = document.getElementById('admin-feedback-toggle-container');
+    if (toggleContainer) {
+      const uRole = currentUser?.role;
+      const uCat  = (currentUser?.category || '').toLowerCase();
+      const isMemberOrAdmin = currentUser && (uRole === 'admin' || uRole === 'subadmin' || isMessHead || uCat === 'mess');
+      toggleContainer.classList.toggle('hidden', !isMemberOrAdmin);
+    }
+  }
+
+  window.toggleFeedbackAdminView = async function() {
+    const uRole = currentUser?.role;
+    const uCat  = (currentUser?.category || '').toLowerCase();
+    const isMemberOrAdmin = currentUser && (uRole === 'admin' || uRole === 'subadmin' || isMessHead || uCat === 'mess');
+    if (!isMemberOrAdmin) {
+      showToast("Access Denied: Only Admins and Mess Members can view submitted feedbacks.", "error");
+      return;
+    }
+
+    showingAdminFeedbackView = !showingAdminFeedbackView;
+    const formSec  = document.getElementById('feedback-form-section');
+    const adminSec = document.getElementById('feedback-admin-section');
+    const btn      = document.getElementById('toggle-feedback-view-btn');
+
+    if (showingAdminFeedbackView) {
+      formSec.style.display = 'none';
+      adminSec.classList.remove('hidden');
+      if (btn) btn.textContent = 'Back to Feedback Form';
+      await loadSubmittedFeedbacks();
+    } else {
+      formSec.style.display = 'block';
+      adminSec.classList.add('hidden');
+      if (btn) btn.textContent = 'View Submitted Feedbacks';
+    }
+  };
+
+  // QR Code Modal Functions
+  window.openFeedbackQRModal = function() {
+    const url = `${window.location.origin}/menu.html?tab=tab-feedback`;
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`;
+    
+    const imgEl = document.getElementById('modal-feedback-qr-img');
+    const txtEl = document.getElementById('modal-feedback-url-text');
+    if (imgEl) imgEl.src = qrApiUrl;
+    if (txtEl) txtEl.textContent = url;
+
+    document.getElementById('feedback-qr-modal-overlay')?.classList.add('show');
+  };
+
+  window.closeFeedbackQRModal = function() {
+    document.getElementById('feedback-qr-modal-overlay')?.classList.remove('show');
+  };
+
+  window.copyFeedbackUrl = function() {
+    const url = `${window.location.origin}/menu.html?tab=tab-feedback`;
+    navigator.clipboard.writeText(url).then(() => {
+      showToast("Feedback link copied to clipboard!", "info");
+    }).catch(() => {
+      showToast("Copy failed, URL: " + url, "warning");
+    });
+  };
+
+  window.printFeedbackQRCode = function() {
+    const url = `${window.location.origin}/menu.html?tab=tab-feedback`;
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+    const win = window.open('', '_blank', 'width=600,height=650');
+    win.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Mess Menu Feedback QR Code — HMC</title>
+        <style>
+          body { font-family: system-ui, -apple-system, sans-serif; text-align: center; padding: 40px; background: #fff; color: #111; }
+          .logo { font-size: 24px; font-weight: 800; margin-bottom: 8px; color: #7c3aed; }
+          .sub { font-size: 14px; color: #555; margin-bottom: 24px; }
+          .qr-box { display: inline-block; padding: 20px; border: 2px solid #e2e8f0; border-radius: 16px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+          img { width: 250px; height: 250px; }
+          .instructions { margin-top: 24px; font-size: 16px; color: #1e293b; font-weight: 700; }
+          .url-text { margin-top: 12px; font-size: 12px; color: #64748b; word-break: break-all; }
+        </style>
+      </head>
+      <body>
+        <div class="logo">IIM BODHGAYA — HMC MESS FEEDBACK</div>
+        <div class="sub">Scan QR Code to rate your daily meal experience</div>
+        <div class="qr-box">
+          <img src="${qrApiUrl}" alt="Mess Feedback QR Code">
+        </div>
+        <div class="instructions">Open your phone camera & scan to submit mess feedback!</div>
+        <div class="url-text">${url}</div>
+      </body>
+      </html>
+    `);
+    win.document.close();
+    win.focus();
+    setTimeout(() => {
+      try { win.print(); } catch(e) {}
+    }, 500);
+  };
+
+  async function loadSubmittedFeedbacks() {
+    const statsDiv     = document.getElementById('feedback-stats-cards');
+    const breakdownTbody = document.getElementById('feedback-admin-breakdown-tbody');
+    const listDiv      = document.getElementById('feedback-submissions-list');
+    if (!statsDiv || !listDiv) return;
+
+    try {
+      const snap = await getDocs(collection(db, 'mess_feedback'));
+
+      // Filter: only count feedback for the current active menu
+      const activeMenuId = currentActiveMenuId || 'none';
+      const cellResetAt  = currentActiveMenuObj?.cellResetAt || {};
+
+      const allItems = [];
+      snap.forEach(d => allItems.push({ id: d.id, ...d.data() }));
+
+      // Keep only submissions for the current active menu
+      const items = allItems.filter(fb => (fb.menuId || 'none') === activeMenuId);
+      items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      if (items.length === 0) {
+        statsDiv.innerHTML = '';
+        if (breakdownTbody) breakdownTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:var(--sp-4); color:var(--text-muted)">No feedbacks recorded yet for the current menu.</td></tr>`;
+        listDiv.innerHTML = `<div class="empty-state"><p style="font-size:0.9rem">No student feedbacks submitted yet for the current menu.</p></div>`;
+        return;
+      }
+
+      const total = items.length;
+      const sumRatings = items.reduce((acc, curr) => acc + (curr.overallRating || 0), 0);
+      const avgRating = (sumRatings / total).toFixed(1);
+
+      statsDiv.innerHTML = `
+        <div class="card" style="padding:var(--sp-4); text-align:center; background:var(--glass-bg); border:1px solid var(--glass-border)">
+          <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase">Total Submissions</div>
+          <div style="font-size:1.8rem; font-weight:800; color:var(--brand-primary); margin-top:4px">${total}</div>
+        </div>
+        <div class="card" style="padding:var(--sp-4); text-align:center; background:var(--glass-bg); border:1px solid var(--glass-border)">
+          <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase">Average Rating</div>
+          <div style="font-size:1.8rem; font-weight:800; color:#f59e0b; margin-top:4px">${avgRating} / 5</div>
+        </div>
+      `;
+
+      // Calculate cell-by-cell votes, respecting per-cell reset timestamps
+      const cellStats = {};
+      items.forEach(fb => {
+        if (fb.cellFeedback && typeof fb.cellFeedback === 'object') {
+          Object.entries(fb.cellFeedback).forEach(([cellKey, option]) => {
+            // If this cell was edited after this feedback was submitted, skip that cell vote
+            const resetTs = cellResetAt[cellKey];
+            if (resetTs && fb.createdAt && new Date(fb.createdAt) < new Date(resetTs)) return;
+
+            if (!cellStats[cellKey]) {
+              cellStats[cellKey] = { satisfied: 0, need_improvement: 0, change: 0, total: 0 };
+            }
+            if (option === 'satisfied')         cellStats[cellKey].satisfied++;
+            else if (option === 'need_improvement') cellStats[cellKey].need_improvement++;
+            else if (option === 'change')        cellStats[cellKey].change++;
+            cellStats[cellKey].total++;
+          });
+        }
+      });
+
+      // Render Admin Breakdown Mess Menu Grid
+      if (breakdownTbody) {
+        if (!currentActiveMenuObj || !currentActiveMenuObj.grid) {
+          breakdownTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:var(--sp-6); color:var(--text-muted)">No active menu configured to show cell breakdown.</td></tr>`;
+        } else {
+          let breakdownHtml = '';
+          DAYS.forEach(day => {
+            breakdownHtml += `<tr>`;
+            breakdownHtml += `<td class="day-column">${day}</td>`;
+            MEALS.forEach(meal => {
+              const cellKey = `${day.toLowerCase()}_${meal.toLowerCase()}`;
+              const foodItems = currentActiveMenuObj.grid[cellKey] || [];
+              const stat = cellStats[cellKey] || { satisfied: 0, need_improvement: 0, change: 0, total: 0 };
+
+              const totalVotes = stat.total;
+              const satPct = totalVotes > 0 ? Math.round((stat.satisfied / totalVotes) * 100) : 0;
+              const impPct = totalVotes > 0 ? Math.round((stat.need_improvement / totalVotes) * 100) : 0;
+              const chgPct = totalVotes > 0 ? Math.round((stat.change / totalVotes) * 100) : 0;
+
+              breakdownHtml += `<td style="vertical-align:top;">`;
+              if (foodItems.length === 0) {
+                breakdownHtml += `<span style="color:var(--text-muted);font-size:0.75rem">—</span>`;
+              } else {
+                breakdownHtml += `<div style="font-size:0.8rem; font-weight:700; color:var(--text-normal); margin-bottom:4px;">${foodItems.join(', ')}</div>`;
+              }
+
+              if (totalVotes === 0) {
+                breakdownHtml += `<div style="width:195px; font-size:0.72rem; color:var(--text-muted); margin-top:6px; font-style:italic">No votes yet</div>`;
+              } else {
+                breakdownHtml += `
+                  <div style="width:195px; min-width:195px; box-sizing:border-box; margin-top:6px; display:flex; flex-direction:column; gap:5px; font-size:0.74rem; font-weight:700; background:rgba(255,255,255,0.04); border:1px solid var(--border-normal); padding:8px; border-radius:var(--radius-md); backdrop-filter:blur(4px);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; color:#4ade80;">
+                      <span>Satisfied</span>
+                      <span style="font-weight:800; white-space:nowrap;">${satPct}% <span style="font-size:0.65rem; opacity:0.8;">(${stat.satisfied})</span></span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; color:#facc15;">
+                      <span>Need Imp.</span>
+                      <span style="font-weight:800; white-space:nowrap;">${impPct}% <span style="font-size:0.65rem; opacity:0.8;">(${stat.need_improvement})</span></span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; color:#f87171;">
+                      <span>Change</span>
+                      <span style="font-weight:800; white-space:nowrap;">${chgPct}% <span style="font-size:0.65rem; opacity:0.8;">(${stat.change})</span></span>
+                    </div>
+                    <div style="font-size:0.63rem; color:var(--text-muted); text-align:right; margin-top:2px; border-top:1px solid rgba(255,255,255,0.06); padding-top:3px;">${totalVotes} vote${totalVotes > 1 ? 's' : ''}</div>
+                  </div>
+                `;
+              }
+              breakdownHtml += `</td>`;
+            });
+            breakdownHtml += `</tr>`;
+          });
+          breakdownTbody.innerHTML = breakdownHtml;
+        }
+      }
+
+      // Render Individual Student Submissions Cards
+      let listHtml = '';
+      items.forEach(fb => {
+        const dateStr = fb.createdAt ? new Date(fb.createdAt).toLocaleString() : 'Recent';
+        const stars = '★'.repeat(fb.overallRating || 0) + '☆'.repeat(5 - (fb.overallRating || 0));
+
+        let cellFeedbackBadges = '';
+        if (fb.cellFeedback && Object.keys(fb.cellFeedback).length > 0) {
+          cellFeedbackBadges = Object.entries(fb.cellFeedback).map(([key, val]) => {
+            const prettyKey = key.replace('_', ' ').toUpperCase();
+            const badgeCls = val === 'satisfied' ? 'badge-success' : (val === 'need_improvement' ? 'badge-warning' : 'badge-danger');
+            const labelStr = val === 'satisfied' ? 'Satisfied' : (val === 'need_improvement' ? 'Needs Improvement' : 'Change');
+            return `<span class="badge ${badgeCls}" style="font-size:0.68rem; margin:2px">${prettyKey}: ${labelStr}</span>`;
+          }).join(' ');
+        }
+
+        listHtml += `
+          <div class="card" style="padding:var(--sp-4); margin-bottom:var(--sp-4); border:1px solid var(--border-subtle); background:var(--glass-bg)">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--sp-2)">
+              <div>
+                <strong style="color:var(--text-primary); font-size:0.95rem">${fb.name}</strong> 
+                <span style="font-size:0.8rem; color:var(--text-muted)">(${fb.batch} • Roll: ${fb.rollNo})</span>
+              </div>
+              <div style="color:#f59e0b; font-weight:800; font-size:1.05rem">${stars} (${fb.overallRating}/5)</div>
+            </div>
+            ${cellFeedbackBadges ? `<div style="margin-top:10px">${cellFeedbackBadges}</div>` : ''}
+            ${fb.suggestions ? `<div style="margin-top:10px; font-size:0.88rem; color:var(--text-secondary); background:rgba(255,255,255,0.02); padding:10px 14px; border-radius:var(--radius-sm); border-left:3px solid var(--brand-primary); font-style:italic">"${fb.suggestions}"</div>` : ''}
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:8px; text-align:right">Submitted: ${dateStr}</div>
+          </div>
+        `;
+      });
+
+      listDiv.innerHTML = listHtml;
+
+    } catch (err) {
+      console.error(err);
+      listDiv.innerHTML = `<div style="color:var(--brand-danger); padding:var(--sp-4)">Error loading feedback: ${err.message}</div>`;
+    }
+  }
+
+  // Resets design editor states and resets DOM view elements
+  function resetDesignEditorState() {
+    editingMenuId = null;
+    originalEditGridStateJSON = '';
+    originalEditMenuName = '';
+    designGridState = {};
+    selectedCells = [];
+    document.getElementById('menu-name-input').value = '';
+    
+    // Hide Discard button
+    const discardBtn = document.getElementById('discard-menu-btn');
+    if (discardBtn) discardBtn.classList.add('hidden');
+
+    // Reset button label
+    const saveBtn = document.querySelector('#tab-design button.btn-primary');
+    if (saveBtn) saveBtn.textContent = 'Save Menu';
+
+    renderDesignEditorGrid();
+  }
+
+  // Discard edits callback
+  window.discardMenuEdits = function() {
+    if (confirm("Discard all edits and exit editing mode?")) {
+      resetDesignEditorState();
+      showToast("Edits discarded", "info");
+      switchMenuTab('tab-saved');
+    }
+  };
+
+  // Load configuration from meta/menu
+  async function loadMenuConfiguration() {
+    try {
+      const configSnap = await getDoc(doc(db, 'meta', 'menu'));
+      if (configSnap.exists()) {
+        const data = configSnap.data();
+        foodCategories = data.categories || DEFAULT_CATEGORIES;
+        allowedDesigners = data.allowedDesigners || [];
+        currentActiveMenuId = data.currentMenuId || null;
+        feedbackMode     = data.feedbackMode     || 'auto';
+        feedbackStartDay = data.feedbackStartDay || 20;
+        feedbackEndDay   = data.feedbackEndDay   || 24;
+      } else {
+        const initialConfig = {
+          categories: DEFAULT_CATEGORIES,
+          allowedDesigners: [],
+          currentMenuId: null,
+          feedbackMode: 'auto',
+          feedbackStartDay: 20,
+          feedbackEndDay: 24
+        };
+        await setDoc(doc(db, 'meta', 'menu'), initialConfig);
+        foodCategories = DEFAULT_CATEGORIES;
+        allowedDesigners = [];
+        currentActiveMenuId = null;
+        feedbackMode     = 'auto';
+        feedbackStartDay = 20;
+        feedbackEndDay   = 24;
+      }
+      updateFeedbackScheduleUI();
+      renderCategoryAccordion();
+    } catch(err) {
+      console.error(err);
+      showToast("Error loading configuration: " + err.message, "error");
+    }
+  }
+
+  // Initialize
+  initAuthGuard({
+    requireLogin: true,
+    onReady: async (user) => {
+      currentUser = user;
+      populateSidebarUser(user);
+      
+      const uTitle = (user.title || '').toLowerCase();
+      const uPost  = (user.post || '').toLowerCase();
+      const uCat   = (user.category || '').toLowerCase();
+      isMessHead = (user.role === 'admin' || 
+                    uTitle.includes('mess head') || 
+                    uPost.includes('mess head') || 
+                    uPost.includes('mess committee head') || 
+                    uPost.includes('mess coordinator') ||
+                    (uCat === 'mess' && user.post === 'Head'));
+
+      if (user.role === 'student') {
+        document.getElementById('saved-tab-btn')?.classList.add('hidden');
+        document.getElementById('designer-tab-btn')?.classList.add('hidden');
+      }
+
+      populateFeedbackUserInfo();
+      checkAdminFeedbackAccess();
+
+      try {
+        await loadMenuConfiguration();
+      } catch (err) {
+        console.error("Error loading menu configuration:", err);
+      }
+
+      try {
+        await loadCurrentActiveMenu();
+      } catch (err) {
+        console.error("Error loading current active menu:", err);
+      }
+
+      try {
+        await loadSavedMenus();
+      } catch (err) {
+        console.error("Error loading saved menus:", err);
+      }
+
+      const hasDesignAccess = isMessHead || (allowedDesigners && allowedDesigners.includes(user.uid));
+      if (hasDesignAccess) {
+        const btn = document.getElementById('designer-tab-btn');
+        if (btn) btn.classList.remove('hidden');
+        renderDesignEditorGrid();
+        loadSavedDesignPreferences();
+        applyDesignStyles(); // Load initial display choices
+      }
+
+      // Settings tab removed from Mess Menu (moved to sidebar admin/mess-settings.html)
+
+      // Check URL query parameters for deep linking
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      const assignmentParam = urlParams.get('assignmentId');
+      if (tabParam === 'tab-food-testing') {
+        const redirectUrl = `food-testing.html${assignmentParam ? `?assignmentId=${assignmentParam}` : ''}`;
+        window.location.href = redirectUrl;
+        return;
+      }
+      if (tabParam) {
+        switchMenuTab(tabParam);
+      }
+    }
+  });
+
+  // Load saved formatting preferences for current user
+  function loadSavedDesignPreferences() {
+    const uid = currentUser?.uid || 'default';
+    const savedTheme = localStorage.getItem(`hmc_menu_theme_${uid}`);
+    const savedHdr = localStorage.getItem(`hmc_menu_hdr_${uid}`);
+    const savedColor = localStorage.getItem(`hmc_menu_color_${uid}`);
+    const savedSize = localStorage.getItem(`hmc_menu_size_${uid}`);
+    const savedPadding = localStorage.getItem(`hmc_menu_padding_${uid}`);
+
+    if (savedTheme && document.getElementById('opt-grid-theme')) document.getElementById('opt-grid-theme').value = savedTheme;
+    if (savedHdr && document.getElementById('opt-hdr-color')) document.getElementById('opt-hdr-color').value = savedHdr;
+    if (savedColor && document.getElementById('opt-text-color')) document.getElementById('opt-text-color').value = savedColor;
+    if (savedSize && document.getElementById('opt-text-size')) document.getElementById('opt-text-size').value = savedSize;
+    if (savedPadding && document.getElementById('opt-padding')) document.getElementById('opt-padding').value = savedPadding;
+  }
+
+  // Apply custom styling on grid based on UI/UX customizer & save user preference
+  window.applyDesignStyles = function() {
+    const table = document.getElementById('design-editor-table');
+    if (!table) return;
+
+    const theme = document.getElementById('opt-grid-theme').value;
+    const hdrColor = document.getElementById('opt-hdr-color').value;
+    const color = document.getElementById('opt-text-color').value;
+    const size = document.getElementById('opt-text-size').value;
+    const padding = document.getElementById('opt-padding').value;
+
+    // Reset current classes
+    table.className = 'menu-grid-table';
+
+    // Apply design choices
+    table.classList.add(`edit-grid-theme-${theme}`);
+    table.classList.add(`edit-hdr-color-${hdrColor}`);
+    table.classList.add(`edit-text-color-${color}`);
+    table.classList.add(`edit-text-size-${size}`);
+    table.classList.add(`edit-padding-${padding}`);
+
+    // Persist choice for current user account
+    const uid = currentUser?.uid || 'default';
+    localStorage.setItem(`hmc_menu_theme_${uid}`, theme);
+    localStorage.setItem(`hmc_menu_hdr_${uid}`, hdrColor);
+    localStorage.setItem(`hmc_menu_color_${uid}`, color);
+    localStorage.setItem(`hmc_menu_size_${uid}`, size);
+    localStorage.setItem(`hmc_menu_padding_${uid}`, padding);
+  };
+
+  // Load active menu and display it in Current Menu tab
+  async function loadCurrentActiveMenu() {
+    const tbody = document.getElementById('current-menu-tbody');
+    const footer = document.getElementById('active-menu-creator');
+    const headerTitle = document.getElementById('active-menu-title');
+    const downloadsDiv = document.getElementById('active-menu-downloads');
+
+    if (!currentActiveMenuId) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:var(--sp-8);color:var(--text-muted)">No active mess menu. Go to "Saved Menus" to activate one.</td></tr>`;
+      headerTitle.textContent = "No Active Menu Selected";
+      footer.innerHTML = "";
+      downloadsDiv.style.display = 'none';
+      currentActiveMenuObj = null;
+      return;
+    }
+
+    try {
+      const menuSnap = await getDoc(doc(db, 'menus', currentActiveMenuId));
+      if (menuSnap.exists()) {
+        const menu = menuSnap.data();
+        currentActiveMenuObj = menu; 
+        headerTitle.textContent = menu.name || "Untitled Menu";
+        footer.innerHTML = `Created by: <span>${menu.createdByName || 'Unknown'}</span>`;
+        downloadsDiv.style.display = 'flex';
+
+        let html = '';
+        DAYS.forEach(day => {
+          html += `<tr>`;
+          html += `<td class="day-column" style="text-align:center !important; vertical-align:middle !important;">${day}</td>`;
+          MEALS.forEach(meal => {
+            const key = `${day.toLowerCase()}_${meal.toLowerCase()}`;
+            const items = menu.grid?.[key] || [];
+            
+            html += `<td>`;
+            if (items.length === 0) {
+              html += `<span style="color:var(--text-muted);font-size:0.78rem">Not set</span>`;
+            } else {
+              html += `<div style="font-size: 0.85rem; line-height: 1.4; color: var(--text-normal);">${items.join(', ')}</div>`;
+            }
+            html += `</td>`;
+          });
+          html += `</tr>`;
+        });
+        tbody.innerHTML = html;
+      } else {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:var(--sp-8);color:var(--text-muted)">Menu details not found.</td></tr>`;
+        downloadsDiv.style.display = 'none';
+      }
+    } catch(err) {
+      console.error(err);
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:var(--sp-8);color:var(--brand-danger)">Error: ${err.message}</td></tr>`;
+    }
+  }
+
+  // Load saved menus list
+  window.loadSavedMenus = async function() {
+    const grid = document.getElementById('saved-menus-grid');
+    try {
+      const snap = await getDocs(collection(db, 'menus'));
+      if (snap.empty) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1"><p style="font-size:0.9rem">No mess menus created yet.</p></div>`;
+        return;
+      }
+
+      const hasAccess = isMessHead || (allowedDesigners && allowedDesigners.includes(currentUser?.uid));
+      let html = '';
+      snap.forEach(d => {
+        const menu = d.data();
+        const createdDate = menu.createdAt ? new Date(menu.createdAt.seconds * 1000).toLocaleDateString() : 'Recent';
+        const isActive = d.id === currentActiveMenuId;
+
+        html += `
+          <div class="menu-card" style="cursor: pointer; ${isActive ? 'border-color: var(--brand-success); box-shadow: 0 0 10px rgba(34,197,94,0.15)' : ''}" onclick="previewSavedMenu('${d.id}')">
+            <div>
+              <div class="menu-card-title">${menu.name || 'Untitled Menu'} ${isActive ? '<span class="badge badge-success" style="font-size:0.65rem;margin-left:6px;vertical-align:middle">Active</span>' : ''}</div>
+              <div class="menu-card-meta" style="margin-top:var(--sp-2)">
+                Created By: <strong>${menu.createdByName || 'HMC Member'}</strong> (${menu.createdByUniqueId || '—'})<br>
+                Date Created: ${createdDate}
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:var(--sp-2); margin-top:var(--sp-3)">
+              <button class="btn btn-sm" style="display: flex; justify-content: center; align-items: center;" onclick="event.stopPropagation(); previewSavedMenu('${d.id}')">View Menu</button>
+              
+              ${hasAccess ? 
+                `<button class="btn btn-sm btn-secondary" style="display: flex; justify-content: center; align-items: center;" onclick="event.stopPropagation(); editSavedMenu('${d.id}')">Edit</button>` : 
+                `<button class="btn btn-sm btn-secondary" style="display: flex; justify-content: center; align-items: center;" disabled onclick="event.stopPropagation()">No Access</button>`
+              }
+
+              ${hasAccess ? 
+                `<button class="btn btn-sm" style="display: flex; justify-content: center; align-items: center; background: rgba(124, 58, 237, 0.15); border: 1px solid var(--brand-primary); color: var(--brand-primary);" onclick="event.stopPropagation(); copySavedMenu('${d.id}')">Copy Menu</button>` : 
+                `<button class="btn btn-sm" style="display: flex; justify-content: center; align-items: center;" disabled onclick="event.stopPropagation()">Copy</button>`
+              }
+              
+              ${isMessHead ? (isActive ? 
+                `<button class="btn btn-sm btn-warning" style="display: flex; justify-content: center; align-items: center;" onclick="event.stopPropagation(); deactivateActiveMenu()">Deactivate</button>` : 
+                `<button class="btn btn-sm btn-success" style="display: flex; justify-content: center; align-items: center;" onclick="event.stopPropagation(); setActiveMenu('${d.id}')">Activate</button>`
+              ) : 
+                `<button class="btn btn-sm btn-success" style="display: flex; justify-content: center; align-items: center;" disabled onclick="event.stopPropagation()">Activate</button>`
+              }
+              
+              ${isMessHead || menu.createdByUid === currentUser.uid ? 
+                `<button class="btn btn-sm btn-danger" style="display: flex; justify-content: center; align-items: center; grid-column: span 2" onclick="event.stopPropagation(); deleteSavedMenu('${d.id}')">Delete</button>` : 
+                `<button class="btn btn-sm btn-danger" style="display: flex; justify-content: center; align-items: center; grid-column: span 2" disabled onclick="event.stopPropagation()">Delete</button>`
+              }
+            </div>
+          </div>
+        `;
+      });
+      grid.innerHTML = html;
+    } catch(err) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1"><p style="color:var(--brand-danger)">Error: ${err.message}</p></div>`;
+    }
+  };
+
+  // Load menu into editing mode in the Design tab
+  window.editSavedMenu = async function(menuId) {
+    try {
+      const snap = await getDoc(doc(db, 'menus', menuId));
+      if (!snap.exists()) return;
+      const menu = snap.data();
+      
+      editingMenuId = menuId;
+      designGridState = menu.grid || {};
+      
+      // Store snapshots for checking dirty changes when switching tabs later
+      originalEditGridStateJSON = JSON.stringify(designGridState);
+      originalEditMenuName = menu.name || '';
+      
+      // Reset selections
+      selectedCells = [];
+      
+      // Switch tab & render editor FIRST (tab switch may call resetDesignEditorState on non-design tabs)
+      switchMenuTab('tab-design');
+      renderDesignEditorGrid();
+
+      // Populate name AFTER tab switch so it isn't cleared by resetDesignEditorState
+      document.getElementById('menu-name-input').value = menu.name || '';
+      
+      // Show Discard button
+      const discardBtn = document.getElementById('discard-menu-btn');
+      if (discardBtn) discardBtn.classList.remove('hidden');
+
+      // Change Save button text
+      const saveBtn = document.querySelector('#tab-design button.btn-primary');
+      if (saveBtn) saveBtn.textContent = 'Update Menu';
+      
+      showToast(`Loaded "${menu.name}" in editor`, "info");
+    } catch(err) {
+      showToast("Error loading menu for edit: " + err.message, "error");
+    }
+  };
+
+  // Copy a saved menu into Design Menu tab as a new template
+  window.copySavedMenu = async function(menuId) {
+    try {
+      const snap = await getDoc(doc(db, 'menus', menuId));
+      if (!snap.exists()) return;
+      const menu = snap.data();
+      
+      editingMenuId = null; // Fresh menu on save
+      designGridState = JSON.parse(JSON.stringify(menu.grid || {}));
+      
+      originalEditGridStateJSON = '';
+      originalEditMenuName = '';
+      selectedCells = [];
+      
+      switchMenuTab('tab-design');
+      renderDesignEditorGrid();
+
+      document.getElementById('menu-name-input').value = `${menu.name || 'Untitled Menu'} (Copy)`;
+      
+      const discardBtn = document.getElementById('discard-menu-btn');
+      if (discardBtn) discardBtn.classList.remove('hidden');
+
+      const saveBtn = document.querySelector('#tab-design button.btn-primary');
+      if (saveBtn) saveBtn.textContent = 'Save Menu';
+      
+      showToast(`Copied "${menu.name}". Edit details and click Save Menu.`, "success");
+    } catch(err) {
+      showToast("Error copying menu: " + err.message, "error");
+    }
+  };
+
+  // Preview a saved menu in modal overlay
+  window.previewSavedMenu = async function(menuId) {
+    try {
+      const snap = await getDoc(doc(db, 'menus', menuId));
+      if (!snap.exists()) return;
+      const menu = snap.data();
+      currentPreviewMenuObj = menu; 
+      document.getElementById('preview-modal-title').textContent = menu.name || "Menu Preview";
+      
+      let html = '';
+      DAYS.forEach(day => {
+        html += `<tr>`;
+        html += `<td class="day-column">${day}</td>`;
+        MEALS.forEach(meal => {
+          const key = `${day.toLowerCase()}_${meal.toLowerCase()}`;
+          const items = menu.grid?.[key] || [];
+          
+          html += `<td>`;
+          if (items.length === 0) {
+            html += `<span style="color:var(--text-muted);font-size:0.75rem">—</span>`;
+          } else {
+            html += `<div style="font-size: 0.82rem; line-height: 1.3; color: var(--text-normal);">${items.join(', ')}</div>`;
+          }
+          html += `</td>`;
+        });
+        html += `</tr>`;
+      });
+      document.getElementById('preview-menu-tbody').innerHTML = html;
+      
+      // Correctly add class show to modal overlay
+      document.getElementById('preview-modal-overlay').classList.add('show');
+    } catch(err) {
+      showToast("Error loading preview: " + err.message, "error");
+    }
+  };
+
+  window.closePreviewModal = function() {
+    document.getElementById('preview-modal-overlay').classList.remove('show');
+    currentPreviewMenuObj = null;
+  };
+
+  // Helper: batch-delete all mess_feedback documents
+  async function clearAllFeedback() {
+    const fbSnap = await getDocs(collection(db, 'mess_feedback'));
+    if (fbSnap.empty) return;
+    const batch = writeBatch(db);
+    fbSnap.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+  }
+
+  // Set active/current menu
+  window.setActiveMenu = async function(menuId) {
+    if (!isMessHead) {
+      showToast("Only the Mess Head can select the current menu.", "error");
+      return;
+    }
+    // If switching to a different menu, warn that all feedback will be reset
+    if (menuId !== currentActiveMenuId) {
+      const hasFeedback = !(await getDocs(collection(db, 'mess_feedback'))).empty;
+      if (hasFeedback) {
+        const confirmed = confirm(
+          "Changing the active menu will permanently delete ALL existing mess feedback submissions.\n\nAre you sure you want to continue?"
+        );
+        if (!confirmed) return;
+        try {
+          showLoading();
+          await clearAllFeedback();
+        } catch(e) {
+          hideLoading();
+          showToast("Error resetting feedback: " + e.message, "error");
+          return;
+        } finally {
+          hideLoading();
+        }
+      }
+    }
+    try {
+      await updateDoc(doc(db, 'meta', 'menu'), { currentMenuId: menuId });
+      currentActiveMenuId = menuId;
+      showToast("Active mess menu updated. All previous feedback has been reset.", "success");
+      logAction({ 
+        action: 'Activated Mess Menu', 
+        department: 'Mess', 
+        details: `Activated mess menu ID "${menuId}"`, 
+        user: currentUser 
+      });
+      await loadCurrentActiveMenu();
+      await loadSavedMenus();
+      switchMenuTab('tab-current');
+    } catch(err) {
+      showToast("Error updating active menu: " + err.message, "error");
+    }
+  };
+
+  // Make the current active menu inactive
+  window.deactivateActiveMenu = async function() {
+    if (!isMessHead) {
+      showToast("Only the Mess Head can deactivate the menu.", "error");
+      return;
+    }
+    try {
+      await updateDoc(doc(db, 'meta', 'menu'), { currentMenuId: null });
+      currentActiveMenuId = null;
+      showToast("Mess menu deactivated. Display cleared.", "success");
+      logAction({ 
+        action: 'Deactivated Mess Menu', 
+        department: 'Mess', 
+        details: `Deactivated active mess menu display`, 
+        user: currentUser 
+      });
+      await loadCurrentActiveMenu();
+      await loadSavedMenus();
+      switchMenuTab('tab-current');
+    } catch(err) {
+      showToast("Error deactivating menu: " + err.message, "error");
+    }
+  };
+
+  // Delete saved menu
+  window.deleteSavedMenu = async function(menuId) {
+    if (!confirm("Are you sure you want to delete this mess menu?")) return;
+    try {
+      await deleteDoc(doc(db, 'menus', menuId));
+      if (currentActiveMenuId === menuId) {
+        await updateDoc(doc(db, 'meta', 'menu'), { currentMenuId: null });
+        currentActiveMenuId = null;
+        await loadCurrentActiveMenu();
+      }
+      showToast("Menu deleted successfully!", "success");
+      logAction({ 
+        action: 'Deleted Mess Menu', 
+        department: 'Mess', 
+        details: `Deleted mess menu ID "${menuId}"`, 
+        user: currentUser 
+      });
+      await loadSavedMenus();
+    } catch(err) {
+      showToast("Error deleting menu: " + err.message, "error");
+    }
+  };
+
+  // Render Accordion
+  function renderCategoryAccordion() {
+    const container = document.getElementById('category-accordion');
+    let html = '';
+    
+    Object.keys(foodCategories).forEach(cat => {
+      const items = foodCategories[cat] || [];
+      html += `
+        <div class="category-group" id="accordion-group-${cat.replace(/\s+/g, '-')}">
+          <div class="category-header" onclick="toggleAccordion('${cat.replace(/\s+/g, '-')}')">
+            <span>${cat}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="arrow"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="category-items" id="accordion-items-${cat.replace(/\s+/g, '-')}">
+            ${items.map(item => `
+              <div class="food-selector-item" data-item-name="${item}" onclick="selectFoodItem('${item}')">${item}</div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  }
+
+  // Toggle Accordion Group
+  window.toggleAccordion = function(id) {
+    const el = document.getElementById(`accordion-items-${id}`);
+    const arrow = document.querySelector(`#accordion-group-${id} .arrow`);
+    if (el.style.display === 'none') {
+      el.style.display = 'flex';
+      arrow.style.transform = 'rotate(0deg)';
+    } else {
+      el.style.display = 'none';
+      arrow.style.transform = 'rotate(-90deg)';
+    }
+  };
+
+  // Filter food items and categories inside selector
+  window.filterSelectorItems = function() {
+    const query = document.getElementById('food-search-input').value.toLowerCase().trim();
+    
+    Object.keys(foodCategories).forEach(cat => {
+      const id = cat.replace(/\s+/g, '-');
+      const groupEl = document.getElementById(`accordion-group-${id}`);
+      const itemsEl = document.getElementById(`accordion-items-${id}`);
+      const arrow = document.querySelector(`#accordion-group-${id} .arrow`);
+      if (!groupEl || !itemsEl) return;
+
+      const catMatches = cat.toLowerCase().includes(query);
+      let hasMatchingItem = false;
+
+      const itemEls = itemsEl.querySelectorAll('.food-selector-item');
+      itemEls.forEach(item => {
+        const name = item.getAttribute('data-item-name').toLowerCase();
+        if (catMatches || query === '' || name.includes(query)) {
+          item.style.display = 'block';
+          hasMatchingItem = true;
+        } else {
+          item.style.display = 'none';
+        }
+      });
+
+      if (query === '') {
+        groupEl.style.display = 'block';
+        itemsEl.style.display = 'flex';
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+      } else if (catMatches || hasMatchingItem) {
+        groupEl.style.display = 'block';
+        itemsEl.style.display = 'flex';
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+      } else {
+        groupEl.style.display = 'none';
+      }
+    });
+  };
+
+  // Render Grid Editor Table
+  function renderDesignEditorGrid() {
+    const tbody = document.getElementById('design-editor-tbody');
+    let html = '';
+    
+    DAYS.forEach(day => {
+      const dayLower = day.toLowerCase();
+      html += `<tr>`;
+      
+      // Weekday Row Header — clicking directly selects cells in row, headers centered
+      html += `
+        <td class="day-column header-row-btn" 
+            id="hdr-row-${dayLower}" 
+            onclick="selectRowHeader('${dayLower}', event)" 
+            style="cursor: pointer !important; user-select: none;">
+          ${day}
+        </td>
+      `;
+
+      MEALS.forEach(meal => {
+        const key = `${day.toLowerCase()}_${meal.toLowerCase()}`;
+        const cellItems = designGridState[key] || [];
+        const isSel = selectedCells.includes(key);
+        
+        html += `
+          <td class="design-cell ${isSel ? 'selected' : ''}" 
+              id="cell-${key}" 
+              onclick="toggleCellSelection('${key}', event)">
+            <div class="cell-inner-wrapper" id="inner-${key}">
+              ${cellItems.map(item => `
+                <span class="food-tag">
+                  ${item}
+                  <span class="remove-btn" onclick="removeSingleItem('${key}', '${item}', event)">&times;</span>
+                </span>
+              `).join('')}
+            </div>
+          </td>
+        `;
+      });
+      html += `</tr>`;
+    });
+    tbody.innerHTML = html;
+    applyDesignStyles(); // Refresh table visual customization classes
+    refreshSelectionUI(); // Refresh selected highlights
+  }
+
+  // Toggle select/deselect all table cells when clicking "Day" header or Table mode
+  window.toggleSelectAllTable = function() {
+    const allCells = [];
+    DAYS.forEach(d => {
+      MEALS.forEach(m => {
+        allCells.push(`${d.toLowerCase()}_${m.toLowerCase()}`);
+      });
+    });
+
+    const isAllSelected = allCells.every(k => selectedCells.includes(k));
+    if (isAllSelected) {
+      selectedCells = [];
+    } else {
+      selectedCells = [...allCells];
+    }
+    refreshSelectionUI();
+  };
+
+  // Toggle selection on grid cell
+  window.toggleCellSelection = function(key, event) {
+    if (event.target.classList.contains('remove-btn')) return;
+
+    if (event.shiftKey || event.ctrlKey || event.metaKey) {
+      const idx = selectedCells.indexOf(key);
+      if (idx > -1) {
+        selectedCells.splice(idx, 1);
+      } else {
+        selectedCells.push(key);
+      }
+    } else {
+      // Single cell click replaces previous selection with ONLY this cell
+      selectedCells = [key];
+    }
+
+    refreshSelectionUI();
+  };
+
+  // Directly select row cells on row header click, replaces previous selection unless Shift/Ctrl pressed
+  window.selectRowHeader = function(dayKey, event) {
+    const rowCells = MEALS.map(m => `${dayKey}_${m.toLowerCase()}`);
+    const isShiftCtrl = event && (event.shiftKey || event.ctrlKey || event.metaKey);
+
+    if (isShiftCtrl) {
+      const isAllSelected = rowCells.every(k => selectedCells.includes(k));
+      if (isAllSelected) {
+        selectedCells = selectedCells.filter(k => !rowCells.includes(k));
+      } else {
+        rowCells.forEach(k => {
+          if (!selectedCells.includes(k)) selectedCells.push(k);
+        });
+      }
+    } else {
+      selectedCells = [...rowCells];
+    }
+    refreshSelectionUI();
+  };
+
+  // Directly select column cells on column header click, replaces previous selection unless Shift/Ctrl pressed
+  window.selectColumnHeader = function(mealKey, event) {
+    const colCells = DAYS.map(d => `${d.toLowerCase()}_${mealKey.toLowerCase()}`);
+    const isShiftCtrl = event && (event.shiftKey || event.ctrlKey || event.metaKey);
+
+    if (isShiftCtrl) {
+      const isAllSelected = colCells.every(k => selectedCells.includes(k));
+      if (isAllSelected) {
+        selectedCells = selectedCells.filter(k => !colCells.includes(k));
+      } else {
+        colCells.forEach(k => {
+          if (!selectedCells.includes(k)) selectedCells.push(k);
+        });
+      }
+    } else {
+      selectedCells = [...colCells];
+    }
+    refreshSelectionUI();
+  };
+
+  // Helper to refresh UI selected states and header highlight classes
+  function refreshSelectionUI() {
+    // 1. Cells highlight
+    document.querySelectorAll('.design-cell').forEach(c => c.classList.remove('selected'));
+    selectedCells.forEach(k => {
+      const el = document.getElementById(`cell-${k}`);
+      if (el) el.classList.add('selected');
+    });
+
+    // 2. Meal column headers highlight
+    MEALS.forEach(m => {
+      const meal = m.toLowerCase();
+      const isAllSelected = DAYS.every(d => selectedCells.includes(`${d.toLowerCase()}_${meal}`));
+      const el = document.getElementById(`hdr-col-${meal}`);
+      if (el) {
+        if (isAllSelected && selectedCells.length > 0) el.classList.add('selected-hdr');
+        else el.classList.remove('selected-hdr');
+      }
+    });
+
+    // 3. Weekday row headers highlight
+    DAYS.forEach(d => {
+      const day = d.toLowerCase();
+      const isAllSelected = MEALS.every(m => selectedCells.includes(`${day}_${m.toLowerCase()}`));
+      const el = document.getElementById(`hdr-row-${day}`);
+      if (el) {
+        if (isAllSelected && selectedCells.length > 0) el.classList.add('selected-hdr');
+        else el.classList.remove('selected-hdr');
+      }
+    });
+
+    // 4. "Day" header highlight if whole table is selected
+    const allCellsCount = DAYS.length * MEALS.length;
+    const dayHdr = document.getElementById('hdr-col-all');
+    if (dayHdr) {
+      if (selectedCells.length === allCellsCount && allCellsCount > 0) dayHdr.classList.add('selected-hdr');
+      else dayHdr.classList.remove('selected-hdr');
+    }
+  }
+
+  // Handle Selection Mode Change
+  window.onSelectionModeChange = function() {
+    const mode = document.querySelector('input[name="select-mode"]:checked').value;
+    if (mode === 'table') {
+      selectedCells = [];
+      DAYS.forEach(d => {
+        MEALS.forEach(m => {
+          selectedCells.push(`${d.toLowerCase()}_${m.toLowerCase()}`);
+        });
+      });
+    } else {
+      selectedCells = [];
+    }
+    refreshSelectionUI();
+  };
+
+  // Add Item to selected cell(s)
+  window.selectFoodItem = function(itemName) {
+    if (selectedCells.length === 0) {
+      showToast("Please select one or more cells in the menu grid first.", "warning");
+      return;
+    }
+
+    selectedCells.forEach(key => {
+      const currentItems = designGridState[key] || [];
+      if (!currentItems.includes(itemName)) {
+        designGridState[key] = [...currentItems, itemName];
+      }
+    });
+
+    renderDesignEditorGrid();
+  };
+
+  // Remove single item via tag click
+  window.removeSingleItem = function(cellKey, itemName, event) {
+    if (event) event.stopPropagation();
+    const currentItems = designGridState[cellKey] || [];
+    designGridState[cellKey] = currentItems.filter(item => item !== itemName);
+    renderDesignEditorGrid();
+  };
+
+  // Clear entire design grid state
+  window.clearFullDesignGrid = function() {
+    if (!confirm("Are you sure you want to clear the entire menu grid?")) return;
+    designGridState = {};
+    renderDesignEditorGrid();
+    showToast("Grid cleared", "info");
+  };
+
+  // Clear item contents in selected cells
+  window.clearSelectedCells = function() {
+    if (selectedCells.length === 0) {
+      showToast("No cells selected to remove items from", "warning");
+      return;
+    }
+    selectedCells.forEach(key => {
+      designGridState[key] = [];
+    });
+    renderDesignEditorGrid();
+    showToast("Items removed from selected cells", "info");
+  };
+
+  // Save or Update the designed menu in Firestore
+  window.saveDesignMenu = async function() {
+    const nameInputVal = document.getElementById('menu-name-input').value.trim();
+    if (!nameInputVal) {
+      showToast("Please enter a menu name.", "warning");
+      return;
+    }
+
+    // Verify grid has at least some data
+    const hasGridData = Object.values(designGridState).some(arr => arr && arr.length > 0);
+    if (!hasGridData) {
+      showToast("Cannot save an empty menu grid. Please add some food items.", "warning");
+      return;
+    }
+
+    try {
+      showLoading();
+      const menuData = {
+        name: nameInputVal,
+        grid: designGridState,
+        createdByUid: currentUser.uid,
+        createdByName: currentUser.name,
+        createdByUniqueId: currentUser.uniqueId || '—',
+        createdAt: serverTimestamp()
+      };
+
+      if (editingMenuId) {
+        // If editing the currently-active menu, find which cells changed and record reset timestamps
+        if (editingMenuId === currentActiveMenuId) {
+          let oldGrid = {};
+          try {
+            const oldSnap = await getDoc(doc(db, 'menus', editingMenuId));
+            if (oldSnap.exists()) oldGrid = oldSnap.data().grid || {};
+          } catch(e) { /* proceed without diff */ }
+
+          const now = new Date().toISOString();
+          const cellResetAt = {};
+          const allKeys = new Set([...Object.keys(oldGrid), ...Object.keys(designGridState)]);
+          allKeys.forEach(key => {
+            const oldItems = JSON.stringify((oldGrid[key] || []).slice().sort());
+            const newItems = JSON.stringify((designGridState[key] || []).slice().sort());
+            if (oldItems !== newItems) {
+              cellResetAt[key] = now;
+            }
+          });
+
+          if (Object.keys(cellResetAt).length > 0) {
+            // Merge new reset timestamps with any existing ones
+            const existingSnap = await getDoc(doc(db, 'menus', editingMenuId));
+            const existingResetAt = existingSnap.exists() ? (existingSnap.data().cellResetAt || {}) : {};
+            menuData.cellResetAt = { ...existingResetAt, ...cellResetAt };
+          }
+        }
+
+        // Update existing document
+        await setDoc(doc(db, 'menus', editingMenuId), menuData, { merge: true });
+        showToast(`Menu "${nameInputVal}" updated successfully!`, "success");
+        logAction({
+          action: 'Updated Mess Menu',
+          department: 'Mess',
+          details: `Updated details and items for menu "${nameInputVal}"`,
+          user: currentUser
+        });
+      } else {
+        // Create new document
+        await addDoc(collection(db, 'menus'), menuData);
+        showToast(`New menu "${nameInputVal}" saved successfully!`, "success");
+        logAction({
+          action: 'Created Mess Menu',
+          department: 'Mess',
+          details: `Created new mess menu "${nameInputVal}"`,
+          user: currentUser
+        });
+      }
+
+      resetDesignEditorState();
+      await loadSavedMenus();
+      // Reload active menu so cellResetAt is picked up in feedback view
+      if (editingMenuId === currentActiveMenuId) await loadCurrentActiveMenu();
+      switchMenuTab('tab-saved');
+    } catch(err) {
+      console.error(err);
+      showToast("Error saving menu: " + err.message, "error");
+    } finally {
+      hideLoading();
+    }
+  };
+
+  // Settings functions removed (moved to admin/mess-settings.html)
+
+
+  // ============================================================
+  // EXPORT / DOWNLOAD FUNCTIONS (CSV, PDF, PNG)
+  // ============================================================
+
+  function generateCSV(menuObj) {
+    if (!menuObj) return '';
+    let csvContent = `HMC Mess Menu: ${menuObj.name}\r\n`;
+    csvContent += `Created By: ${menuObj.createdByName || 'HMC Member'}\r\n\r\n`;
+    csvContent += 'Day,Breakfast,Lunch,Snacks,Dinner\r\n';
+
+    DAYS.forEach(day => {
+      let row = `"${day}"`;
+      MEALS.forEach(meal => {
+        const key = `${day.toLowerCase()}_${meal.toLowerCase()}`;
+        const items = menuObj.grid?.[key] || [];
+        row += `,"${items.join('; ')}"`;
+      });
+      csvContent += row + '\r\n';
+    });
+    return csvContent;
+  }
+
+  function triggerDownload(content, filename, contentType) {
+    const blob = new Blob([content], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function printMenuWindow(menuObj) {
+    if (!menuObj) return;
+    const printWin = window.open('', '_blank');
+    let rowsHtml = '';
+    
+    DAYS.forEach(day => {
+      rowsHtml += `<tr><td style="font-weight:bold; border:1px solid #ddd; padding:8px">${day}</td>`;
+      MEALS.forEach(meal => {
+        const key = `${day.toLowerCase()}_${meal.toLowerCase()}`;
+        const items = menuObj.grid?.[key] || [];
+        rowsHtml += `<td style="border:1px solid #ddd; padding:8px">${items.join(', ') || '—'}</td>`;
+      });
+      rowsHtml += '</tr>';
+    });
+
+    printWin.document.write(`
+      <html>
+        <head>
+          <title>${menuObj.name}</title>
+          <style>
+            body { font-family: sans-serif; padding: 20px; }
+            h2 { color: #7c3aed; margin-bottom: 5px; }
+            .meta { color: #555; margin-bottom: 20px; font-size: 0.9rem; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { background: #f4f4f4; text-align: left; font-weight: bold; border:1px solid #ddd; padding:10px; }
+            @media print {
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body onload="window.print();window.close();">
+          <h2>HMC Mess Menu: ${menuObj.name}</h2>
+          <div class="meta">Created by: ${menuObj.createdByName} (${menuObj.createdByUniqueId || '—'})</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Breakfast</th>
+                <th>Lunch</th>
+                <th>Snacks</th>
+                <th>Dinner</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `);
+    printWin.document.close();
+  }
+
+  // Helper for multi-line canvas text wrapping
+  function wrapCanvasText(ctx, text, maxWidth) {
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = '';
+
+    words.forEach(word => {
+      const testLine = currentLine ? currentLine + ' ' + word : word;
+      if (ctx.measureText(testLine).width <= maxWidth) {
+        currentLine = testLine;
+      } else {
+        if (currentLine) lines.push(currentLine);
+        currentLine = word;
+      }
+    });
+    if (currentLine) lines.push(currentLine);
+    return lines;
+  }
+
+  function drawMenuToPNG(menuObj) {
+    if (!menuObj) return;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 800;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const grad = ctx.createLinearGradient(0, 0, canvas.width, 140);
+    grad.addColorStop(0, '#1e1b4b');
+    grad.addColorStop(1, '#311042');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, 140);
+
+    ctx.fillStyle = '#7c3aed';
+    ctx.font = 'bold 32px sans-serif';
+    ctx.fillText("IIM BODHGAYA — HMC MESS MENU", 50, 60);
+
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '22px sans-serif';
+    ctx.fillText(menuObj.name || 'Mess Menu Board', 50, 100);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = 'italic 16px sans-serif';
+    ctx.fillText(`Created by: ${menuObj.createdByName || 'HMC Member'}`, 850, 100);
+
+    const startX = 50;
+    const startY = 180;
+    const totalWidth = 1100;
+    const rowHeight = 75;
+    const colWidths = [150, 237, 237, 237, 237]; 
+
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(startX, startY, totalWidth, 50);
+
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(startX, startY, totalWidth, 50 + (rowHeight * 7));
+
+    const headers = ['Day', 'Breakfast', 'Lunch', 'Snacks', 'Dinner'];
+    let currentX = startX;
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = 'bold 16px sans-serif';
+    
+    headers.forEach((h, idx) => {
+      ctx.fillText(h, currentX + 15, startY + 32);
+      if (idx < headers.length - 1) {
+        ctx.beginPath();
+        ctx.moveTo(currentX + colWidths[idx], startY);
+        ctx.lineTo(currentX + colWidths[idx], startY + 50 + (rowHeight * 7));
+        ctx.stroke();
+      }
+      currentX += colWidths[idx];
+    });
+
+    DAYS.forEach((day, rIdx) => {
+      const yPos = startY + 50 + (rIdx * rowHeight);
+      
+      if (rIdx % 2 === 1) {
+        ctx.fillStyle = 'rgba(255,255,255,0.015)';
+        ctx.fillRect(startX, yPos, totalWidth, rowHeight);
+      }
+
+      ctx.strokeStyle = '#334155';
+      ctx.beginPath();
+      ctx.moveTo(startX, yPos + rowHeight);
+      ctx.lineTo(startX + totalWidth, yPos + rowHeight);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText(day, startX + 15, yPos + 42);
+
+      let cellX = startX + colWidths[0];
+      MEALS.forEach((meal, mIdx) => {
+        const key = `${day.toLowerCase()}_${meal.toLowerCase()}`;
+        const items = menuObj.grid?.[key] || [];
+        const cellWidth = colWidths[mIdx + 1];
+        const paddingX = 14;
+        const maxTextWidth = cellWidth - (paddingX * 2);
+
+        if (items.length === 0) {
+          ctx.fillStyle = '#64748b';
+          ctx.font = '14px sans-serif';
+          ctx.fillText('—', cellX + paddingX, yPos + 42);
+        } else {
+          ctx.fillStyle = '#cbd5e1';
+          const fullText = items.join(', ');
+          
+          ctx.font = '500 13px sans-serif';
+          let lines = wrapCanvasText(ctx, fullText, maxTextWidth);
+
+          if (lines.length > 3) {
+            ctx.font = '500 11px sans-serif';
+            lines = wrapCanvasText(ctx, fullText, maxTextWidth);
+          }
+
+          const lineHeight = lines.length > 2 ? 18 : 22;
+          const totalTextHeight = lines.length * lineHeight;
+          let startYOffset = (rowHeight - totalTextHeight) / 2 + (lineHeight * 0.7);
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(cellX + 2, yPos + 2, cellWidth - 4, rowHeight - 4);
+          ctx.clip();
+
+          lines.slice(0, 3).forEach((line, lIdx) => {
+            let textToDraw = line;
+            if (lIdx === 2 && lines.length > 3) {
+              if (!textToDraw.endsWith('…')) textToDraw += '…';
+            }
+            ctx.fillText(textToDraw, cellX + paddingX, yPos + startYOffset + (lIdx * lineHeight));
+          });
+
+          ctx.restore();
+        }
+        cellX += cellWidth;
+      });
+    });
+
+    const link = document.createElement('a');
+    link.download = `${menuObj.name.replace(/\s+/g, '_')}_Mess_Menu.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+
+  window.downloadActiveCSV = function() {
+    if (!currentActiveMenuObj) return;
+    const csv = generateCSV(currentActiveMenuObj);
+    triggerDownload(csv, `${currentActiveMenuObj.name.replace(/\s+/g, '_')}_Mess_Menu.csv`, 'text/csv;charset=utf-8;');
+  };
+
+  window.downloadActivePDF = function() {
+    if (!currentActiveMenuObj) return;
+    printMenuWindow(currentActiveMenuObj);
+  };
+
+  window.downloadActivePNG = function() {
+    if (!currentActiveMenuObj) return;
+    drawMenuToPNG(currentActiveMenuObj);
+  };
+
+  window.downloadPreviewCSV = function() {
+    if (!currentPreviewMenuObj) return;
+    const csv = generateCSV(currentPreviewMenuObj);
+    triggerDownload(csv, `${currentPreviewMenuObj.name.replace(/\s+/g, '_')}_Mess_Menu.csv`, 'text/csv;charset=utf-8;');
+  };
+
+  window.downloadPreviewPDF = function() {
+    if (!currentPreviewMenuObj) return;
+    printMenuWindow(currentPreviewMenuObj);
+  };
+
+  window.downloadPreviewPNG = function() {
+    if (!currentPreviewMenuObj) return;
+    drawMenuToPNG(currentPreviewMenuObj);
+  };
+
+</script>
+</body>
+</html>

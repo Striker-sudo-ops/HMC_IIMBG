@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Tasks — HMC Portal</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/tasks.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <script type="module">import { initTheme } from './js/theme.js'; initTheme();</script>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Task Board</h1>
+        <p class="page-subtitle">Manage and track your tasks</p>
+      </div>
+      <div class="flex gap-3">
+        <div class="search-bar" style="width:220px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Search tasks…" id="task-search" oninput="filterTasks()">
+        </div>
+        <a href="admin/task-manager.html" class="btn btn-primary head-or-admin-only hidden">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Task Manager
+        </a>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <!-- Filters -->
+      <div class="task-filter-bar">
+        <div class="tabs" id="status-tabs">
+          <button class="tab active" onclick="setFilter('all', this)">All Tasks</button>
+          <button class="tab" id="tab-assigned" onclick="setFilter('assigned', this)">Assigned</button>
+          <button class="tab" id="tab-pending" onclick="setFilter('pending_verification', this)">Pending Verification</button>
+          <button class="tab" onclick="setFilter('completed', this)">Completed</button>
+        </div>
+        <select class="form-control" id="category-filter" style="width:180px" onchange="filterTasks()">
+          <option value="">All Categories</option>
+        </select>
+      </div>
+
+      <!-- Task Grid -->
+      <div class="tasks-grid" id="tasks-grid">
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="spinner"></div>
+          <p>Loading tasks…</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Mark as Complete (Assignee notifies assigner)           -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="submit-work-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">✓ I've Completed This Task</h3>
+      <button class="modal-close" onclick="closeModal('submit-work-modal')">&times;</button>
+    </div>
+    <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:var(--sp-4);font-size:0.85rem;color:var(--brand-success)">
+      This will notify your assigner that the task is done. They will review and officially mark it as complete (or transfer it).
+    </div>
+    <input type="hidden" id="submit-work-task-id">
+    <div style="margin-bottom:var(--sp-4)">
+      <label class="form-label">What did you do? (Completion notes / proof) *</label>
+      <textarea id="submit-work-notes" class="form-control" rows="4" placeholder="Describe what you completed — include links, photos, or any relevant details…"></textarea>
+    </div>
+    <div class="flex gap-3">
+      <button class="btn btn-success flex-1" id="btn-do-submit-work" onclick="submitWorkDone()">✓ Notify Assigner — Task Done</button>
+      <button class="btn btn-secondary" onclick="closeModal('submit-work-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Verify & Complete (Assigner confirms assignee's work)   -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="verify-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">✓ Verify &amp; Mark Complete</h3>
+      <button class="modal-close" onclick="closeModal('verify-modal')">&times;</button>
+    </div>
+    <input type="hidden" id="verify-task-id">
+    <input type="hidden" id="verify-assignee-uid">
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:var(--sp-4)">
+      <div style="font-size:0.75rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Assignee's Completion Notes</div>
+      <div id="verify-notes-display" style="font-size:0.88rem;line-height:1.5"></div>
+    </div>
+    <label class="form-label">Rate Work Quality (Optional)</label>
+    <div class="rating-stars-lg" id="verify-stars" style="margin-bottom:8px">
+      <span class="star" data-val="1" onclick="selectVerifyRating(1)">★</span>
+      <span class="star" data-val="2" onclick="selectVerifyRating(2)">★</span>
+      <span class="star" data-val="3" onclick="selectVerifyRating(3)">★</span>
+      <span class="star" data-val="4" onclick="selectVerifyRating(4)">★</span>
+      <span class="star" data-val="5" onclick="selectVerifyRating(5)">★</span>
+    </div>
+    <p id="verify-rating-label" style="text-align:center;color:var(--text-muted);font-size:0.82rem;margin-bottom:var(--sp-4)">No rating (skip)</p>
+    <div class="flex gap-3">
+      <button class="btn btn-primary flex-1" id="btn-do-verify" onclick="submitVerification()">✓ Mark as Completed</button>
+      <button class="btn btn-secondary" onclick="closeModal('verify-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Transfer Task (Assigner reassigns to someone else)      -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="transfer-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">↔ Transfer Task</h3>
+      <button class="modal-close" onclick="closeModal('transfer-modal')">&times;</button>
+    </div>
+    <div style="margin-bottom:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-3)">
+      <input type="hidden" id="transfer-task-id">
+      <div class="form-group">
+        <label class="form-label">Transfer To Member *</label>
+        <select id="transfer-assignee-select" class="form-control">
+          <option value="">Select new member…</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason for Transfer</label>
+        <input type="text" id="transfer-reason-input" class="form-control" placeholder="e.g. Workload reallocation / member unavailable">
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <button class="btn btn-primary flex-1" id="btn-do-transfer" onclick="submitTaskTransfer()">Transfer Task</button>
+      <button class="btn btn-secondary" onclick="closeModal('transfer-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Request Transfer (Assignee asks to be relieved)         -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="request-transfer-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Request Task Transfer</h3>
+      <button class="modal-close" onclick="closeModal('request-transfer-modal')">&times;</button>
+    </div>
+    <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:var(--sp-4);font-size:0.85rem;color:#fbbf24">
+      This will notify your assigner that you cannot complete this task. They can then transfer it to someone else.
+    </div>
+    <input type="hidden" id="req-transfer-task-id">
+    <div style="margin-bottom:var(--sp-4)">
+      <label class="form-label">Why can't you complete this task? *</label>
+      <textarea id="req-transfer-reason" class="form-control" rows="3" placeholder="e.g. I don't have access to the required resources / schedule conflict…"></textarea>
+    </div>
+    <div class="flex gap-3">
+      <button class="btn btn-warning flex-1" id="btn-do-req-transfer" onclick="submitRequestTransfer()">Send Request to Assigner</button>
+      <button class="btn btn-secondary" onclick="closeModal('request-transfer-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Rate Quality (Assigner rates after completion)          -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="rate-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Rate Task Quality</h3>
+      <button class="modal-close" onclick="closeModal('rate-modal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:var(--sp-2)">
+      How would you rate the quality of work done on <strong id="rate-task-id"></strong>?
+    </p>
+    <div class="rating-stars-lg" id="rate-stars">
+      <span class="star" data-val="1" onclick="selectRating(1)">★</span>
+      <span class="star" data-val="2" onclick="selectRating(2)">★</span>
+      <span class="star" data-val="3" onclick="selectRating(3)">★</span>
+      <span class="star" data-val="4" onclick="selectRating(4)">★</span>
+      <span class="star" data-val="5" onclick="selectRating(5)">★</span>
+    </div>
+    <p id="rating-label" style="text-align:center;color:var(--text-muted);font-size:0.85rem;margin-bottom:var(--sp-5)">Click a star to rate</p>
+    <div class="flex gap-3">
+      <button class="btn btn-primary flex-1" id="submit-rating-btn" onclick="submitRating()" disabled>Submit Rating</button>
+      <button class="btn btn-secondary" onclick="closeModal('rate-modal')">Skip</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from './js/auth.js';
+  import { renderSidebar, initSidebarTheme } from './js/sidebar.js';
+  import { getAllMembers } from './js/members.js';
+  import {
+    getTasksForUser, getTasksAssignedBy, getCategories,
+    submitTaskForVerification, verifyAndCompleteTask,
+    transferTask, requestTaskTransfer, rateTask, postDoubt, replyToDoubt
+  } from './js/tasks.js';
+  import { formatDate, starsHTML, showToast, openModal, closeModal, daysUntil, deadlineClass } from './js/utils.js';
+  import { logAction } from './js/audit-logger.js';
+
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('tasks.html');
+  initSidebarTheme();
+
+  let allTasks     = [];
+  let currentUser  = null;
+  let categories   = [];
+  let allMembers   = [];
+  let activeFilter = 'all';
+
+  // Rating state
+  let ratingTaskDocId = null, ratingAssigneeUid = null, selectedRating = 0, verifySelectedRating = 0;
+
+  window.closeModal = closeModal;
+
+  // ═══════════════════════════════════════════════════════════════
+  // CORE: Load all tasks relevant to me from Firestore
+  // ═══════════════════════════════════════════════════════════════
+  async function loadAllTasks() {
+    const grid = document.getElementById('tasks-grid');
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="spinner"></div><p>Loading tasks…</p></div>';
+
+    let tasksForMe   = [];
+    let assignedByMe = [];
+
+    // Fetch tasks assigned TO me — this is what shows in "Assigned to Me" tab
+    try {
+      tasksForMe = await getTasksForUser(currentUser.uid);
+    } catch (err) {
+      console.error('[Tasks] getTasksForUser failed:', err);
+      showToast('Could not load your assigned tasks: ' + (err.message || err), 'error');
+    }
+
+    // Fetch tasks assigned BY me — so I can verify / transfer as assigner
+    try {
+      assignedByMe = await getTasksAssignedBy(currentUser.uid);
+    } catch (err) {
+      console.warn('[Tasks] getTasksAssignedBy failed (non-fatal):', err);
+    }
+
+    // Merge: tasks assigned TO me are priority so role flags work correctly
+    const taskMap = new Map();
+    tasksForMe.forEach(t  => taskMap.set(t.id, t));
+    assignedByMe.forEach(t => { if (!taskMap.has(t.id)) taskMap.set(t.id, t); });
+    allTasks = Array.from(taskMap.values());
+
+    // Sort newest first (handle Firestore Timestamp, seconds, or ISO string)
+    allTasks.sort((a, b) => {
+      const ms = t => {
+        const d = t.assignedDate || t.createdAt;
+        if (!d) return 0;
+        if (typeof d.toDate === 'function') return d.toDate().getTime();
+        if (d.seconds) return d.seconds * 1000;
+        return new Date(d).getTime() || 0;
+      };
+      return ms(b) - ms(a);
+    });
+
+    // Update tab badges
+    const pendingCount = allTasks.filter(t => t.status === 'pending_verification').length;
+    const assignedCount = allTasks.filter(t =>
+      t.assignedToUid === currentUser.uid &&
+      ['assigned', 'pending', 'in_progress'].includes(t.status)
+    ).length;
+    const tabAssigned = document.getElementById('tab-assigned');
+    const tabPending  = document.getElementById('tab-pending');
+    if (tabAssigned) tabAssigned.innerHTML = `Assigned${assignedCount > 0 ? ` <span class="nav-badge" style="position:relative;top:0;margin-left:4px">${assignedCount}</span>` : ''}`;
+    if (tabPending)  tabPending.innerHTML  = `Pending Verification${pendingCount > 0 ? ` <span class="nav-badge" style="position:relative;top:0;margin-left:4px;background:var(--brand-warning);color:#000">${pendingCount}</span>` : ''}`;
+
+    renderTasks();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // INIT
+  // ═══════════════════════════════════════════════════════════════
+  initAuthGuard({
+    requireLogin: true,
+    onReady: async (user) => {
+      currentUser = user;
+      populateSidebarUser(user);
+
+      [categories, allMembers] = await Promise.all([
+        getCategories().catch(() => []),
+        getAllMembers().catch(() => [])
+      ]);
+
+      const catSelect = document.getElementById('category-filter');
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.name;
+        opt.textContent = cat.name;
+        catSelect.appendChild(opt);
+      });
+
+      await loadAllTasks();
+    }
+  });
+
+  // Tab switching always reloads from Firestore — so assigner sees submissions in real time
+  window.setFilter = async function(filter, btn) {
+    activeFilter = filter;
+    document.querySelectorAll('#status-tabs .tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    await loadAllTasks();
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // RENDER TASKS
+  // ═══════════════════════════════════════════════════════════════
+  function renderTasks() {
+    const search    = document.getElementById('task-search').value.toLowerCase();
+    const catFilter = document.getElementById('category-filter').value;
+
+    let filtered = allTasks.filter(t => {
+      if (activeFilter === 'assigned') {
+        // Show tasks assigned TO me that are still active (any non-completed status)
+        if (t.assignedToUid !== currentUser.uid) return false;
+        const activeStatuses = ['assigned', 'pending', 'in_progress'];
+        if (!activeStatuses.includes(t.status)) return false;
+      } else if (activeFilter === 'pending_verification') {
+        if (t.status !== 'pending_verification') return false;
+        // Show if I'm the assignee (I submitted) OR if I'm the assigner (I need to verify)
+        const isMine = t.assignedToUid === currentUser.uid || t.assignedByUid === currentUser.uid;
+        if (!isMine) return false;
+      } else if (activeFilter === 'completed') {
+        if (t.status !== 'completed') return false;
+      }
+
+      if (catFilter && t.category !== catFilter) return false;
+      if (search) {
+        const haystack = [t.taskId, t.description, t.title, t.category, t.assignedToName, t.assignedByName]
+          .join(' ').toLowerCase();
+        if (!haystack.includes(search)) return false;
+      }
+      return true;
+    });
+
+    const grid = document.getElementById('tasks-grid');
+    if (!filtered.length) {
+      const msgs = {
+        assigned:             'No active tasks assigned to you.',
+        pending_verification: 'No tasks are awaiting verification.',
+        completed:            'No completed tasks yet.',
+        all:                  'No tasks found.'
+      };
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <h3>${msgs[activeFilter] || 'No tasks found'}</h3>
+        <p style="font-size:0.85rem;color:var(--text-muted)">${activeFilter === 'assigned' ? 'Tasks assigned to you will appear here.' : 'Try a different filter or ask your head to assign tasks.'}</p>
+      </div>`;
+      return;
+    }
+    grid.innerHTML = filtered.map(t => renderTaskCard(t)).join('');
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // RENDER SINGLE TASK CARD
+  // ═══════════════════════════════════════════════════════════════
+  function renderTaskCard(task) {
+    const isAssignedToMe = task.assignedToUid === currentUser.uid;
+    const isAssignedByMe = task.assignedByUid === currentUser.uid;
+    const days       = daysUntil(task.deadline);
+    const deadlineCls = deadlineClass(task.deadline);
+    const doubts     = task.doubts || [];
+    const cleanId    = (task.taskId && task.taskId !== 'undefined') ? task.taskId : `#T_${(task.id||'').slice(0,4).toUpperCase()}`;
+
+    // ── Build action buttons based on role + status ──────────────
+    let actions = '';
+
+    if (task.type === 'food_testing') {
+      // Food testing tasks always link to the food testing page
+      if (task.status !== 'completed') {
+        actions = `<a href="food-testing.html?assignmentId=${task.assignmentId || task.id}"
+          class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;text-decoration:none">
+          Open Food Testing</a>`;
+      }
+    } else if (task.type === 'water_tds') {
+      if (task.status !== 'completed') {
+        actions = `<a href="water-tds.html?assignmentId=${task.assignmentId || task.id}"
+          class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;text-decoration:none">
+          Open Water TDS</a>`;
+      }
+    } else if (task.type === 'hygiene_clean') {
+      if (task.status !== 'completed') {
+        actions = `<a href="hygiene-clean.html?assignmentId=${task.assignmentId || task.id}"
+          class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;text-decoration:none">
+          Open Hygiene Clean</a>`;
+      }
+    } else {
+      // ASSIGNEE ACTIONS
+      if (isAssignedToMe && (task.status === 'assigned' || task.status === 'in_progress')) {
+        actions += `
+          <button class="btn btn-success btn-sm" onclick="openMarkCompleteModal('${task.id}')"
+            title="Notify your assigner that you're done">
+            ✓ I'm Done — Notify Assigner
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="openReqTransferModal('${task.id}')"
+            title="Ask your assigner to give this task to someone else">
+            ↔ Can't Do This
+          </button>`;
+      }
+
+      if (isAssignedToMe && task.status === 'pending_verification') {
+        actions += `
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span class="badge badge-warning" style="font-size:0.78rem;padding:5px 10px">
+              Awaiting assigner review
+            </span>
+            <span style="font-size:0.72rem;color:var(--text-muted)">
+              Your assigner will verify and close this task.
+            </span>
+          </div>`;
+      }
+
+      /* ─── ASSIGNER ACTIONS ─── */
+      if (isAssignedByMe && (task.status === 'assigned' || task.status === 'pending')) {
+        actions += `
+          <button class="btn btn-secondary btn-sm" onclick="openTransferModal('${task.id}')">
+            ↔ Transfer to Someone Else
+          </button>`;
+      }
+
+      if (isAssignedByMe && task.status === 'pending_verification') {
+        const notes = (task.submissionNotes || '').replace(/'/g, "\\'");
+        actions += `
+          <button class="btn btn-primary btn-sm"
+            onclick="openVerifyModal('${task.id}','${task.assignedToUid}','${notes}')">
+            ✓ Verify &amp; Mark Complete
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="openTransferModal('${task.id}')">
+            ↔ Transfer Instead
+          </button>`;
+      }
+
+      if (isAssignedByMe && task.status === 'completed' && !task.qualityRating) {
+        actions += `
+          <button class="btn btn-secondary btn-sm"
+            onclick="openRating('${task.id}','${cleanId}','${task.assignedToUid}')">
+            ★ Rate Quality
+          </button>`;
+      }
+    }
+
+    // ── Transfer request notice (for assigner) ──
+    const transferReqNotice = (isAssignedByMe && task.transferRequested)
+      ? `<div style="margin-top:var(--sp-2);padding:8px 12px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24;border-radius:4px;font-size:0.82rem">
+          <strong>⚠ Transfer Requested</strong>: ${task.transferReason || 'Assignee cannot complete this task.'}
+          <button class="btn btn-sm btn-warning" style="margin-left:8px;padding:2px 8px;font-size:0.75rem"
+            onclick="openTransferModal('${task.id}')">Transfer Now</button>
+        </div>` : '';
+
+    // ── Submission notes banner ──
+    const submissionBanner = (task.submissionNotes && task.status !== 'assigned')
+      ? `<div style="margin-top:var(--sp-3);padding:8px 12px;background:rgba(59,130,246,0.08);border-left:3px solid var(--brand-primary);border-radius:4px;font-size:0.82rem">
+          <strong>Completion Notes:</strong> ${task.submissionNotes}
+        </div>` : '';
+
+    const doubtsHtml = doubts.map(d => `
+      <div class="doubt-message">
+        <div class="doubt-message-header">
+          <span class="doubt-message-sender">${d.senderName}</span>
+          <span class="doubt-message-time">${new Date(d.timestamp).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
+        </div>
+        <p class="doubt-message-text">${d.text}</p>
+        ${d.reply
+          ? `<div style="margin-top:var(--sp-2);padding-left:var(--sp-3);border-left:2px solid var(--border-normal)">
+              <div style="font-size:0.72rem;color:var(--brand-success);font-weight:700">↳ ${d.reply.replierName}</div>
+              <p class="doubt-message-text">${d.reply.text}</p>
+            </div>`
+          : (isAssignedByMe
+              ? `<button class="doubt-send-btn" style="margin-top:var(--sp-2)" onclick="openReply('${task.id}','${d.id}')">Reply</button>`
+              : '')}
+      </div>`).join('');
+
+    return `
+    <div class="task-card status-${task.status}" id="task-card-${task.id}">
+      <div class="task-card-header">
+        <span class="task-id">${cleanId}</span>
+        <span class="task-category-tag">${task.category || 'General'}</span>
+        <span class="task-status-badge ${task.status}">${(task.status || '').replace(/_/g,' ')}</span>
+      </div>
+
+      <div class="task-card-body">
+        <p class="task-description">${task.description || task.title || 'No description'}</p>
+
+        <div class="task-meta-grid">
+          <div class="task-meta-item">
+            <div class="task-meta-label">Assigned By</div>
+            <div class="task-meta-value">${task.assignedByName || task.createdByName || 'System'}</div>
+          </div>
+          <div class="task-meta-item">
+            <div class="task-meta-label">Assigned To</div>
+            <div class="task-meta-value">${task.assignedToName || '—'}</div>
+          </div>
+          <div class="task-meta-item">
+            <div class="task-meta-label">Assigned Date</div>
+            <div class="task-meta-value">${formatDate(task.assignedDate || task.createdAt)}</div>
+          </div>
+          <div class="task-meta-item">
+            <div class="task-meta-label">Deadline</div>
+            <div class="task-meta-value ${deadlineCls}">
+              ${task.deadline || '—'}
+              ${days !== null && task.status !== 'completed'
+                ? `<span style="font-size:0.7rem;opacity:0.8"> (${days < 0 ? `${Math.abs(days)}d overdue` : `${days}d left`})</span>`
+                : ''}
+            </div>
+          </div>
+        </div>
+
+        ${submissionBanner}
+        ${transferReqNotice}
+        ${task.qualityRating ? `<div class="quality-rating"><span style="font-size:0.8rem;color:var(--text-muted)">Quality:</span> ${starsHTML(task.qualityRating)}</div>` : ''}
+      </div>
+
+      <!-- Doubts / Notes Section -->
+      <div class="task-doubt-section">
+        <div class="doubt-header" onclick="toggleDoubts('${task.id}')">
+          <span class="doubt-header-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Discussion / Notes
+          </span>
+          <span class="doubt-count">${doubts.length}</span>
+        </div>
+        <div id="doubt-body-${task.id}" class="hidden">
+          <div class="doubt-list" id="doubt-list-${task.id}">
+            ${doubts.length ? doubtsHtml : '<p style="color:var(--text-muted);font-size:0.82rem">No messages yet.</p>'}
+          </div>
+          ${(isAssignedToMe || isAssignedByMe) ? `
+          <div class="doubt-input-row" style="margin-top:var(--sp-2)">
+            <input type="text" class="form-control" id="doubt-input-${task.id}"
+              placeholder="${isAssignedToMe ? 'Ask a question or add a note…' : 'Add a note or reply…'}">
+            <button class="doubt-send-btn" onclick="submitDoubt('${task.id}')">Send</button>
+          </div>` : ''}
+        </div>
+      </div>
+
+      <div class="task-card-footer">
+        <div class="task-footer-actions">${actions}</div>
+        <span style="font-size:0.7rem;color:var(--text-muted)">${task.assignedByUniqueId || ''}</span>
+      </div>
+    </div>`;
+  }
+
+  window.filterTasks = () => renderTasks();
+  window.toggleDoubts = (id) => document.getElementById(`doubt-body-${id}`)?.classList.toggle('hidden');
+
+  // ═══════════════════════════════════════════════════════════════
+  // ASSIGNEE: "I'm Done — Notify Assigner"
+  // ═══════════════════════════════════════════════════════════════
+  window.openMarkCompleteModal = function(taskId) {
+    document.getElementById('submit-work-task-id').value = taskId;
+    document.getElementById('submit-work-notes').value = '';
+    openModal('submit-work-modal');
+  };
+
+  window.submitWorkDone = async function() {
+    const taskId = document.getElementById('submit-work-task-id').value;
+    const notes  = document.getElementById('submit-work-notes').value.trim();
+    if (!notes) { showToast('Please add completion notes before submitting.', 'warning'); return; }
+    const btn = document.getElementById('btn-do-submit-work');
+    btn.disabled = true; btn.textContent = 'Notifying…';
+    try {
+      await submitTaskForVerification(taskId, notes);
+      closeModal('submit-work-modal');
+      const task = allTasks.find(t => t.id === taskId);
+      logAction({ action: 'Submitted Task for Verification', department: 'Tasks', details: `Marked task "${task?.title || taskId}" as done and notified assigner. Notes: ${notes.slice(0,80)}`, user: currentUser });
+      showToast('✓ Assigner notified! Task is now pending their verification.', 'success');
+      await loadAllTasks();
+    } catch (e) {
+      showToast('Failed: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '✓ Notify Assigner — Task Done';
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // ASSIGNEE: "Can't Do This — Request Transfer"
+  // ═══════════════════════════════════════════════════════════════
+  window.openReqTransferModal = function(taskId) {
+    document.getElementById('req-transfer-task-id').value = taskId;
+    document.getElementById('req-transfer-reason').value = '';
+    openModal('request-transfer-modal');
+  };
+
+  window.submitRequestTransfer = async function() {
+    const taskId = document.getElementById('req-transfer-task-id').value;
+    const reason = document.getElementById('req-transfer-reason').value.trim();
+    if (!reason) { showToast('Please explain why you cannot complete this task.', 'warning'); return; }
+    const btn = document.getElementById('btn-do-req-transfer');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      await requestTaskTransfer(taskId, {
+        senderUid: currentUser.uid,
+        senderName: currentUser.name,
+        senderUniqueId: currentUser.uniqueId || '—',
+        reason
+      });
+      closeModal('request-transfer-modal');
+      showToast('Transfer request sent to your assigner!', 'info');
+      await loadAllTasks();
+    } catch (e) {
+      showToast('Failed: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send Request to Assigner';
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // ASSIGNER: "Verify & Mark Complete"
+  // ═══════════════════════════════════════════════════════════════
+  window.openVerifyModal = function(taskId, assigneeUid, submissionNotes) {
+    document.getElementById('verify-task-id').value     = taskId;
+    document.getElementById('verify-assignee-uid').value = assigneeUid;
+    document.getElementById('verify-notes-display').innerHTML = submissionNotes
+      ? submissionNotes
+      : '<em style="color:var(--text-muted)">No completion notes provided.</em>';
+    verifySelectedRating = 0;
+    document.querySelectorAll('#verify-stars .star').forEach(s => s.classList.remove('filled'));
+    document.getElementById('verify-rating-label').textContent = 'No rating (skip)';
+    openModal('verify-modal');
+  };
+
+  window.selectVerifyRating = function(val) {
+    verifySelectedRating = val;
+    const labels = ['','Poor','Fair','Good','Very Good','Excellent'];
+    document.getElementById('verify-rating-label').textContent = `${labels[val]} (${val}/5)`;
+    document.querySelectorAll('#verify-stars .star').forEach(s => {
+      s.classList.toggle('filled', parseInt(s.dataset.val) <= val);
+    });
+  };
+
+  window.submitVerification = async function() {
+    const taskId      = document.getElementById('verify-task-id').value;
+    const assigneeUid = document.getElementById('verify-assignee-uid').value;
+    const btn = document.getElementById('btn-do-verify');
+    btn.disabled = true; btn.textContent = 'Completing…';
+    try {
+      await verifyAndCompleteTask(taskId, assigneeUid, verifySelectedRating || null);
+      closeModal('verify-modal');
+      const task = allTasks.find(t => t.id === taskId);
+      logAction({ action: 'Verified & Completed Task', department: 'Tasks', details: `Verified completion of task "${task?.title || taskId}" assigned to ${task?.assignedToName || assigneeUid}${verifySelectedRating ? `. Rated ${verifySelectedRating}/5.` : '.'}`, user: currentUser });
+      showToast('✓ Task verified and marked as complete!', 'success');
+      await loadAllTasks();
+    } catch (e) {
+      showToast('Failed: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '✓ Mark as Completed';
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // ASSIGNER: "Transfer to Someone Else"
+  // ═══════════════════════════════════════════════════════════════
+  window.openTransferModal = function(taskId) {
+    document.getElementById('transfer-task-id').value = taskId;
+    const sel = document.getElementById('transfer-assignee-select');
+    sel.innerHTML = '<option value="">Select new member…</option>' +
+      allMembers.filter(m => m.uid !== currentUser.uid).map(m =>
+        `<option value="${m.uid}">${m.name} (${m.uniqueId || m.post || 'HMC'})</option>`
+      ).join('');
+    document.getElementById('transfer-reason-input').value = '';
+    openModal('transfer-modal');
+  };
+
+  window.submitTaskTransfer = async function() {
+    const taskId   = document.getElementById('transfer-task-id').value;
+    const newUid   = document.getElementById('transfer-assignee-select').value;
+    const reason   = document.getElementById('transfer-reason-input').value.trim();
+    if (!newUid) { showToast('Please select a member to transfer to.', 'warning'); return; }
+    const newMember = allMembers.find(m => m.uid === newUid);
+    const btn = document.getElementById('btn-do-transfer');
+    btn.disabled = true; btn.textContent = 'Transferring…';
+    try {
+      await transferTask(taskId, {
+        newAssigneeUid:      newUid,
+        newAssigneeName:     newMember?.name || 'Member',
+        newAssigneeUniqueId: newMember?.uniqueId || '—',
+        transferredByUid:    currentUser.uid,
+        transferredByName:   currentUser.name,
+        reason
+      });
+      closeModal('transfer-modal');
+      const task = allTasks.find(t => t.id === taskId);
+      logAction({ action: 'Transferred Task', department: 'Tasks', details: `Transferred task "${task?.title || taskId}" to ${newMember?.name}${reason ? `. Reason: ${reason.slice(0,80)}` : ''}`, user: currentUser });
+      showToast(`Task transferred to ${newMember?.name}!`, 'success');
+      await loadAllTasks();
+    } catch (e) {
+      showToast('Failed: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Transfer Task';
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // ASSIGNER: Rate Quality after Completion
+  // ═══════════════════════════════════════════════════════════════
+  window.openRating = function(docId, taskId, assigneeUid) {
+    ratingTaskDocId = docId; ratingAssigneeUid = assigneeUid; selectedRating = 0;
+    document.getElementById('rate-task-id').textContent = taskId;
+    document.querySelectorAll('#rate-stars .star').forEach(s => s.classList.remove('filled'));
+    document.getElementById('rating-label').textContent = 'Click a star to rate';
+    document.getElementById('submit-rating-btn').disabled = true;
+    openModal('rate-modal');
+  };
+
+  window.selectRating = function(val) {
+    selectedRating = val;
+    const labels = ['','Poor','Fair','Good','Very Good','Excellent'];
+    document.getElementById('rating-label').textContent = `${labels[val]} (${val}/5)`;
+    document.querySelectorAll('#rate-stars .star').forEach(s => {
+      s.classList.toggle('filled', parseInt(s.dataset.val) <= val);
+    });
+    document.getElementById('submit-rating-btn').disabled = false;
+  };
+
+  window.submitRating = async function() {
+    try {
+      await rateTask(ratingTaskDocId, ratingAssigneeUid, selectedRating);
+      closeModal('rate-modal');
+      showToast(`Rated ${selectedRating}/5 — track record updated!`, 'success');
+      await loadAllTasks();
+    } catch (e) { showToast(e.message, 'error'); }
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // DISCUSSION NOTES
+  // ═══════════════════════════════════════════════════════════════
+  window.submitDoubt = async function(taskId) {
+    const input = document.getElementById(`doubt-input-${taskId}`);
+    const text  = input.value.trim();
+    if (!text) return;
+    try {
+      await postDoubt(taskId, {
+        senderUid:      currentUser.uid,
+        senderName:     currentUser.name,
+        senderUniqueId: currentUser.uniqueId,
+        text
+      });
+      input.value = '';
+      await loadAllTasks();
+      showToast('Message sent!', 'info');
+    } catch (e) { showToast(e.message, 'error'); }
+  };
+
+  window.openReply = function(taskId, doubtId) {
+    const text = window.prompt('Type your reply:');
+    if (!text) return;
+    replyToDoubt(taskId, doubtId, text, currentUser.name)
+      .then(() => { showToast('Reply sent!', 'success'); return loadAllTasks(); })
+      .catch(e => showToast(e.message, 'error'));
+  };
+</script>
+</body>
+</html>

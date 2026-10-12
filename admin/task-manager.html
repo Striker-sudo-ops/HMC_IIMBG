@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Manager — HMC Portal</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/tasks.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  <script type="module">import { initTheme } from '../js/theme.js'; initTheme();</script>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Task Manager</h1>
+        <p class="page-subtitle">Create and assign tasks to HMC members</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('create-task-modal')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Create Task
+      </button>
+    </div>
+
+    <div class="page-body">
+      <!-- Stats -->
+      <div style="display:flex;gap:var(--sp-4);flex-wrap:wrap;margin-bottom:var(--sp-6)">
+        <div class="stat-card" style="flex:1;min-width:140px">
+          <div class="stat-icon stat-icon-info"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></div>
+          <div><div class="stat-value" id="st-total">0</div><div class="stat-label">Total Tasks</div></div>
+        </div>
+        <div class="stat-card" style="flex:1;min-width:140px">
+          <div class="stat-icon stat-icon-warning"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div><div class="stat-value" id="st-pending">0</div><div class="stat-label">Pending Verification</div></div>
+        </div>
+        <div class="stat-card" style="flex:1;min-width:140px">
+          <div class="stat-icon stat-icon-success"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <div><div class="stat-value" id="st-done">0</div><div class="stat-label">Completed</div></div>
+        </div>
+        <div class="stat-card" style="flex:1;min-width:140px">
+          <div class="stat-icon stat-icon-danger"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <div><div class="stat-value" id="st-overdue">0</div><div class="stat-label">Overdue</div></div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="task-filter-bar">
+        <div class="tabs" id="status-tabs">
+          <button class="tab active" onclick="setFilter('all', this)">All</button>
+          <button class="tab" onclick="setFilter('assigned', this)">Assigned</button>
+          <button class="tab" onclick="setFilter('pending_verification', this)">Pending Verification</button>
+          <button class="tab" onclick="setFilter('completed', this)">Completed</button>
+        </div>
+        <div class="flex gap-3">
+          <select class="form-control" id="cat-filter" style="width:160px" onchange="renderTaskList()">
+            <option value="">All Categories</option>
+          </select>
+          <div class="search-bar" style="width:200px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Search…" id="task-search" oninput="renderTaskList()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Tasks Table -->
+      <div class="card" style="margin-top:var(--sp-4)">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Task ID</th>
+                <th>Category</th>
+                <th>Assigned By</th>
+                <th>Assigned To</th>
+                <th>Assigned Date</th>
+                <th>Deadline</th>
+                <th>Status</th>
+                <th>Rating</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-tbody">
+              <tr><td colspan="9" style="text-align:center;padding:var(--sp-8)"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Create Task Modal -->
+<div class="modal-overlay" id="create-task-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 class="modal-title">Create & Assign Task</h3>
+      <button class="modal-close" onclick="closeModal('create-task-modal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <form id="task-form" onsubmit="handleCreateTask(event)">
+      <div class="task-form-grid">
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <select id="t-category" class="form-control" required>
+            <option value="">Select category…</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assign To *</label>
+          <select id="t-assignee" class="form-control" required>
+            <option value="">Select member…</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deadline *</label>
+          <input type="date" id="t-deadline" class="form-control" required>
+        </div>
+        <div class="form-group" style="grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:var(--sp-2) 0">
+          <input type="checkbox" id="t-is-daily" style="width:16px;height:16px;cursor:pointer">
+          <label for="t-is-daily" class="form-label" style="margin-bottom:0;cursor:pointer;font-weight:600;color:var(--brand-primary)">Daily Recurring Task (auto-schedules for tomorrow upon completion)</label>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Task Description *</label>
+          <textarea id="t-description" class="form-control" required placeholder="Describe the task in detail…" rows="4"></textarea>
+        </div>
+      </div>
+      <div class="flex gap-3" style="margin-top:var(--sp-5)">
+        <button type="submit" class="btn btn-primary flex-1" id="assign-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Assign Task
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('create-task-modal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Rate Modal -->
+<div class="modal-overlay" id="rate-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Rate Task Quality</h3>
+      <button class="modal-close" onclick="closeModal('rate-modal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:var(--sp-2)">Rate the quality for <strong id="rate-tid"></strong></p>
+    <div class="rating-stars-lg" id="rate-stars">
+      <span class="star" data-val="1" onclick="selectRating(1)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+      <span class="star" data-val="2" onclick="selectRating(2)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+      <span class="star" data-val="3" onclick="selectRating(3)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+      <span class="star" data-val="4" onclick="selectRating(4)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+      <span class="star" data-val="5" onclick="selectRating(5)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+    </div>
+    <p id="rating-label" style="text-align:center;color:var(--text-muted);margin-bottom:var(--sp-5)">Click a star to rate</p>
+    <div class="flex gap-3">
+      <button class="btn btn-primary flex-1" id="submit-rating-btn" onclick="submitRating()" disabled>Submit</button>
+      <button class="btn btn-secondary" onclick="closeModal('rate-modal')">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- Submit Work Modal (Assignee) -->
+<div class="modal-overlay" id="submit-work-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Submit Task for Verification</h3>
+      <button class="modal-close" onclick="closeModal('submit-work-modal')">&times;</button>
+    </div>
+    <div style="margin-bottom:var(--sp-4)">
+      <input type="hidden" id="submit-work-task-id">
+      <label class="form-label">Completion Notes / Proof / Links *</label>
+      <textarea id="submit-work-notes" class="form-control" rows="4" placeholder="Describe the work done, attach links or completion notes…"></textarea>
+    </div>
+    <div class="flex gap-3">
+      <button class="btn btn-primary flex-1" id="btn-do-submit-work" onclick="submitWorkDone()">Submit for Verification</button>
+      <button class="btn btn-secondary" onclick="closeModal('submit-work-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Verify & Complete Modal (Assigner) -->
+<div class="modal-overlay" id="verify-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Verify & Mark Task Completed</h3>
+      <button class="modal-close" onclick="closeModal('verify-modal')">&times;</button>
+    </div>
+    <div style="margin-bottom:var(--sp-4)">
+      <input type="hidden" id="verify-task-id">
+      <input type="hidden" id="verify-assignee-uid">
+      
+      <div id="verify-notes-display" style="padding:10px 12px; background:rgba(255,255,255,0.03); border:1px solid var(--border-subtle); border-radius:var(--radius-md); font-size:0.85rem; margin-bottom:14px">
+        <!-- Display submission notes -->
+      </div>
+
+      <label class="form-label">Task Quality Rating (Optional)</label>
+      <div class="rating-stars-lg" id="verify-stars" style="margin-bottom:12px">
+        <span class="star" data-val="1" onclick="selectVerifyRating(1)">★</span>
+        <span class="star" data-val="2" onclick="selectVerifyRating(2)">★</span>
+        <span class="star" data-val="3" onclick="selectVerifyRating(3)">★</span>
+        <span class="star" data-val="4" onclick="selectVerifyRating(4)">★</span>
+        <span class="star" data-val="5" onclick="selectVerifyRating(5)">★</span>
+      </div>
+      <p id="verify-rating-label" style="text-align:center; color:var(--text-muted); font-size:0.82rem; margin-bottom:12px">Select rating</p>
+    </div>
+    <div class="flex gap-3">
+      <button class="btn btn-primary flex-1" id="btn-do-verify" onclick="submitVerification()">Verify & Complete Task</button>
+      <button class="btn btn-secondary" onclick="closeModal('verify-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Transfer Task Modal -->
+<div class="modal-overlay" id="transfer-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Transfer Task</h3>
+      <button class="modal-close" onclick="closeModal('transfer-modal')">&times;</button>
+    </div>
+    <div style="margin-bottom:var(--sp-4); display:flex; flex-direction:column; gap:var(--sp-3)">
+      <input type="hidden" id="transfer-task-id">
+      <div class="form-group">
+        <label class="form-label">Transfer To Member *</label>
+        <select id="transfer-assignee-select" class="form-control">
+          <option value="">Select new member…</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason for Transfer</label>
+        <input type="text" id="transfer-reason-input" class="form-control" placeholder="e.g. Workload reallocation / member unavailable">
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <button class="btn btn-primary flex-1" id="btn-do-transfer" onclick="submitTaskTransfer()">Transfer Task</button>
+      <button class="btn btn-secondary" onclick="closeModal('transfer-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from '../js/auth.js';
+  import { renderSidebar, initSidebarTheme } from '../js/sidebar.js';
+  import { getAllMembers } from '../js/members.js';
+  import {
+    getAllTasks, getTasksAssignedBy, createTask, deleteTask, rateTask,
+    getCategories, seedCategoriesIfNeeded, submitTaskForVerification,
+    verifyAndCompleteTask, transferTask, requestTaskTransfer
+  } from '../js/tasks.js';
+  import { showToast, openModal, closeModal, formatDate, starsHTML } from '../js/utils.js';
+  import { logAction } from '../js/audit-logger.js';
+
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('task-manager.html');
+  initSidebarTheme();
+  window.openModal  = openModal;
+  window.closeModal = closeModal;
+
+  let allTasks = [];
+  let categories = [];
+  let members = [];
+  let currentUser = null;
+  let activeFilter = 'all';
+  let ratingDocId = null;
+  let ratingAssigneeUid = null;
+  let selectedRating = 0;
+  let verifySelectedRating = 0;
+
+  initAuthGuard({
+    requireLogin: true,
+    onReady: async (user) => {
+      currentUser = user;
+      populateSidebarUser(user);
+
+      const isMessHead = user.role === 'admin' || 
+                         user.title?.toLowerCase().includes('mess head') || 
+                         user.post?.toLowerCase().includes('mess head') || 
+                         user.post?.toLowerCase().includes('mess committee head') || 
+                         user.post?.toLowerCase().includes('mess coordinator') ||
+                         (user.category === 'mess' && user.post === 'Head');
+
+      const isHead = user.role === 'admin' || user.role === 'subadmin' || user.post === 'Head';
+      if (!isHead) {
+        showToast("Access Denied: Only Admins and Category Heads can access the Task Manager.", "error");
+        window.location.href = '../dashboard.html';
+        return;
+      }
+
+      await seedCategoriesIfNeeded();
+      [categories, members] = await Promise.all([getCategories(), getAllMembers()]);
+      
+      if (user.role === 'admin') {
+        allTasks = await getAllTasks();
+      } else {
+        const { getTasksForUser } = await import('../js/tasks.js');
+        const [assignedByMe, assignedToMe] = await Promise.all([
+          getTasksAssignedBy(user.uid),
+          getTasksForUser(user.uid)
+        ]);
+        const seen = new Set();
+        allTasks = [];
+        [...assignedByMe, ...assignedToMe].forEach(t => {
+          if (!seen.has(t.id)) {
+            seen.add(t.id);
+            allTasks.push(t);
+          }
+        });
+      }
+
+      if (isMessHead && user.role !== 'admin') {
+        allTasks = allTasks.filter(t => (t.category || '').toLowerCase().trim() === 'mess');
+      }
+
+      // Populate category dropdowns
+      const catSel = document.getElementById('t-category');
+      const catFilter = document.getElementById('cat-filter');
+      const filteredCategories = (isMessHead && user.role !== 'admin')
+        ? categories.filter(c => c.name.toLowerCase().trim() === 'mess')
+        : categories;
+
+      filteredCategories.forEach(c => {
+        catSel.innerHTML    += `<option value="${c.name}">${c.name}</option>`;
+        catFilter.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+      });
+
+      // Bind category change to filter assignees
+      catSel.onchange = updateAssigneeDropdownByCategory;
+
+      updateAssigneeDropdownByCategory();
+      renderStats();
+      renderTaskList();
+    }
+  });
+
+  window.updateAssigneeDropdownByCategory = function() {
+    const selectedCat = (document.getElementById('t-category')?.value || '').toLowerCase().trim();
+    const assSel = document.getElementById('t-assignee');
+    if (!assSel) return;
+
+    assSel.innerHTML = '<option value="">Select member…</option>';
+
+    let assignableMembers = members;
+    if (selectedCat) {
+      assignableMembers = members.filter(m => {
+        const cat = (m.category || '').toLowerCase().trim();
+        const post = (m.post || '').toLowerCase().trim();
+
+        if (selectedCat.includes('mess') && (cat === 'mess' || post.includes('mess'))) return true;
+        if (selectedCat.includes('hostel') && (cat === 'hostel' || post.includes('hostel'))) return true;
+        if (selectedCat.includes('event') && (cat.includes('event') || post.includes('event'))) return true;
+        if (selectedCat.includes('laundry') && (cat.includes('laundr') || post.includes('laundr'))) return true;
+
+        return cat === selectedCat || post.includes(selectedCat);
+      });
+    }
+
+    assignableMembers.forEach(m => {
+      if (m.uid !== currentUser?.uid) {
+        assSel.innerHTML += `<option value="${m.uid}">${m.name} (${m.uniqueId || m.post})</option>`;
+      }
+    });
+  };
+
+  window.setFilter = async function(filter, btn) {
+    activeFilter = filter;
+    document.querySelectorAll('#status-tabs .tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    // Reload from Firestore so pending_verification tasks appear fresh
+    if (currentUser.role === 'admin') {
+      allTasks = await getAllTasks();
+    } else {
+      const { getTasksForUser } = await import('../js/tasks.js');
+      const [byMe, toMe] = await Promise.all([
+        getTasksAssignedBy(currentUser.uid).catch(() => []),
+        getTasksForUser(currentUser.uid).catch(() => [])
+      ]);
+      const seen = new Set();
+      allTasks = [];
+      [...byMe, ...toMe].forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); allTasks.push(t); } });
+    }
+    renderStats();
+    renderTaskList();
+  };
+
+  function renderStats() {
+    const now = new Date();
+    document.getElementById('st-total').textContent   = allTasks.length;
+    document.getElementById('st-pending').textContent = allTasks.filter(t => t.status === 'pending_verification').length;
+    document.getElementById('st-done').textContent    = allTasks.filter(t => t.status === 'completed').length;
+    document.getElementById('st-overdue').textContent = allTasks.filter(t => t.deadline && new Date(t.deadline) < now && t.status !== 'completed').length;
+  }
+
+  window.renderTaskList = function() {
+    const search  = document.getElementById('task-search').value.toLowerCase();
+    const catFilt = document.getElementById('cat-filter').value;
+    let filtered  = allTasks;
+
+    if (activeFilter !== 'all') {
+      if (activeFilter === 'assigned') {
+        filtered = filtered.filter(t => ['assigned', 'pending', 'in_progress'].includes((t.status || '').toLowerCase().trim()));
+      } else {
+        filtered = filtered.filter(t => (t.status || '').toLowerCase().trim() === activeFilter);
+      }
+    }
+    if (catFilt) filtered = filtered.filter(t => t.category === catFilt);
+    if (search)  filtered = filtered.filter(t =>
+      (t.taskId && t.taskId.toLowerCase().includes(search)) ||
+      (t.assignedToName && t.assignedToName.toLowerCase().includes(search)) ||
+      (t.assignedByName && t.assignedByName.toLowerCase().includes(search)) ||
+      (t.description && t.description.toLowerCase().includes(search))
+    );
+
+    const tbody = document.getElementById('tasks-tbody');
+    const stColor = { assigned:'info', pending:'info', in_progress:'warning', pending_verification:'warning', completed:'success' };
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:var(--sp-8);color:var(--text-muted)">No tasks found</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(t => {
+      const daysLeft = t.deadline ? Math.ceil((new Date(t.deadline) - Date.now()) / 86400000) : null;
+      const dlClass  = daysLeft !== null && daysLeft < 0 ? 'deadline-overdue' : daysLeft !== null && daysLeft <= 2 ? 'deadline-soon' : '';
+      const cleanTaskId = (t.taskId && t.taskId !== 'undefined') ? t.taskId : `#T_${(t.id || 'N/A').slice(0, 4).toUpperCase()}`;
+      
+      const isAssignedToMe = t.assignedToUid === currentUser.uid;
+      const isAssignedByMe = t.assignedByUid === currentUser.uid;
+
+      let actionBtns = '';
+
+      // Transfer request notice
+      if (t.transferRequested && (isAssignedByMe || currentUser.role === 'admin')) {
+        actionBtns += `<div style="padding:4px 8px;background:rgba(251,191,36,0.12);border-left:2px solid #fbbf24;border-radius:4px;font-size:0.72rem;margin-bottom:4px;color:#fbbf24">
+          ⚠ <strong>Transfer Requested</strong>: ${(t.transferReason||'Cannot complete task').substring(0,60)}${t.transferReason?.length>60?'…':''}
+        </div>`;
+      }
+
+      if (t.type === 'food_testing') {
+        if (t.status !== 'completed') {
+          actionBtns += `<button class="btn btn-sm btn-primary" onclick="window.location.href='../food-testing.html?assignmentId=${t.assignmentId || t.id}'" style="padding: 4px 8px; font-size: 0.72rem">Open</button>`;
+        }
+      } else {
+        if (t.status === 'assigned' || t.status === 'pending' || t.status === 'in_progress') {
+          if (isAssignedToMe) {
+            actionBtns += `<button class="btn btn-sm btn-success" onclick="openSubmitWorkModal('${t.id}')" style="padding: 4px 8px; font-size: 0.72rem">Submit</button>`;
+          }
+          if (isAssignedByMe) {
+            actionBtns += `<button class="btn btn-sm btn-primary" onclick="openVerifyModal('${t.id}', '${t.assignedToUid}', '${(t.submissionNotes||'').replace(/'/g, "\\'")}')" style="padding: 4px 8px; font-size: 0.72rem">Verify & Complete</button>`;
+            actionBtns += `<button class="btn btn-sm btn-secondary" onclick="openTransferModal('${t.id}')" style="padding: 4px 8px; font-size: 0.72rem">Transfer</button>`;
+          }
+        } else if (t.status === 'pending_verification') {
+          if (isAssignedToMe) {
+            actionBtns += `<span class="badge badge-warning" style="font-size:0.65rem">Submitted</span>`;
+          }
+          if (isAssignedByMe) {
+            actionBtns += `<button class="btn btn-sm btn-primary" onclick="openVerifyModal('${t.id}', '${t.assignedToUid}', '${(t.submissionNotes||'').replace(/'/g, "\\'")}')" style="padding: 4px 8px; font-size: 0.72rem">Verify & Complete</button>`;
+            actionBtns += `<button class="btn btn-sm btn-secondary" onclick="openTransferModal('${t.id}')" style="padding: 4px 8px; font-size: 0.72rem">Transfer</button>`;
+          }
+        } else if (t.status === 'completed') {
+          if (isAssignedByMe && !t.qualityRating && t.type !== 'food_testing') {
+            actionBtns += `<button class="btn btn-sm btn-secondary" onclick="openRating('${t.id}','${cleanTaskId}','${t.assignedToUid}')" style="padding: 4px 8px; font-size: 0.72rem">Rate</button>`;
+          }
+        }
+      }
+
+      actionBtns += `<button class="btn btn-icon btn-sm" title="Delete" onclick="handleDelete('${t.id}')" style="color:var(--brand-danger); padding: 4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>`;
+
+      return `
+        <tr>
+          <td>
+            <span class="font-mono" style="color:var(--brand-primary);font-size:0.82rem">${cleanTaskId}</span>
+            ${t.isDaily ? `<br><span class="badge badge-info" style="font-size:0.62rem">Daily</span>` : ''}
+          </td>
+          <td><span class="task-category-tag">${t.category || '—'}</span></td>
+          <td>
+            <div style="font-size:0.85rem;font-weight:600">${t.assignedByName || '—'}</div>
+            <div style="font-size:0.7rem;color:var(--text-muted)">${t.assignedByUniqueId || ''}</div>
+          </td>
+          <td>
+            <div style="font-size:0.85rem;font-weight:600">${t.assignedToName || '—'}</div>
+            <div style="font-size:0.7rem;color:var(--text-muted)">${t.assignedToUniqueId || ''}</div>
+          </td>
+          <td style="font-size:0.82rem;color:var(--text-muted)">${formatDate(t.assignedDate)}</td>
+          <td class="${dlClass}" style="font-size:0.82rem">${t.deadline || '—'}</td>
+          <td><span class="badge badge-${stColor[t.status] || 'muted'}">${t.status?.replace('_',' ')}</span></td>
+          <td>${t.qualityRating ? starsHTML(t.qualityRating) : '<span style="color:var(--text-muted);font-size:0.78rem">—</span>'}</td>
+          <td>
+            <div style="display:flex;gap:var(--sp-1);align-items:center">
+              ${actionBtns}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  };
+
+  window.handleCreateTask = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('assign-btn');
+    btn.disabled = true;
+    btn.textContent = 'Assigning…';
+
+    const assigneeUid = document.getElementById('t-assignee').value;
+    const assignee    = members.find(m => m.uid === assigneeUid);
+
+    try {
+      const desc = document.getElementById('t-description').value.trim();
+      const title = desc.split('\\n')[0].substring(0, 50);
+      const task = await createTask({
+        title:               title,
+        category:            document.getElementById('t-category').value,
+        assignedByUid:       currentUser.uid,
+        assignedByName:      currentUser.name,
+        assignedByUniqueId:  currentUser.uniqueId,
+        assignedToUid:       assigneeUid,
+        assignedToName:      assignee?.name || '—',
+        assignedToUniqueId:  assignee?.uniqueId || '',
+        description:         desc,
+        deadline:            document.getElementById('t-deadline').value,
+        isDaily:             document.getElementById('t-is-daily')?.checked || false
+      });
+
+      allTasks.unshift(task);
+      renderStats();
+      renderTaskList();
+      closeModal('create-task-modal');
+      document.getElementById('task-form').reset();
+      logAction({ action: 'Assigned Task', department: 'Tasks', details: `Assigned task "${title}" (${task.taskId}) to ${assignee?.name || assigneeUid}. Deadline: ${document.getElementById('t-deadline').value || 'N/A'}.`, user: currentUser });
+      showToast(`Task ${task.taskId} assigned to ${assignee?.name}!`, 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to create task', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Assign Task`;
+    }
+  };
+
+  window.handleDelete = async function(taskId) {
+    if (!confirm('Delete this task?')) return;
+    try {
+      const task = allTasks.find(t => t.id === taskId);
+      await deleteTask(taskId);
+      allTasks = allTasks.filter(t => t.id !== taskId);
+      renderStats();
+      renderTaskList();
+      logAction({ action: 'Deleted Task', department: 'Tasks', details: `Deleted task "${task?.title || taskId}" previously assigned to ${task?.assignedToName || 'Unknown'}.`, user: currentUser });
+      showToast('Task deleted', 'info');
+    } catch (e) { showToast(e.message, 'error'); }
+  };
+
+  // Submit Work Modal (Assignee)
+  window.openSubmitWorkModal = function(taskId) {
+    document.getElementById('submit-work-task-id').value = taskId;
+    document.getElementById('submit-work-notes').value = '';
+    openModal('submit-work-modal');
+  };
+
+  window.submitWorkDone = async function() {
+    const taskId = document.getElementById('submit-work-task-id').value;
+    const notes = document.getElementById('submit-work-notes').value;
+    const btn = document.getElementById('btn-do-submit-work');
+    btn.disabled = true;
+    try {
+      await submitTaskForVerification(taskId, notes);
+      const task = allTasks.find(t => t.id === taskId);
+      if (task) { task.status = 'pending_verification'; task.submissionNotes = notes; }
+      closeModal('submit-work-modal');
+      renderStats();
+      renderTaskList();
+      showToast('Task submitted for assigner verification!', 'success');
+    } catch (e) { showToast(e.message, 'error'); }
+    finally { btn.disabled = false; }
+  };
+
+  // Verify & Complete Modal (Assigner/Admin)
+  window.openVerifyModal = function(taskId, assigneeUid, submissionNotes) {
+    document.getElementById('verify-task-id').value = taskId;
+    document.getElementById('verify-assignee-uid').value = assigneeUid;
+    document.getElementById('verify-notes-display').innerHTML = submissionNotes ? `<strong>Assignee Notes:</strong> ${submissionNotes}` : `<em>No submission notes provided.</em>`;
+    verifySelectedRating = 0;
+    document.querySelectorAll('#verify-stars .star').forEach(s => s.classList.remove('filled'));
+    document.getElementById('verify-rating-label').textContent = 'Select rating (optional)';
+    openModal('verify-modal');
+  };
+
+  window.selectVerifyRating = function(val) {
+    verifySelectedRating = val;
+    const labels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+    document.getElementById('verify-rating-label').textContent = `${labels[val]} (${val}/5)`;
+    document.querySelectorAll('#verify-stars .star').forEach(s => {
+      s.classList.toggle('filled', parseInt(s.dataset.val) <= val);
+    });
+  };
+
+  window.submitVerification = async function() {
+    const taskId = document.getElementById('verify-task-id').value;
+    const assigneeUid = document.getElementById('verify-assignee-uid').value;
+    const btn = document.getElementById('btn-do-verify');
+    btn.disabled = true;
+    try {
+      await verifyAndCompleteTask(taskId, assigneeUid, verifySelectedRating || null);
+      const task = allTasks.find(t => t.id === taskId);
+      if (task) { task.status = 'completed'; if (verifySelectedRating) task.qualityRating = verifySelectedRating; }
+      closeModal('verify-modal');
+      renderStats();
+      renderTaskList();
+      showToast('Task verified & marked as completed!', 'success');
+    } catch (e) { showToast(e.message, 'error'); }
+    finally { btn.disabled = false; }
+  };
+
+  // Transfer Task Modal
+  window.openTransferModal = function(taskId) {
+    document.getElementById('transfer-task-id').value = taskId;
+    const sel = document.getElementById('transfer-assignee-select');
+    sel.innerHTML = '<option value="">Select new member…</option>' +
+      members.map(m => `<option value="${m.uid}">${m.name} (${m.uniqueId || m.post || 'HMC'})</option>`).join('');
+    document.getElementById('transfer-reason-input').value = '';
+    openModal('transfer-modal');
+  };
+
+  window.submitTaskTransfer = async function() {
+    const taskId = document.getElementById('transfer-task-id').value;
+    const newUid = document.getElementById('transfer-assignee-select').value;
+    const reason = document.getElementById('transfer-reason-input').value.trim();
+    if (!newUid) { showToast('Please select a new member.', 'warning'); return; }
+
+    const newMember = members.find(m => m.uid === newUid);
+    const btn = document.getElementById('btn-do-transfer');
+    btn.disabled = true;
+    try {
+      await transferTask(taskId, {
+        newAssigneeUid: newUid,
+        newAssigneeName: newMember?.name || 'Member',
+        newAssigneeUniqueId: newMember?.uniqueId || '—',
+        transferredByUid: currentUser.uid,
+        transferredByName: currentUser.name,
+        reason
+      });
+      const task = allTasks.find(t => t.id === taskId);
+      if (task) {
+        task.assignedToUid = newUid;
+        task.assignedToName = newMember?.name;
+        task.assignedToUniqueId = newMember?.uniqueId;
+        task.status = 'assigned';
+      }
+      closeModal('transfer-modal');
+      renderStats();
+      renderTaskList();
+      showToast(`Task transferred to ${newMember?.name}!`, 'success');
+    } catch (e) { showToast(e.message, 'error'); }
+    finally { btn.disabled = false; }
+  };
+
+  window.openRating = function(docId, tid, assigneeUid) {
+    ratingDocId = docId; ratingAssigneeUid = assigneeUid; selectedRating = 0;
+    document.getElementById('rate-tid').textContent = tid;
+    document.querySelectorAll('#rate-stars .star').forEach(s => s.classList.remove('filled'));
+    document.getElementById('rating-label').textContent = 'Click a star to rate';
+    document.getElementById('submit-rating-btn').disabled = true;
+    openModal('rate-modal');
+  };
+
+  window.selectRating = function(v) {
+    selectedRating = v;
+    const labels = ['','Poor','Fair','Good','Very Good','Excellent'];
+    document.getElementById('rating-label').textContent = `${labels[v]} (${v}/5)`;
+    document.querySelectorAll('#rate-stars .star').forEach(s => {
+      s.classList.toggle('filled', parseInt(s.dataset.val) <= v);
+    });
+    document.getElementById('submit-rating-btn').disabled = false;
+  };
+
+  window.submitRating = async function() {
+    try {
+      await rateTask(ratingDocId, ratingAssigneeUid, selectedRating);
+      const t = allTasks.find(t => t.id === ratingDocId);
+      if (t) t.qualityRating = selectedRating;
+      closeModal('rate-modal');
+      renderTaskList();
+      showToast(`Rated ${selectedRating}/5 — updated!`, 'success');
+    } catch (e) { showToast(e.message, 'error'); }
+  };
+</script>
+</body>
+</html>

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mess Settings — HMC Portal</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  <script type="module">import { initTheme } from '../js/theme.js'; initTheme();</script>
+  <style>
+    .settings-container {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-6);
+    }
+
+    .editor-panel {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-5);
+      min-height: 400px;
+    }
+
+    .control-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--brand-primary);
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: var(--sp-3);
+      margin-bottom: var(--sp-2);
+      letter-spacing: 0.02em;
+    }
+
+    .premium-form-control {
+      width: 100%;
+      padding: 11px 16px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-normal);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: var(--transition-fast);
+      box-sizing: border-box;
+      margin-bottom: 0;
+    }
+
+    .premium-form-control:focus {
+      background: var(--bg-surface);
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+      outline: none;
+    }
+
+    .premium-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='%23a1a1aa' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px;
+      padding-right: 40px;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      font-size: 0.88rem;
+      cursor: pointer;
+      padding: var(--sp-2) var(--sp-3);
+      color: var(--text-secondary);
+      border-radius: var(--radius-md);
+      transition: var(--transition-fast);
+      user-select: none;
+    }
+
+    .checkbox-label:hover {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-normal);
+    }
+
+    .badge-id {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--brand-primary);
+      background: rgba(124, 58, 237, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 4px;
+    }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Mess Settings</h1>
+        <p class="page-subtitle">Manage menu design permissions and food items database</p>
+      </div>
+    </div>
+
+    <div class="page-body">
+        <!-- Top row: Feedback Controls & QR Code -->
+        <div class="editor-panel" style="min-height: auto; margin-bottom: var(--sp-6);">
+          <div class="control-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Mess Menu Feedback Controls & Schedule</span>
+            <span id="feedback-current-status-badge" class="badge badge-success" style="font-size:0.75rem;">Status Loading...</span>
+          </div>
+          
+          <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap: var(--sp-6); align-items:center;">
+            <div>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-top: 0;">
+                Configure the automatic monthly feedback schedule date range or manually force activate / deactivate the feedback form at any time.
+              </p>
+
+              <div style="display:flex; flex-direction:column; gap:8px; margin-top:var(--sp-4);">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase">Feedback Activation Mode</label>
+                <select id="setting-feedback-mode" class="premium-form-control premium-select" onchange="saveFeedbackSettings()">
+                  <option value="auto">Automatic (Monthly Schedule)</option>
+                  <option value="force_on">Force Activate (Always Open)</option>
+                  <option value="force_off">Force Deactivate (Always Closed)</option>
+                </select>
+              </div>
+
+              <!-- Custom Start and End Day Dropdowns -->
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:var(--sp-3); margin-top:var(--sp-3);">
+                <div>
+                  <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase">Auto Start Day</label>
+                  <select id="setting-feedback-start-day" class="premium-form-control premium-select" onchange="saveFeedbackSettings()">
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase">Auto End Day</label>
+                  <select id="setting-feedback-end-day" class="premium-form-control premium-select" onchange="saveFeedbackSettings()">
+                  </select>
+                </div>
+              </div>
+
+              <div style="margin-top:var(--sp-4); font-size:0.8rem; color:var(--text-muted);">
+                Form Direct URL: <span id="feedback-form-url-text" style="font-family:var(--font-mono); color:var(--brand-primary); word-break:break-all;"></span>
+              </div>
+            </div>
+
+            <!-- QR Code Box -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: var(--sp-4); text-align: center;">
+              <div style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom: 10px;">
+                Feedback QR Code
+              </div>
+              <div style="background: #ffffff; padding: 12px; border-radius: 12px; display: inline-block; box-shadow: var(--shadow-sm);">
+                <img id="feedback-qr-img" src="" alt="Feedback QR Code" style="width: 150px; height: 150px; display: block;">
+              </div>
+              <div style="display:flex; gap: 8px; justify-content: center; margin-top: 12px;">
+                <button class="btn btn-sm btn-primary" onclick="printFeedbackQRCode()" style="font-weight: 700;">Print Poster QR</button>
+                <button class="btn btn-sm btn-secondary" onclick="copyFeedbackUrl()">Copy Link</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6)">
+          
+          <!-- Left panel: Designer Access list -->
+          <div class="editor-panel">
+            <div class="control-title">Authorized Designers</div>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin-top: 0">
+              Select which HMC members are authorized to create, design, or edit the mess menus:
+            </p>
+            <div id="designers-list-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 400px; overflow-y: auto; padding-right: 4px">
+              <div class="spinner" style="margin: 20px auto"></div>
+            </div>
+          </div>
+
+          <!-- Right panel: Food categories/items editor -->
+          <div class="editor-panel">
+            <div class="control-title">Add Food Item</div>
+            <div style="display: flex; flex-direction: column; gap: var(--sp-4)">
+              <div style="display:flex; flex-direction: column; gap: 6px">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase">Select Category</label>
+                <select id="setting-category-select" class="premium-form-control premium-select">
+                  <!-- Loaded dynamically -->
+                </select>
+              </div>
+              <div style="display:flex; flex-direction: column; gap: 6px">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase">Food Item Name</label>
+                <input type="text" id="setting-item-name-input" class="premium-form-control" placeholder="e.g. Butter Paneer Masala">
+              </div>
+              <button class="btn btn-primary" onclick="addFoodItemToCategory()" style="width:100%; font-weight:700">Add Food Item</button>
+            </div>
+
+            <div class="control-title" style="margin-top: var(--sp-4)">Create New Category</div>
+            <div style="display: flex; flex-direction: column; gap: var(--sp-4)">
+              <div style="display:flex; flex-direction: column; gap: 6px">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase">Category Name</label>
+                <input type="text" id="setting-new-category-input" class="premium-form-control" placeholder="e.g. Chinese Corner">
+              </div>
+              <button class="btn btn-primary" onclick="createFoodCategory()" style="width:100%; font-weight:700">Add Category</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from '../js/auth.js';
+  import { renderSidebar, initSidebarTheme } from '../js/sidebar.js';
+  import { getAllMembers } from '../js/members.js';
+  import { showToast } from '../js/utils.js';
+  import { db } from '../js/firebase-config.js';
+  import { logAction } from '../js/audit-logger.js';
+  import { 
+    doc, getDoc, setDoc, updateDoc 
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // Inject sidebar
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('mess-settings.html');
+  initSidebarTheme();
+
+  // Global states
+  let currentUser = null;
+  let foodCategories = {};
+  let allowedDesigners = [];
+  let allMembersList = [];
+  let isMessHead = false;
+
+  const DEFAULT_CATEGORIES = {
+    'Beverages': ['Milk', 'Tea', 'Coffee', 'Mango Juice', 'Butter Milk', 'Lemonade'],
+    'Daal': ['Moong Daal', 'Masoor Daal', 'Chana Chana', 'Toor Daal', 'Makhani Daal', 'Kadhei Daal'],
+    'Rotis': ['Tandoori Roti', 'Butter Roti', 'Naan', 'Missi Roti', 'Plain Chapati', 'Aloo Paratha'],
+    'Sides': ['Green Salad', 'Mix Veg Raita', 'Boondi Raita', 'Mixed Pickle', 'Papad', 'Green Chutney'],
+    'Dessert': ['Kheer', 'Gulab Jamun', 'Vanilla Ice Cream', 'Moong Dal Halwa', 'Rasgulla', 'Jalebi'],
+    'Main Course': ['Paneer Butter Masala', 'Mix Veg Dry', 'Aloo Gobhi', 'Rajma Masala', 'Chole Masala', 'Kadhi Pakoda']
+  };
+
+  // Initialize Auth
+  initAuthGuard({
+    requireLogin: true,
+    onReady: async (user) => {
+      currentUser = user;
+      populateSidebarUser(user);
+
+      isMessHead = (user.role === 'admin' || 
+                    user.title?.toLowerCase().includes('mess head') || 
+                    user.post?.toLowerCase().includes('mess head') || 
+                    user.post?.toLowerCase().includes('mess committee head') || 
+                    user.post?.toLowerCase().includes('mess coordinator') ||
+                    (user.category === 'mess' && user.post === 'Head'));
+      if (!isMessHead) {
+        showToast("Access Denied: Only the Mess Head can configure these settings.", "error");
+        window.location.href = '../dashboard.html';
+        return;
+      }
+
+      await loadMenuConfiguration();
+      await loadSettingsPanel();
+    }
+  });
+
+  let feedbackMode = 'auto'; // 'auto', 'force_on', 'force_off'
+  let feedbackStartDay = 20;
+  let feedbackEndDay = 24;
+
+  function populateDayDropdowns() {
+    const startSelect = document.getElementById('setting-feedback-start-day');
+    const endSelect   = document.getElementById('setting-feedback-end-day');
+    if (!startSelect || !endSelect) return;
+
+    let optionsHtml = '';
+    for (let i = 1; i <= 31; i++) {
+      optionsHtml += `<option value="${i}">${i}${getOrdinalSuffix(i)} of month</option>`;
+    }
+    startSelect.innerHTML = optionsHtml;
+    endSelect.innerHTML   = optionsHtml;
+
+    startSelect.value = feedbackStartDay;
+    endSelect.value   = feedbackEndDay;
+  }
+
+  function getOrdinalSuffix(i) {
+    const j = i % 10, k = i % 100;
+    if (j === 1 && k !== 11) return "st";
+    if (j === 2 && k !== 12) return "nd";
+    if (j === 3 && k !== 13) return "rd";
+    return "th";
+  }
+
+  // Load configuration from meta/menu
+  async function loadMenuConfiguration() {
+    try {
+      const configSnap = await getDoc(doc(db, 'meta', 'menu'));
+      if (configSnap.exists()) {
+        const data = configSnap.data();
+        foodCategories = data.categories || DEFAULT_CATEGORIES;
+        allowedDesigners = data.allowedDesigners || [];
+        feedbackMode = data.feedbackMode || 'auto';
+        feedbackStartDay = data.feedbackStartDay || 20;
+        feedbackEndDay = data.feedbackEndDay || 24;
+      } else {
+        const initialConfig = {
+          categories: DEFAULT_CATEGORIES,
+          allowedDesigners: [],
+          currentMenuId: null,
+          feedbackMode: 'auto',
+          feedbackStartDay: 20,
+          feedbackEndDay: 24
+        };
+        await setDoc(doc(db, 'meta', 'menu'), initialConfig);
+        foodCategories = DEFAULT_CATEGORIES;
+        allowedDesigners = [];
+        feedbackMode = 'auto';
+        feedbackStartDay = 20;
+        feedbackEndDay = 24;
+      }
+      
+      const select = document.getElementById('setting-feedback-mode');
+      if (select) select.value = feedbackMode;
+
+      populateDayDropdowns();
+      updateFeedbackStatusUI();
+      renderFeedbackQR();
+      populateCategorySelects();
+    } catch(err) {
+      console.error(err);
+      showToast("Error loading menu configuration: " + err.message, "error");
+    }
+  }
+
+  function getFeedbackFormUrl() {
+    return `${window.location.origin}/menu.html?tab=tab-feedback`;
+  }
+
+  function renderFeedbackQR() {
+    const url = getFeedbackFormUrl();
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`;
+    const imgEl = document.getElementById('feedback-qr-img');
+    const txtEl = document.getElementById('feedback-form-url-text');
+    if (imgEl) imgEl.src = qrApiUrl;
+    if (txtEl) txtEl.textContent = url;
+  }
+
+  function updateFeedbackStatusUI() {
+    const badge = document.getElementById('feedback-current-status-badge');
+    if (!badge) return;
+    
+    let isActive = false;
+    const day = new Date().getDate();
+    if (feedbackMode === 'force_on') isActive = true;
+    else if (feedbackMode === 'force_off') isActive = false;
+    else isActive = (day >= feedbackStartDay && day <= feedbackEndDay);
+
+    const rangeStr = `${feedbackStartDay}${getOrdinalSuffix(feedbackStartDay)}–${feedbackEndDay}${getOrdinalSuffix(feedbackEndDay)}`;
+    if (isActive) {
+      badge.className = 'badge badge-success';
+      badge.textContent = `Active (${feedbackMode === 'auto' ? `Auto ${rangeStr}` : 'Manually ON'})`;
+    } else {
+      badge.className = 'badge badge-danger';
+      badge.textContent = `Closed (${feedbackMode === 'auto' ? `Auto ${rangeStr}` : 'Manually OFF'})`;
+    }
+  }
+
+  window.saveFeedbackSettings = async function() {
+    const selectMode = document.getElementById('setting-feedback-mode')?.value || 'auto';
+    const startDay   = parseInt(document.getElementById('setting-feedback-start-day')?.value) || 20;
+    const endDay     = parseInt(document.getElementById('setting-feedback-end-day')?.value) || 24;
+
+    if (startDay > endDay) {
+      showToast("Start Day cannot be greater than End Day.", "warning");
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, 'meta', 'menu'), { 
+        feedbackMode: selectMode,
+        feedbackStartDay: startDay,
+        feedbackEndDay: endDay
+      });
+      feedbackMode = selectMode;
+      feedbackStartDay = startDay;
+      feedbackEndDay = endDay;
+
+      updateFeedbackStatusUI();
+      showToast("Feedback schedule settings updated successfully!", "success");
+      
+      logAction({ 
+        action: 'Updated Feedback Schedule Settings', 
+        department: 'Mess', 
+        details: `Changed feedback mode to "${selectMode}" (${startDay} to ${endDay})`, 
+        user: currentUser 
+      });
+    } catch (err) {
+      console.error(err);
+      showToast("Error updating feedback settings: " + err.message, "error");
+    }
+  };
+
+  window.copyFeedbackUrl = function() {
+    const url = getFeedbackFormUrl();
+    navigator.clipboard.writeText(url).then(() => {
+      showToast("Feedback link copied to clipboard!", "info");
+    }).catch(() => {
+      showToast("Copy failed, URL: " + url, "warning");
+    });
+  };
+
+  window.printFeedbackQRCode = function() {
+    const url = getFeedbackFormUrl();
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+    const win = window.open('', '_blank', 'width=600,height=650');
+    win.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Mess Menu Feedback QR Code — HMC</title>
+        <style>
+          body { font-family: system-ui, -apple-system, sans-serif; text-align: center; padding: 40px; background: #fff; color: #111; }
+          .logo { font-size: 24px; font-weight: 800; margin-bottom: 8px; color: #7c3aed; }
+          .sub { font-size: 14px; color: #555; margin-bottom: 24px; }
+          .qr-box { display: inline-block; padding: 20px; border: 2px solid #e2e8f0; border-radius: 16px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+          img { width: 250px; height: 250px; }
+          .instructions { margin-top: 24px; font-size: 16px; color: #1e293b; font-weight: 700; }
+          .url-text { margin-top: 12px; font-size: 12px; color: #64748b; word-break: break-all; }
+        </style>
+      </head>
+      <body>
+        <div class="logo">IIM BODHGAYA — HMC MESS FEEDBACK</div>
+        <div class="sub">Scan QR Code to rate your daily meal experience</div>
+        <div class="qr-box">
+          <img src="${qrApiUrl}" alt="Mess Feedback QR Code">
+        </div>
+        <div class="instructions">Open your phone camera & scan to submit mess feedback!</div>
+        <div class="url-text">${url}</div>
+      </body>
+      </html>
+    `);
+    win.document.close();
+    win.focus();
+    setTimeout(() => {
+      try { win.print(); } catch(e) {}
+    }, 500);
+  };
+
+  // Load HMC Members list
+  async function loadSettingsPanel() {
+    const listContainer = document.getElementById('designers-list-container');
+    try {
+      allMembersList = await getAllMembers();
+      
+      let html = '';
+      allMembersList.forEach(m => {
+        if (m.role === 'admin') return; 
+        const isChecked = allowedDesigners.includes(m.uid);
+        html += `
+          <label class="checkbox-label" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle)">
+            <span><strong>${m.name}</strong> <span class="badge-id">(${m.uniqueId || '—'})</span></span>
+            <input type="checkbox" value="${m.uid}" ${isChecked ? 'checked' : ''} onchange="toggleDesignerAccess('${m.uid}', this)" style="cursor:pointer">
+          </label>
+        `;
+      });
+      listContainer.innerHTML = html || '<div class="empty-state">No other HMC members found</div>';
+    } catch(err) {
+      console.error(err);
+      listContainer.innerHTML = `<div style="color:var(--brand-danger)">Error loading members: ${err.message}</div>`;
+    }
+  }
+
+  // Populate Select Category dropdown
+  function populateCategorySelects() {
+    const select = document.getElementById('setting-category-select');
+    if (!select) return;
+    select.innerHTML = '';
+    Object.keys(foodCategories).forEach(cat => {
+      select.innerHTML += `<option value="${cat}">${cat}</option>`;
+    });
+  }
+
+  // Toggle allowed designers access list
+  window.toggleDesignerAccess = async function(memberUid, checkboxEl) {
+    const isChecked = checkboxEl.checked;
+    
+    if (isChecked) {
+      if (!allowedDesigners.includes(memberUid)) {
+        allowedDesigners.push(memberUid);
+      }
+    } else {
+      allowedDesigners = allowedDesigners.filter(uid => uid !== memberUid);
+    }
+
+    try {
+      await updateDoc(doc(db, 'meta', 'menu'), { allowedDesigners });
+      showToast("Design access updated successfully!", "success");
+      logAction({ 
+        action: 'Updated Designer Permissions', 
+        department: 'Mess', 
+        details: `${isChecked ? 'Granted' : 'Revoked'} menu design access for user ID ${memberUid}`, 
+        user: currentUser 
+      });
+    } catch(err) {
+      showToast("Failed to update access: " + err.message, "error");
+      checkboxEl.checked = !isChecked; 
+    }
+  };
+
+  // Add Item to food category
+  window.addFoodItemToCategory = async function() {
+    const category = document.getElementById('setting-category-select').value;
+    const itemInput = document.getElementById('setting-item-name-input');
+    const itemName = itemInput.value.trim();
+
+    if (!itemName) {
+      showToast("Please enter a food item name.", "warning");
+      itemInput.focus();
+      return;
+    }
+
+    if (foodCategories[category]?.includes(itemName)) {
+      showToast("This item already exists in the category.", "warning");
+      return;
+    }
+
+    try {
+      const updatedItems = [...(foodCategories[category] || []), itemName];
+      const newCategories = { ...foodCategories, [category]: updatedItems };
+
+      await updateDoc(doc(db, 'meta', 'menu'), { categories: newCategories });
+      foodCategories = newCategories;
+      
+      itemInput.value = '';
+      showToast(`Added "${itemName}" to ${category}`, "success");
+      logAction({ 
+        action: 'Added Mess Food Item', 
+        department: 'Mess', 
+        details: `Added item "${itemName}" to category "${category}"`, 
+        user: currentUser 
+      });
+    } catch(err) {
+      showToast("Failed to add item: " + err.message, "error");
+    }
+  };
+
+  // Create new food category
+  window.createFoodCategory = async function() {
+    const catInput = document.getElementById('setting-new-category-input');
+    const catName = catInput.value.trim();
+
+    if (!catName) {
+      showToast("Please enter a category name.", "warning");
+      catInput.focus();
+      return;
+    }
+
+    if (foodCategories[catName]) {
+      showToast("A category with this name already exists.", "warning");
+      return;
+    }
+
+    try {
+      const newCategories = { ...foodCategories, [catName]: [] };
+
+      await updateDoc(doc(db, 'meta', 'menu'), { categories: newCategories });
+      foodCategories = newCategories;
+
+      populateCategorySelects();
+      catInput.value = '';
+      showToast(`Category "${catName}" created!`, "success");
+      logAction({ 
+        action: 'Created Mess Category', 
+        department: 'Mess', 
+        details: `Created new food category "${catName}"`, 
+        user: currentUser 
+      });
+    } catch(err) {
+      showToast("Failed to create category: " + err.message, "error");
+    }
+  };
+</script>
+</body>
+</html>

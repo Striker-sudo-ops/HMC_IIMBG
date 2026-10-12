@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Departments — HMC Admin</title>
+  <meta name="description" content="Admin hub for managing all HMC departments and accessing their exclusive features.">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  <script type="module">import { initTheme } from '../js/theme.js'; initTheme();</script>
+  <style>
+    .page-body {
+      padding: 0 var(--sp-8) var(--sp-8) var(--sp-8);
+    }
+    @media (max-width: 768px) {
+      .page-body {
+        padding: 0 var(--sp-4) var(--sp-6) var(--sp-4);
+      }
+    }
+
+    /* ── Search Bar ── */
+    .dept-search-wrap {
+      position: relative;
+      max-width: 520px;
+      margin-bottom: var(--sp-6);
+    }
+    .dept-search-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); pointer-events: none;
+    }
+    .dept-search {
+      width: 100%; padding: 12px 16px 12px 42px;
+      background: var(--glass-bg); backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+      color: var(--text-normal); font-size: 0.9rem; font-family: inherit;
+      outline: none; transition: var(--transition-normal);
+    }
+    .dept-search:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
+    .dept-search::placeholder { color: var(--text-muted); }
+
+    /* ── Quick results dropdown ── */
+    .search-results {
+      position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+      background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg); z-index: 100;
+      max-height: 300px; overflow-y: auto; box-shadow: var(--shadow-lg);
+      display: none;
+    }
+    .search-results.visible { display: block; }
+    .search-result-item {
+      display: flex; align-items: center; gap: var(--sp-3);
+      padding: 10px 16px; cursor: pointer; transition: var(--transition-fast);
+      text-decoration: none; color: inherit;
+    }
+    .search-result-item:hover { background: rgba(108,99,255,0.08); }
+    .search-result-dept {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 2px 6px; border-radius: var(--radius-sm);
+    }
+    .search-result-name { font-size: 0.88rem; font-weight: 600; flex: 1; }
+    .search-no-results { padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+
+    /* ── Department Cards Grid ── */
+    .dept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: var(--sp-6);
+    }
+    @media (max-width: 780px) { .dept-grid { grid-template-columns: 1fr; } }
+
+    .dept-card {
+      background: var(--glass-bg); backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border); border-radius: var(--radius-xl);
+      overflow: hidden; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    }
+    .dept-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-glow-sm); }
+    .dept-card-header {
+      padding: var(--sp-5) var(--sp-5) var(--sp-4);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex; align-items: center; gap: var(--sp-4);
+      overflow: hidden;
+    }
+    .dept-icon-box {
+      width: 52px; height: 52px; border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .dept-name { font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dept-meta { font-size: 0.78rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dept-head-badge {
+      margin-left: auto; flex-shrink: 0;
+      font-size: 0.68rem; font-weight: 700; padding: 3px 8px;
+      border-radius: 999px; border: 1px solid var(--border-subtle);
+      color: var(--text-muted); white-space: nowrap;
+    }
+
+    /* ── Feature Links inside card ── */
+    .dept-features { padding: var(--sp-3) var(--sp-2); }
+    .feature-link {
+      display: flex; align-items: center; gap: var(--sp-3);
+      padding: 9px 14px; border-radius: var(--radius-md);
+      text-decoration: none; color: var(--text-secondary);
+      font-size: 0.85rem; font-weight: 500;
+      transition: var(--transition-fast);
+    }
+    .feature-link:hover {
+      background: rgba(108,99,255,0.08); color: var(--text-primary);
+    }
+    .feature-link:hover .fl-arrow { transform: translateX(4px); }
+    .fl-icon { width: 30px; height: 30px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .fl-label { flex: 1; }
+    .fl-tag {
+      font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 2px 6px; border-radius: var(--radius-sm);
+    }
+    .fl-arrow { transition: transform 0.2s; color: var(--text-muted); }
+
+    /* ── Highlight matched text ── */
+    mark { background: rgba(108,99,255,0.3); color: var(--text-primary); border-radius: 2px; padding: 0 2px; }
+
+    /* ── No match overlay ── */
+    .no-match { display: none; }
+    .no-match.visible { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--sp-12); gap: var(--sp-3); color: var(--text-muted); }
+
+    /* ── Stats bar ── */
+    .dept-stats {
+      display: flex; gap: var(--sp-4); flex-wrap: wrap; margin-bottom: var(--sp-6);
+    }
+    .dept-stat {
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg); padding: var(--sp-3) var(--sp-5);
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .dept-stat-val { font-size: 1.4rem; font-weight: 800; color: var(--text-primary); }
+    .dept-stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Departments</h1>
+        <p class="page-subtitle">Access all department features and settings from one place</p>
+      </div>
+    </div>
+
+    <!-- Page Body Container -->
+    <div class="page-body">
+      <!-- Stats Bar -->
+      <div class="dept-stats" id="dept-stats">
+        <div class="dept-stat"><div class="dept-stat-val" id="stat-depts">4</div><div class="dept-stat-lbl">Departments</div></div>
+        <div class="dept-stat"><div class="dept-stat-val" id="stat-features">—</div><div class="dept-stat-lbl">Features</div></div>
+        <div class="dept-stat"><div class="dept-stat-val" id="stat-members">—</div><div class="dept-stat-lbl">Members</div></div>
+      </div>
+
+      <!-- Search -->
+      <div class="dept-search-wrap">
+        <span class="dept-search-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" id="dept-search" class="dept-search" placeholder="Search departments or features… (e.g. mess menu, water TDS, food testing)">
+        <div class="search-results" id="search-results"></div>
+      </div>
+
+      <!-- Department Cards -->
+      <div class="dept-grid" id="dept-grid"></div>
+
+      <!-- No match -->
+      <div class="no-match" id="no-match">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div style="font-size:1rem;font-weight:700;color:var(--text-secondary)">No results found</div>
+        <div style="font-size:0.82rem">Try searching "mess", "hostel", "water", "food", "laundry"…</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import { initAuthGuard, populateSidebarUser } from '../js/auth.js';
+import { renderSidebar, initSidebarTheme } from '../js/sidebar.js';
+import { showToast } from '../js/utils.js';
+import { db } from '../js/firebase-config.js';
+import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+document.getElementById('sidebar-container').innerHTML = renderSidebar('departments.html');
+initSidebarTheme();
+
+// ── Department Definitions ────────────────────────────────
+// Each department has: id, name, icon, color, description, categoryKey (for user lookup), features[]
+// Each feature has: label, url, icon, tag (optional badge like "Head Only")
+const DEPARTMENTS = [
+  {
+    id: 'mess',
+    name: 'Mess Committee',
+    icon: 'food',
+    color: '#F59E0B',
+    bgColor: 'rgba(245,158,11,0.12)',
+    description: 'Manages dining, food quality & menu',
+    categoryKey: 'mess',
+    features: [
+      { label: 'Mess Menu',       url: '/menu.html',          icon: 'menu-book',    tag: null },
+      { label: 'Food Testing',    url: '/food-testing.html',  icon: 'food-testing', tag: null },
+      { label: 'Mess Settings',   url: '/admin/mess-settings.html', icon: 'settings', tag: 'Head' },
+    ]
+  },
+  {
+    id: 'hostel',
+    name: 'Hostel Committee',
+    icon: 'hostel',
+    color: '#6C63FF',
+    bgColor: 'rgba(108,99,255,0.12)',
+    description: 'Manages accommodation, cleanliness & utilities',
+    categoryKey: 'hostel',
+    features: [
+      { label: 'Water TDS',          url: '/water-tds.html',          icon: 'water',       tag: null },
+      { label: 'Hygiene & Clean',    url: '/hygiene-clean.html',      icon: 'trash-2',     tag: null },
+      { label: 'Hostel Settings',    url: '/admin/hostel-settings.html', icon: 'settings', tag: 'Head' },
+      { label: 'Manage Hostels',     url: '/admin/manage-hostels.html',  icon: 'git-branch', tag: 'Admin' },
+    ]
+  },
+  {
+    id: 'events',
+    name: 'Events Committee',
+    icon: 'events',
+    color: '#A78BFA',
+    bgColor: 'rgba(167,139,250,0.12)',
+    description: 'Organises campus events, fests & activities',
+    categoryKey: 'events',
+    features: [
+      { label: 'Events Portal',      url: '/events/events-portal.html', icon: 'star',      tag: null },
+      { label: 'Event Settings',     url: '/admin/event-settings.html', icon: 'settings',  tag: 'Head' },
+    ]
+  },
+  {
+    id: 'laundry',
+    name: 'Laundry Committee',
+    icon: 'laundry',
+    color: '#34D399',
+    bgColor: 'rgba(52,211,153,0.12)',
+    description: 'Manages laundry schedules & groups',
+    categoryKey: 'laundry',
+    features: [
+      { label: 'Laundry Management', url: '/laundry.html',                    icon: 'shirt',    tag: null },
+      { label: 'Laundry Settings',   url: '/admin/laundry-settings.html',     icon: 'settings', tag: 'Head' },
+    ]
+  },
+  {
+    id: 'administration',
+    name: 'Administration',
+    icon: 'admin',
+    color: '#EC4899',
+    bgColor: 'rgba(236,72,153,0.12)',
+    description: 'Member management, roles & system setup',
+    categoryKey: 'administration',
+    features: [
+      { label: 'Manage Members',     url: '/admin/manage-members.html', icon: 'users',     tag: 'Admin' },
+      { label: 'Hierarchy',          url: '/admin/manage-hierarchy.html', icon: 'git-branch', tag: 'Admin' },
+      { label: 'Task Manager',       url: '/admin/task-manager.html',   icon: 'clipboard', tag: 'Admin' },
+      { label: 'Categories',         url: '/admin/categories.html',     icon: 'tag',       tag: 'Admin' },
+      { label: 'Log',                url: '/admin/logs.html',           icon: 'file-text', tag: 'Admin' },
+    ]
+  },
+];
+
+// All flat features for search
+const ALL_FEATURES = DEPARTMENTS.flatMap(d =>
+  d.features.map(f => ({ ...f, deptId: d.id, deptName: d.name, deptColor: d.color }))
+);
+
+let memberCounts = {};
+
+// ── Auth ─────────────────────────────────────────────────
+initAuthGuard({
+  requireLogin: true,
+  requireRoles: ['admin'],
+  onReady: async (user) => {
+    populateSidebarUser(user);
+    await loadMemberCounts();
+    renderDeptGrid(DEPARTMENTS);
+    document.getElementById('stat-depts').textContent = DEPARTMENTS.length;
+    document.getElementById('stat-features').textContent = ALL_FEATURES.length;
+  }
+});
+
+// ── Load member counts per category ───────────────────────
+async function loadMemberCounts() {
+  try {
+    const snap = await getDocs(collection(db, 'users'));
+    let total = 0;
+    snap.forEach(d => {
+      const data = d.data();
+      // Skip pure students and laundry workers
+      if (data.role === 'student' || data.role === 'laundry_worker') return;
+      total++;
+
+      // Determine category bucket
+      let cat = (data.category || '').toLowerCase().trim();
+
+      // Only the super-admin role counts under Administration
+      if (data.role === 'admin') {
+        cat = 'administration';
+      }
+
+      // Normalise common laundry category spelling variations
+      if (cat.startsWith('laund')) cat = 'laundry';
+      // Normalise event/events variation
+      if (cat === 'event') cat = 'events';
+
+      if (cat) memberCounts[cat] = (memberCounts[cat] || 0) + 1;
+    });
+    document.getElementById('stat-members').textContent = total;
+  } catch (e) {
+    console.warn('Could not load members:', e.message);
+  }
+}
+
+// ── SVG Icons ─────────────────────────────────────────────
+function icon(name) {
+  const icons = {
+    'menu-book':    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`,
+    'food-testing': `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 11 2 2 4-4"/></svg>`,
+    'settings':     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+    'water':        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/></svg>`,
+    'trash-2':      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`,
+    'git-branch':   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>`,
+    'star':         `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+    'shirt':        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46L16 6.05V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3.05L3.62 3.46a1 1 0 0 0-1.37.37l-1 1.73a1 1 0 0 0 .37 1.37L5 8.76V20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.76l3.38-1.93a1 1 0 0 0 .37-1.37l-1-1.73a1 1 0 0 0-1.37-.37z"/><path d="M12 2v4"/></svg>`,
+    'users':        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    'clipboard':    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>`,
+    'tag':          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`,
+    'file-text':    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+    'layers':       `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
+    'arrow-right':  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`,
+    'food':         `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+    'hostel':       `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+    'events':       `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+    'laundry':      `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46L16 6.05V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3.05L3.62 3.46a1 1 0 0 0-1.37.37l-1 1.73a1 1 0 0 0 .37 1.37L5 8.76V20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.76l3.38-1.93a1 1 0 0 0 .37-1.37l-1-1.73a1 1 0 0 0-1.37-.37z"/><path d="M12 2v4"/></svg>`,
+    'admin':        `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`
+  };
+  return icons[name] || '';
+}
+
+// ── Render Department Grid ────────────────────────────────
+function renderDeptGrid(depts, query = '') {
+  const grid = document.getElementById('dept-grid');
+  const noMatch = document.getElementById('no-match');
+
+  if (!depts.length) {
+    grid.innerHTML = '';
+    noMatch.classList.add('visible');
+    return;
+  }
+  noMatch.classList.remove('visible');
+
+  grid.innerHTML = depts.map(d => {
+    const membCount = memberCounts[(d.categoryKey || '').toLowerCase()] || 0;
+    const featuresHtml = d.features.map(f => {
+      const labelHtml = query
+        ? highlightMatch(f.label, query)
+        : f.label;
+      const tagHtml = f.tag
+        ? `<span class="fl-tag" style="background:${d.bgColor};color:${d.color}">${f.tag}</span>`
+        : '';
+      return `
+        <a href="${f.url}" class="feature-link">
+          <span class="fl-icon" style="background:${d.bgColor};color:${d.color}">${icon(f.icon)}</span>
+          <span class="fl-label">${labelHtml}</span>
+          ${tagHtml}
+          <span class="fl-arrow">${icon('arrow-right')}</span>
+        </a>`;
+    }).join('');
+
+    const nameHtml = query ? highlightMatch(d.name, query) : d.name;
+
+    return `
+      <div class="dept-card" id="dcard-${d.id}">
+        <div class="dept-card-header" style="border-top: 3px solid ${d.color}">
+          <div class="dept-icon-box" style="background:${d.bgColor};color:${d.color}">${icon(d.icon)}</div>
+          <div style="flex:1;min-width:0">
+            <div class="dept-name">${nameHtml}</div>
+          </div>
+          <div class="dept-head-badge">${membCount} member${membCount !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="dept-features">${featuresHtml}</div>
+      </div>`;
+  }).join('');
+}
+
+// ── Highlight match in text ────────────────────────────────
+function highlightMatch(text, query) {
+  if (!query) return text;
+  const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return text.replace(re, '<mark>$1</mark>');
+}
+
+// ── Search Logic ───────────────────────────────────────────
+const searchInput = document.getElementById('dept-search');
+const searchResults = document.getElementById('search-results');
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+
+  if (!q) {
+    searchResults.classList.remove('visible');
+    renderDeptGrid(DEPARTMENTS);
+    return;
+  }
+
+  // Filter departments — show a dept card if name OR any feature label matches
+  const matchedDepts = DEPARTMENTS.filter(d =>
+    d.name.toLowerCase().includes(q) ||
+    d.description.toLowerCase().includes(q) ||
+    d.features.some(f => f.label.toLowerCase().includes(q))
+  );
+
+  // For each matched dept, filter only matching features (or show all if dept name matched)
+  const filteredDepts = matchedDepts.map(d => {
+    const deptNameMatch = d.name.toLowerCase().includes(q) || d.description.toLowerCase().includes(q);
+    if (deptNameMatch) return d; // show all features
+    return { ...d, features: d.features.filter(f => f.label.toLowerCase().includes(q)) };
+  });
+
+  renderDeptGrid(filteredDepts, q);
+
+  // Dropdown quick results
+  const featureMatches = ALL_FEATURES.filter(f =>
+    f.label.toLowerCase().includes(q) || f.deptName.toLowerCase().includes(q)
+  ).slice(0, 8);
+
+  if (featureMatches.length) {
+    searchResults.innerHTML = featureMatches.map(f => `
+      <a class="search-result-item" href="${f.url}">
+        <span class="search-result-dept" style="background:rgba(108,99,255,0.1);color:${f.deptColor}">${f.deptName}</span>
+        <span class="search-result-name">${highlightMatch(f.label, q)}</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.4"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    `).join('');
+    searchResults.classList.add('visible');
+  } else {
+    searchResults.innerHTML = `<div class="search-no-results">No features match "${q}"</div>`;
+    searchResults.classList.add('visible');
+  }
+});
+
+// Close dropdown on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dept-search-wrap')) {
+    searchResults.classList.remove('visible');
+  }
+});
+
+// Close on Escape
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    searchResults.classList.remove('visible');
+    searchInput.blur();
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Student Portal — IIM Bodhgaya</title>
+  <meta name="description" content="Student portal for IIM Bodhgaya — view HMC committee, calendar, events and announcements.">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/calendar.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css">
+  <script type="module">
+    import { initTheme } from './js/theme.js';
+    initTheme();
+  </script>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="layout">
+
+  <!-- Shared Sidebar Container -->
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+
+    <!-- ───── HOME SECTION ───── -->
+    <section id="section-home" class="student-section" style="padding:var(--sp-8) var(--sp-8) var(--sp-6)">
+      <!-- Hero -->
+      <div class="welcome-banner" style="margin-bottom:var(--sp-6); display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%); border:1px solid rgba(255,255,255,0.18); border-radius:var(--radius-xl); padding:var(--sp-6) var(--sp-8); box-shadow:0 8px 30px rgba(37,99,235,0.2)">
+        <div class="welcome-info">
+          <div style="font-size:1.15rem; font-weight:700; color:rgba(255,255,255,0.9); margin-bottom:2px">Welcome</div>
+          <div class="welcome-name" id="wb-name" style="font-size:1.75rem; font-weight:800; color:#ffffff; letter-spacing:-0.02em; line-height:1.2; margin:0">Student</div>
+          <div class="welcome-meta" style="color:rgba(255,255,255,0.92); font-size:0.88rem; font-weight:500; margin-top:6px; display:flex; align-items:center; gap:8px">
+            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10b981"></span>
+            Hostel Management Committee Official Portal
+          </div>
+        </div>
+        <div class="welcome-avatar" id="wb-avatar" style="border:2.5px solid rgba(255,255,255,0.5); border-radius:50%; box-shadow:0 4px 14px rgba(0,0,0,0.18)"></div>
+      </div>
+
+      <!-- Today's Mess Menu & Hostel Laundry Schedule -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--sp-6); margin-bottom: var(--sp-6);">
+        
+        <!-- Today's Mess Menu Card -->
+        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div class="card-header" style="margin-bottom: var(--sp-4); padding-bottom: var(--sp-3); border-bottom: 1px solid var(--border-subtle);">
+              <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Today's Mess Menu
+              </h3>
+              <span id="today-day-badge" class="badge badge-primary" style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">—</span>
+            </div>
+            <div id="today-menu-container">
+              <div class="empty-state" style="padding: var(--sp-4);"><div class="spinner" style="margin: 0 auto;"></div></div>
+            </div>
+          </div>
+          <div style="margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px dashed var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">View complete weekly rotation</span>
+            <a href="menu.html" class="btn btn-sm btn-secondary">Full Menu</a>
+          </div>
+        </div>
+
+        <!-- Hostel Laundry Schedule Card -->
+        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div class="card-header" style="margin-bottom: var(--sp-4); padding-bottom: var(--sp-3); border-bottom: 1px solid var(--border-subtle);">
+              <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+                Laundry Schedule
+              </h3>
+              <span id="laundry-status-badge" class="badge" style="font-size: 0.72rem; font-weight: 700;">Checking...</span>
+            </div>
+            <div id="laundry-status-container">
+              <div class="empty-state" style="padding: var(--sp-4);"><div class="spinner" style="margin: 0 auto;"></div></div>
+            </div>
+          </div>
+          <div style="margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px dashed var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.75rem; color: var(--text-muted);" id="laundry-hostel-footer">Hostel details</span>
+            <a href="laundry.html" class="btn btn-sm btn-secondary">Laundry Details</a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Latest Notices preview -->
+      <div class="card" style="margin-bottom:var(--sp-6)">
+        <div class="card-header">
+          <h3 class="card-title" style="display:flex;align-items:center;gap:8px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            Latest Notices & Circulars
+          </h3>
+          <a href="notices.html" class="btn btn-sm btn-secondary">View Notice Board</a>
+        </div>
+        <div id="student-notices-preview">
+          <div class="empty-state" style="padding:var(--sp-4)"><div class="spinner" style="margin:0 auto"></div></div>
+        </div>
+      </div>
+
+      <!-- Upcoming events preview -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title" style="display:flex;align-items:center;gap:8px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Upcoming Events
+          </h3>
+          <a href="#calendar" onclick="showSection('calendar',null)" class="btn btn-sm btn-secondary">View Calendar</a>
+        </div>
+        <div id="student-events-preview">
+          <div class="empty-state" style="padding:var(--sp-6)"><div class="spinner" style="margin:0 auto"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───── COMMITTEE SECTION ───── -->
+    <section id="section-committee" class="student-section hidden" style="padding:var(--sp-8)">
+      <h1 class="page-title" style="margin-bottom:4px">Current HMC Committee</h1>
+      <p class="page-subtitle" style="margin-bottom:var(--sp-6)">2025–26 Hostel Management Committee — IIM Bodhgaya</p>
+
+      <div id="committee-grid" class="committee-public-grid">
+        <div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>
+      </div>
+    </section>
+
+    <!-- ───── PAST MEMBERS SECTION ───── -->
+    <section id="section-past" class="student-section hidden" style="padding:var(--sp-8)">
+      <h1 class="page-title" style="margin-bottom:4px">Past HMC Members</h1>
+      <p class="page-subtitle" style="margin-bottom:var(--sp-6)">Recognising the contributions of previous committee members</p>
+
+      <div id="past-members-grid" class="committee-public-grid">
+        <div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>
+      </div>
+    </section>
+
+    <!-- ───── CALENDAR SECTION ───── -->
+    <section id="section-calendar" class="student-section hidden" style="padding:var(--sp-8)">
+      <h1 class="page-title" style="margin-bottom:4px">Academic Calendar</h1>
+      <p class="page-subtitle" style="margin-bottom:var(--sp-6)">College events, national holidays and festivals</p>
+      <div class="card" style="padding:var(--sp-5)">
+        <div id="student-calendar"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<style>
+  .student-section { display: block; }
+  .committee-public-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--sp-5);
+  }
+  .committee-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    backdrop-filter: var(--glass-blur);
+    padding: var(--sp-5);
+    text-align: center;
+    transition: var(--transition-normal);
+  }
+  .committee-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-normal);
+    box-shadow: var(--shadow-glow-sm);
+  }
+  .committee-card-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--border-normal);
+    margin: 0 auto var(--sp-3);
+    display: block;
+  }
+  .committee-card-avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--grad-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 800;
+    color: white;
+    margin: 0 auto var(--sp-3);
+  }
+  .committee-card-name { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .committee-card-designation { font-size: 0.82rem; color: var(--brand-primary); font-weight: 600; margin-bottom: var(--sp-3); }
+  .committee-card-info { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.7; }
+  .committee-card-info a { color: var(--brand-info); text-decoration: none; }
+  .committee-card-info a:hover { text-decoration: underline; }
+  .committee-professor { margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--border-subtle); font-size: 0.77rem; color: var(--text-muted); }
+  .batch-divider { grid-column: 1/-1; padding: var(--sp-2) 0; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .1em; border-bottom: 1px solid var(--border-subtle); }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script type="module">
+  import { initAuthGuard, populateSidebarUser, getCachedUser } from './js/auth.js';
+  import { renderSidebar, initSidebarTheme } from './js/sidebar.js';
+  import { initTheme, toggleTheme, getTheme } from './js/theme.js';
+  import { getCommitteeMembers } from './js/committee.js';
+  import { getAllEvents, toCalendarEvents } from './js/calendar.js';
+  import { getAllMembers } from './js/members.js';
+  import { renderAvatar, showToast } from './js/utils.js';
+  import { db } from './js/firebase-config.js';
+  import { collection, doc, getDoc, query, where, orderBy, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('student-dashboard.html');
+  initSidebarTheme();
+
+  let calendarInstance = null;
+
+  initAuthGuard({
+    requireLogin: true,
+    requireRoles: ['student'],
+    onReady: async (user) => {
+      populateSidebarUser(user);
+      document.getElementById('wb-name').textContent = user.name || 'Student';
+      const avatarEl = document.getElementById('wb-avatar');
+      if (avatarEl) avatarEl.innerHTML = renderAvatar(user, 'xl');
+
+      // Load Today's Mess Menu & Hostel Laundry Schedule
+      loadTodayMessMenu();
+      loadHostelLaundrySchedule(user);
+
+      // Load data in parallel with safe fallbacks
+      let committeeMembers = [], events = [], hmcMembers = [];
+      try {
+        const results = await Promise.allSettled([
+          getCommitteeMembers(),
+          getAllEvents().catch(() => []),
+          getAllMembers().catch(() => [])
+        ]);
+        committeeMembers = results[0].status === 'fulfilled' && Array.isArray(results[0].value) ? results[0].value : [];
+        events           = results[1].status === 'fulfilled' && Array.isArray(results[1].value) ? results[1].value : [];
+        hmcMembers       = results[2].status === 'fulfilled' && Array.isArray(results[2].value) ? results[2].value : [];
+      } catch (e) {
+        console.warn('Student dashboard data fetch error:', e);
+      }
+
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const current  = committeeMembers.filter(m => m && m.isCurrent);
+      const upcomingAll = events.filter(e => e && e.date && new Date(e.date + 'T00:00:00') >= now);
+
+      // Render committee section
+      renderCommittee(current);
+      renderPastMembers(committeeMembers.filter(m => m && !m.isCurrent), hmcMembers);
+
+      // Upcoming preview
+      renderEventsPreview(events, upcomingAll);
+      loadStudentNoticesPreview();
+
+      // Store for calendar init
+      window._calEvents = toCalendarEvents(events);
+    }
+  });
+
+  async function loadTodayMessMenu() {
+    const container = document.getElementById('today-menu-container');
+    const dayBadge = document.getElementById('today-day-badge');
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const now = new Date();
+    const todayDayName = dayNames[now.getDay()];
+    const todayDayKey = todayDayName.toLowerCase();
+    
+    if (dayBadge) dayBadge.textContent = todayDayName;
+
+    try {
+      const configSnap = await getDoc(doc(db, 'meta', 'menu'));
+      let currentMenuId = configSnap.exists() ? configSnap.data().currentMenuId : null;
+      
+      let menuData = null;
+      if (currentMenuId) {
+        const menuSnap = await getDoc(doc(db, 'menus', currentMenuId));
+        if (menuSnap.exists()) menuData = menuSnap.data();
+      }
+
+      // If no active menu ID in meta, fallback to first available menu in menus collection
+      if (!menuData) {
+        const allMenusSnap = await getDocs(collection(db, 'menus'));
+        if (!allMenusSnap.empty) {
+          menuData = allMenusSnap.docs[0].data();
+        }
+      }
+
+      if (!menuData || !menuData.grid) {
+        container.innerHTML = `<div style="padding:var(--sp-4); text-align:center; color:var(--text-muted); font-size:0.83rem">No active mess menu published.</div>`;
+        return;
+      }
+
+      const meals = [
+        { key: 'breakfast', label: 'Breakfast', time: '8:00 – 10:00 AM' },
+        { key: 'lunch',     label: 'Lunch',     time: '12:30 – 2:30 PM' },
+        { key: 'snacks',    label: 'Snacks',    time: '5:00 – 6:30 PM' },
+        { key: 'dinner',    label: 'Dinner',    time: '8:00 – 10:00 PM' }
+      ];
+
+      let html = `<div style="display:grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3);">`;
+      meals.forEach(m => {
+        const cellKey = `${todayDayKey}_${m.key}`;
+        const items = menuData.grid[cellKey] || [];
+        const itemsText = items.length > 0 ? escapeHtml(items.join(', ')) : '<span style="color:var(--text-muted);font-weight:normal">Not specified</span>';
+        
+        html += `
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 10px 12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+              <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--brand-primary); letter-spacing:0.04em">${m.label}</span>
+              <span style="font-size:0.65rem; color:var(--text-muted)">${m.time}</span>
+            </div>
+            <div style="font-size:0.82rem; color:var(--text-normal); font-weight:600; line-height:1.35; max-height: 48px; overflow: hidden; text-overflow: ellipsis;">
+              ${itemsText}
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      container.innerHTML = html;
+    } catch (e) {
+      console.warn('Error loading today menu:', e);
+      container.innerHTML = `<div style="padding:var(--sp-4); text-align:center; color:var(--text-muted); font-size:0.83rem">Unable to load today's menu at this time.</div>`;
+    }
+  }
+
+  function getLocalTodayStr() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function evaluateAutoStatus(currentStatus, collectionDate, deliveryDate) {
+    if (!currentStatus || currentStatus === 'N/A' || currentStatus === 'No laundry given') return 'No laundry given';
+    const todayStr = getLocalTodayStr();
+
+    if (deliveryDate && todayStr < deliveryDate) {
+      if (collectionDate && todayStr > collectionDate) return 'In washing';
+      if (collectionDate && todayStr === collectionDate) return 'Collected';
+      return 'In washing';
+    }
+
+    if (deliveryDate && todayStr >= deliveryDate) {
+      if (currentStatus === 'Collected' || currentStatus === 'In washing' || currentStatus === 'In Process') return 'Completed';
+      if (currentStatus === 'Delivered') return 'Delivered';
+      return 'Completed';
+    }
+
+    if (collectionDate && todayStr > collectionDate) {
+      if (currentStatus === 'Collected') return 'In washing';
+    }
+    return currentStatus;
+  }
+
+  async function loadHostelLaundrySchedule(user) {
+    const container = document.getElementById('laundry-status-container');
+    const badge = document.getElementById('laundry-status-badge');
+    const footerHostel = document.getElementById('laundry-hostel-footer');
+
+    const userHostel = (user.hostelName || '').trim();
+    if (footerHostel) {
+      footerHostel.textContent = userHostel && userHostel !== 'Not Allocated' ? `Hostel: ${userHostel}` : 'Hostel: Not Allocated';
+    }
+
+    const todayStr = getLocalTodayStr();
+
+    try {
+      const snap = await getDocs(collection(db, 'laundry_schedules'));
+      const schedules = [];
+      snap.forEach(d => schedules.push({ id: d.id, ...d.data() }));
+
+      const normRoom = (r) => String(r || '').replace(/^room\s*[-#:]*\s*/i, '').replace(/[\s\-_]/g, '').toLowerCase().trim();
+      const myRoom = normRoom(user.roomNo);
+
+      // Find if student's hostel matches schedule
+      const matchesHostel = (s) => {
+        if (!userHostel || userHostel === 'Not Allocated') return true;
+        const hLower = userHostel.toLowerCase();
+        if (s.hostelNames && Array.isArray(s.hostelNames)) {
+          if (s.hostelNames.some(name => name.toLowerCase().includes(hLower) || hLower.includes(name.toLowerCase()))) return true;
+        }
+        if (s.hostelName && (s.hostelName.toLowerCase().includes(hLower) || hLower.includes(s.hostelName.toLowerCase()))) return true;
+        return false;
+      };
+
+      const hostelSchedules = schedules.filter(s => s.status !== 'Cancelled' && matchesHostel(s));
+      const todaySchedules = hostelSchedules.filter(s => s.date === todayStr);
+      const upcomingSchedules = hostelSchedules.filter(s => s.date > todayStr).sort((a,b) => a.date.localeCompare(b.date));
+
+      // Check if there is an active room entry across all schedules
+      let foundActiveEntry = null;
+      let foundActiveSched = null;
+
+      for (const s of schedules) {
+        if (s.roomEntries && s.roomEntries.length > 0) {
+          const entry = s.roomEntries.find(e => normRoom(e.roomNo) === myRoom);
+          if (entry && entry.status !== 'Delivered') {
+            if (entry.status === 'N/A') {
+              foundActiveEntry = { ...entry, status: 'No laundry given' };
+            } else {
+              const calculatedStatus = evaluateAutoStatus(entry.status, entry.collectionDate || s.date, entry.deliveryDate || s.deliveryDate);
+              foundActiveEntry = { ...entry, status: calculatedStatus };
+            }
+            foundActiveSched = s;
+            break;
+          }
+        }
+      }
+
+      if (foundActiveEntry) {
+        const st = foundActiveEntry.status || 'Collected';
+        if (badge) {
+          badge.className = st === 'Completed' ? 'badge badge-success' : 'badge badge-primary';
+          badge.textContent = st === 'Completed' ? 'Ready for Delivery' : st;
+        }
+
+        const roomDetailsHtml = `
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(16,185,129,0.2);display:flex;gap:12px;font-size:0.8rem;color:var(--text-primary);flex-wrap:wrap">
+            ${foundActiveEntry.clothesCount !== undefined ? `<span><strong>Clothes:</strong> ${foundActiveEntry.clothesCount} pcs</span>` : ''}
+            ${foundActiveEntry.weight ? `<span><strong>Weight:</strong> ${foundActiveEntry.weight} kg</span>` : ''}
+            ${foundActiveSched.deliveryDate ? `<span><strong>Expected Delivery:</strong> ${formatDate(foundActiveSched.deliveryDate)}</span>` : ''}
+          </div>
+        `;
+
+        container.innerHTML = `
+          <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: var(--radius-md); padding: 14px 16px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px">
+              <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981"></span>
+              <strong style="color:var(--brand-success); font-size:0.92rem">Laundry: ${escapeHtml(st)}</strong>
+              <span style="padding:2px 8px;border-radius:var(--radius-full);background:rgba(16,185,129,0.2);color:#10b981;font-weight:700;font-size:0.75rem;margin-left:auto">${escapeHtml(st)}</span>
+            </div>
+            <div style="font-size:0.83rem; color:var(--text-secondary); line-height:1.4">
+              <strong>Batch:</strong> ${escapeHtml(foundActiveSched.collectionId || foundActiveSched.groupName || 'Batch')}<br>
+              <strong>Location:</strong> ${escapeHtml(foundActiveSched.location || 'Central Laundry Point')}
+            </div>
+            ${roomDetailsHtml}
+          </div>
+        `;
+      } else if (todaySchedules.length > 0) {
+        const active = todaySchedules[0];
+        if (badge) {
+          badge.className = 'badge badge-success';
+          badge.textContent = 'Active Today';
+        }
+
+        container.innerHTML = `
+          <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: var(--radius-md); padding: 14px 16px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px">
+              <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981"></span>
+              <strong style="color:var(--brand-success); font-size:0.92rem">Laundry Collection Active Today</strong>
+            </div>
+            <div style="font-size:0.83rem; color:var(--text-secondary); line-height:1.4">
+              <strong>Batch / Group:</strong> ${escapeHtml(active.collectionId || active.groupName || 'Batch')} (${escapeHtml(active.hostelName || active.hostelNames?.join(', ') || 'Hostels')})<br>
+              <strong>Location:</strong> ${escapeHtml(active.location || 'Central Laundry Point')}
+              ${active.deliveryDate ? `<br><strong>Expected Delivery:</strong> ${formatDate(active.deliveryDate)}` : ''}
+            </div>
+          </div>
+        `;
+      } else if (upcomingSchedules.length > 0) {
+        const next = upcomingSchedules[0];
+        const nextDateStr = new Date(next.date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+        if (badge) {
+          badge.className = 'badge badge-primary';
+          badge.textContent = `Next: ${nextDateStr}`;
+        }
+
+        container.innerHTML = `
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px 16px;">
+            <div style="font-weight:700; font-size:0.9rem; color:var(--text-primary); margin-bottom:4px">
+              No collection scheduled for today.
+            </div>
+            <div style="font-size:0.83rem; color:var(--text-secondary); line-height:1.4">
+              Next scheduled laundry pickup for your hostel is on <strong>${nextDateStr}</strong>.<br>
+              <strong>Location:</strong> ${escapeHtml(next.location || 'Central Laundry Point')}
+              ${next.deliveryDate ? `<br><strong>Expected Delivery:</strong> ${formatDate(next.deliveryDate)}` : ''}
+            </div>
+          </div>
+        `;
+      } else {
+        if (badge) {
+          badge.className = 'badge badge-muted';
+          badge.textContent = 'Not Scheduled';
+        }
+
+        container.innerHTML = `
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px 16px; text-align:center;">
+            <div style="font-weight:600; font-size:0.88rem; color:var(--text-secondary)">
+              No active or upcoming laundry collection scheduled for ${escapeHtml(userHostel || 'your hostel')}.
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px">Check with your hostel representative or view full laundry schedule.</div>
+          </div>
+        `;
+      }
+    } catch (e) {
+      console.warn('Error loading laundry schedule:', e);
+      container.innerHTML = `<div style="padding:var(--sp-4); text-align:center; color:var(--text-muted); font-size:0.83rem">Unable to check laundry schedule.</div>`;
+    }
+  }
+
+  async function loadStudentNoticesPreview() {
+    const container = document.getElementById('student-notices-preview');
+    if (!container) return;
+    try {
+      let notices = [];
+      try {
+        const q = query(collection(db, 'notices'), where('status', '==', 'published'), orderBy('createdAt', 'desc'), limit(3));
+        const snap = await getDocs(q);
+        snap.forEach(d => notices.push({ id: d.id, ...d.data() }));
+      } catch (qErr) {
+        const snap2 = await getDocs(collection(db, 'notices'));
+        snap2.forEach(d => {
+          const data = d.data();
+          if (data.status === 'published') notices.push({ id: d.id, ...data });
+        });
+        notices.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+        notices = notices.slice(0, 3);
+      }
+
+      if (!notices.length) {
+        container.innerHTML = '<div style="padding:var(--sp-4); text-align:center; color:var(--text-muted); font-size:0.83rem">No active notices at this time.</div>';
+        return;
+      }
+
+      container.innerHTML = notices.map(n => {
+        const formattedDate = n.publishedAt || n.createdAt ? new Date(n.publishedAt || n.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : '—';
+        return `
+          <a href="notices.html" style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--border-subtle); text-decoration:none; color:inherit; transition:background 0.15s">
+            <div style="display:flex; align-items:center; gap:8px; overflow:hidden">
+              ${n.isPinned ? '<span style="color:#f59e0b; font-size:0.72rem; font-weight:800; border:1px solid rgba(245,158,11,0.4); border-radius:3px; padding:1px 5px">PINNED</span>' : ''}
+              <span style="font-weight:700; font-size:0.88rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${escapeHtml(n.title)}</span>
+            </div>
+            <span style="font-size:0.75rem; color:var(--text-muted); flex-shrink:0">${formattedDate}</span>
+          </a>
+        `;
+      }).join('');
+    } catch(err) {
+      container.innerHTML = '<div style="padding:var(--sp-4); text-align:center; color:var(--text-muted); font-size:0.83rem">View the Notice Board for official announcements.</div>';
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function renderCommittee(members) {
+    const el = document.getElementById('committee-grid');
+    if (!members.length) { el.innerHTML = '<div class="empty-state"><p>No committee members added yet</p></div>'; return; }
+    el.innerHTML = members.map(m => committeeCard(m)).join('');
+  }
+
+  function renderPastMembers(past, hmcUsers) {
+    const el = document.getElementById('past-members-grid');
+    // Combine explicitly marked past committee members + old HMC user accounts
+    const combined = [...past];
+    if (!combined.length) {
+      el.innerHTML = '<div class="empty-state"><p>No past members recorded yet</p></div>';
+      return;
+    }
+
+    // Group by batch
+    const byBatch = {};
+    combined.forEach(m => {
+      const batch = m.batch || 'Legacy';
+      if (!byBatch[batch]) byBatch[batch] = [];
+      byBatch[batch].push(m);
+    });
+
+    let html = '';
+    Object.entries(byBatch).sort((a,b) => b[0].localeCompare(a[0])).forEach(([batch, members]) => {
+      html += `<div class="batch-divider">Batch ${batch}</div>`;
+      html += members.map(m => committeeCard(m)).join('');
+    });
+    el.innerHTML = html;
+  }
+
+  function committeeCard(m) {
+    const initials = (m.name || 'M').split(' ').map(p => p[0]).join('').slice(0,2).toUpperCase();
+    const avatarHtml = m.profilePicUrl
+      ? `<img src="${m.profilePicUrl}" class="committee-card-avatar" alt="${m.name}" onerror="this.onerror=null;this.outerHTML='<div class=\\'committee-card-avatar-placeholder\\'>${initials}</div>'">`
+      : `<div class="committee-card-avatar-placeholder">${initials}</div>`;
+
+    return `
+      <div class="committee-card">
+        ${avatarHtml}
+        <div class="committee-card-name">${m.name}</div>
+        <div class="committee-card-designation">${m.designation}</div>
+        <div class="committee-card-info">
+          <div class="member-contact">
+            ${m.contactNumber ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> <span>${m.contactNumber}</span><br>` : ''}
+            ${m.email ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> <a href="mailto:${m.email}">${m.email}</a><br>` : ''}
+          </div>
+        </div>
+        ${m.associatedProfessor ? `
+          <div class="committee-professor">
+            <div style="font-weight:700;color:var(--text-secondary)">Faculty Advisor</div>
+            <div>${m.associatedProfessor}</div>
+          </div>` : ''}
+      </div>
+    `;
+  }
+
+  function renderEventsPreview(all, upcoming) {
+    const el = document.getElementById('student-events-preview');
+    const sorted = upcoming.sort((a,b) => new Date(a.date)-new Date(b.date)).slice(0,6);
+    if (!sorted.length) { el.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:var(--sp-6)">No upcoming events</p>'; return; }
+    const colorDot = { college:'#3B82F6', holiday:'#EF4444', festival:'#F59E0B' };
+    el.innerHTML = `<div style="display:flex;flex-direction:column">` + sorted.map(e => {
+      const d = new Date(e.date);
+      return `
+        <div style="display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-3) 0;border-bottom:1px solid var(--border-subtle)">
+          <div style="width:12px;height:12px;border-radius:3px;background:${colorDot[e.type]||'#6C63FF'};flex-shrink:0"></div>
+          <div style="flex:1;font-weight:600;font-size:0.88rem">${e.title}</div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">${d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</div>
+          <span class="badge badge-${e.type==='holiday'?'danger':e.type==='festival'?'warning':'info'}" style="font-size:0.68rem">${e.type}</span>
+        </div>
+      `;
+    }).join('') + `</div>`;
+  }
+
+  // Section navigation
+  window.showSection = function(name, navEl) {
+    document.querySelectorAll('.student-section').forEach(s => s.classList.add('hidden'));
+    document.getElementById(`section-${name}`)?.classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if (navEl) navEl.classList.add('active');
+
+    // Init calendar when first shown
+    if (name === 'calendar' && !calendarInstance && window._calEvents) {
+      setTimeout(() => {
+        const el = document.getElementById('student-calendar');
+        calendarInstance = new FullCalendar.Calendar(el, {
+          initialView: 'dayGridMonth',
+          headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
+          events: window._calEvents,
+          height: 'auto'
+        });
+        calendarInstance.render();
+      }, 100);
+    }
+  };
+</script>
+</body>
+</html>

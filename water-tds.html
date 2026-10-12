@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Water TDS Monitoring — HMC Portal</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <script type="module">import { initTheme } from './js/theme.js'; initTheme();</script>
+  <style>
+    /* ── Hostel Card Grid ─────────────────────────────────── */
+    .hostel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--sp-4);
+    }
+    .hostel-card {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      border: 1.5px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-5);
+      cursor: pointer;
+      transition: var(--transition-normal);
+      position: relative;
+      overflow: hidden;
+    }
+    .hostel-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-glow-sm); }
+    .hostel-card.pending { border-color: rgba(251,191,36,0.5); background: rgba(251,191,36,0.05); }
+    .hostel-card.in_progress { border-color: rgba(99,102,241,0.5); background: rgba(99,102,241,0.05); }
+    .hostel-card.completed { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.04); }
+    .hostel-card-name { font-size: 1rem; font-weight: 800; color: var(--text-normal); margin-bottom: var(--sp-2); }
+    .hostel-card-code { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+    .hostel-week-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: var(--radius-full);
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      margin-top: var(--sp-3);
+    }
+    .badge-pending    { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+    .badge-in-progress{ background: rgba(99,102,241,0.15);  color: #818cf8; }
+    .badge-completed  { background: rgba(34,197,94,0.15);   color: #4ade80; }
+    .badge-incomplete { background: rgba(239,68,68,0.12);   color: #f87171; }
+    .section-divider {
+      font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-muted); padding: var(--sp-2) 0; margin-bottom: var(--sp-3);
+      display: flex; align-items: center; gap: var(--sp-3);
+    }
+    .section-divider::after { content:''; flex:1; height:1px; background:var(--border-subtle); }
+    /* ── Slide Panel ─────────────────────────────────────── */
+    .slide-panel-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(4px); z-index: 400; display: none;
+      align-items: stretch; justify-content: flex-end;
+    }
+    .slide-panel-overlay.open { display: flex; }
+    .slide-panel {
+      width: min(620px, 100vw);
+      background: var(--bg-elevated);
+      border-left: 1px solid var(--border-subtle);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      animation: slideIn 0.25s ease;
+    }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    .slide-panel-header {
+      padding: var(--sp-5) var(--sp-6);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-card);
+    }
+    .slide-panel-body { flex: 1; overflow-y: auto; padding: var(--sp-5) var(--sp-6); }
+    .slide-panel-footer {
+      padding: var(--sp-4) var(--sp-6);
+      border-top: 1px solid var(--border-subtle);
+      display: flex; gap: var(--sp-3); justify-content: flex-end;
+      background: var(--bg-card);
+    }
+    /* ── Floor Section in Form ────────────────────────────── */
+    .floor-section {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: var(--sp-4);
+    }
+    .floor-section-header {
+      background: rgba(255,255,255,0.03);
+      padding: var(--sp-3) var(--sp-4);
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--border-subtle);
+      cursor: pointer;
+    }
+    .floor-section-header:hover { background: rgba(255,255,255,0.05); }
+    .floor-section-body { padding: var(--sp-4); }
+    .cooler-row {
+      display: grid;
+      grid-template-columns: 1fr 90px 120px 110px auto;
+      gap: var(--sp-2);
+      align-items: center;
+      margin-bottom: var(--sp-2);
+    }
+    .cooler-row input, .cooler-row select { margin-bottom: 0 !important; }
+    .remove-cooler-btn {
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; padding: 4px; border-radius: var(--radius-sm);
+      transition: var(--transition-fast);
+    }
+    .remove-cooler-btn:hover { color: var(--brand-danger); background: rgba(239,68,68,0.1); }
+    /* ── Status badges for TDS ppm ────────────────────────── */
+    .status-badge {
+      display: inline-block; padding: 3px 9px; border-radius: var(--radius-full);
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .status-safe     { background: rgba(34,197,94,0.12); color: #4ade80; }
+    .status-caution  { background: rgba(245,158,11,0.12); color: #fbbf24; }
+    .status-unsafe   { background: rgba(239,68,68,0.12); color: #f87171; }
+    /* ── Tab ─────────────────────────────────────────────── */
+    .tab-btn {
+      background: transparent; border: none; color: var(--text-muted);
+      padding: var(--sp-2) var(--sp-4); font-size: 0.88rem; font-weight: 600;
+      cursor: pointer; border-radius: var(--radius-md); transition: var(--transition-fast);
+    }
+    .tab-btn:hover { color: var(--text-normal); background: rgba(255,255,255,0.03); }
+    .tab-btn.active { color: var(--brand-primary); background: rgba(124,58,237,0.12); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    @media (max-width: 640px) {
+      .hostel-grid { grid-template-columns: 1fr 1fr; }
+      .cooler-row { grid-template-columns: 1fr 70px 90px 90px auto; }
+    }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Water TDS Monitoring</h1>
+        <p class="page-subtitle" id="week-label">Track chemical safety and TDS levels of hostel drinking water</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn btn-secondary hmc-head-action hidden" onclick="downloadWeeklyReport()" style="font-size:0.82rem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Weekly Report
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:var(--sp-4);border-bottom:1px solid var(--border-subtle);padding-bottom:var(--sp-1)">
+      <button class="tab-btn active" id="tab-hostels-btn" onclick="switchTab('hostels')">This Week's Testing</button>
+      <button class="tab-btn" id="tab-logs-btn" onclick="switchTab('logs')">TDS Session Logs</button>
+      <button class="tab-btn hmc-head-action hidden" id="tab-assign-btn" onclick="switchTab('assign')">Duty Assignment</button>
+    </div>
+
+    <!-- Tab: Hostels Weekly View -->
+    <div id="tab-hostels" class="tab-content active">
+      <!-- Pending Hostels -->
+      <div id="pending-section">
+        <div class="section-divider" style="color:#fbbf24">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Pending This Week
+        </div>
+        <div class="hostel-grid" id="pending-grid">
+          <div style="grid-column:1/-1;text-align:center;padding:var(--sp-6)"><div class="spinner" style="margin:0 auto"></div></div>
+        </div>
+      </div>
+
+      <!-- Tested / In Progress Hostels -->
+      <div id="tested-section" style="margin-top:var(--sp-6)">
+        <div class="section-divider" style="color:#4ade80">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Tested This Week
+        </div>
+        <div class="hostel-grid" id="tested-grid">
+          <div style="grid-column:1/-1;text-align:center;padding:var(--sp-4);color:var(--text-muted);font-size:0.85rem">No hostels tested yet this week.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Logs -->
+    <div id="tab-logs" class="tab-content">
+      <div class="card">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--sp-2)">
+          <h3 class="card-title" style="margin:0">TDS Session History</h3>
+          <select class="form-control" id="log-filter" style="width:180px;margin-bottom:0" onchange="renderLogsTable()">
+            <option value="all">All Hostels</option>
+          </select>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Week Starting</th>
+                <th>Hostel</th>
+                <th>Status</th>
+                <th>Readings</th>
+                <th>Avg TDS</th>
+                <th>Logged By</th>
+                <th>Last Updated</th>
+              </tr>
+            </thead>
+            <tbody id="logs-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:var(--sp-8)"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Duty Assignment -->
+    <div id="tab-assign" class="tab-content">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-6);">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Assign TDS Duty</h3></div>
+          <div style="padding:var(--sp-4)">
+            <div class="form-group">
+              <label class="form-label">Select Member</label>
+              <div style="position:relative">
+                <input type="text" id="assign-member-search" class="form-control" placeholder="Search member name…" oninput="filterMemberDropdown()" onfocus="showMemberDropdown()">
+                <div id="assign-member-list" style="display:none;position:absolute;top:100%;left:0;width:100%;z-index:1000;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);max-height:200px;overflow-y:auto;box-shadow:var(--shadow-md)"></div>
+              </div>
+              <input type="hidden" id="assign-member-uid">
+              <div id="assign-member-preview" style="font-size:0.8rem;color:var(--text-muted);margin-top:4px"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Assign For Date</label>
+              <input type="date" id="assign-date" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hostel to Check</label>
+              <select id="assign-hostel" class="form-control">
+                <option value="">All Hostels</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Task Note (optional)</label>
+              <input type="text" id="assign-note" class="form-control" placeholder="e.g. Check all coolers on ground floor">
+            </div>
+            <button class="btn btn-primary" style="width:100%" onclick="saveAssignment()">Assign Duty</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Active Assignments</h3></div>
+          <div id="active-assignments-list" style="padding:var(--sp-4)">
+            <div class="spinner" style="margin:0 auto"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Track Record -->
+      <div class="card" style="margin-top:var(--sp-6)">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+          <h3 class="card-title">HMC Members Track Record</h3>
+          <span style="font-size:0.78rem;color:var(--text-muted)">Bonus points for extra/ad-hoc checks</span>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>#</th><th>Member</th><th>Assigned</th><th>Completed</th><th>Bonus Points</th><th>Total Score</th></tr></thead>
+            <tbody id="leaderboard-tbody">
+              <tr><td colspan="6" style="text-align:center;padding:var(--sp-6)"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Slide Panel: Per-Hostel TDS Form ─────────────────── -->
+<div class="slide-panel-overlay" id="tds-panel-overlay" onclick="closeTdsPanel(event)">
+  <div class="slide-panel" id="tds-panel">
+    <div class="slide-panel-header">
+      <div>
+        <div style="font-weight:800;font-size:1.1rem" id="panel-hostel-name">Hostel Name</div>
+        <div style="font-size:0.78rem;color:var(--text-muted)" id="panel-week-label"></div>
+      </div>
+      <button class="modal-close" onclick="closePanelDirect()">&times;</button>
+    </div>
+    <div class="slide-panel-body" id="panel-body">
+      <!-- Floors + coolers rendered here -->
+    </div>
+    <div class="slide-panel-footer">
+      <button class="btn btn-secondary" onclick="closePanelDirect()">Close</button>
+      <button class="btn btn-secondary" id="panel-save-btn" onclick="saveTdsSession(false)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save (In Progress)
+      </button>
+      <button class="btn btn-primary" id="panel-complete-btn" onclick="saveTdsSession(true)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Mark as Complete
+      </button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from './js/auth.js';
+  import { renderSidebar, initSidebarTheme } from './js/sidebar.js';
+  import { showToast } from './js/utils.js';
+  import { db } from './js/firebase-config.js';
+  import { logAction } from './js/audit-logger.js';
+  import {
+    doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc, query, where, orderBy
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('water-tds.html');
+  initSidebarTheme();
+
+  // ── Globals ──────────────────────────────────────────────
+  let currentUser = null;
+  let allHostels = [];
+  let allMembers = [];
+  let allAssignments = [];
+  let allSessions = [];       // this week's sessions
+  let allLogsHistory = [];    // all historical sessions
+  let tdsThresholds = { excellent: 150, good: 300, fair: 500 };
+  let weekResetConfig = { day: 1, time: '21:00' };
+  let currentWeekStart = null;
+  let isHead = false;
+  let selectedMemberUid = '';
+
+  // Panel state
+  let activeHostelId = null;
+  let activeSession = null;   // current editable session doc
+
+  // ── Week Calculation ──────────────────────────────────────
+  function getWeekStart(config = weekResetConfig, now = new Date()) {
+    const resetDay = parseInt(config.day ?? 1);     // 0=Sun..6=Sat
+    const [rH, rM] = (config.time || '21:00').split(':').map(Number);
+    // Work in IST (UTC+5:30)
+    const IST = 5.5 * 60 * 60 * 1000;
+    const istNow = new Date(now.getTime() + IST);
+
+    let day = istNow.getUTCDay();  // 0=Sun..6=Sat
+    let daysSince = (day - resetDay + 7) % 7;
+    let candidate = new Date(istNow);
+    candidate.setUTCDate(istNow.getUTCDate() - daysSince);
+    candidate.setUTCHours(rH - 5, rM - 30, 0, 0);  // convert IST to UTC
+    if (candidate.getTime() > now.getTime()) {
+      candidate.setUTCDate(candidate.getUTCDate() - 7);
+    }
+    return candidate;
+  }
+
+  function formatWeekLabel(dt) {
+    const opts = { day: '2-digit', month: 'short', year: 'numeric' };
+    const end = new Date(dt.getTime() + 7 * 24 * 3600 * 1000);
+    return `Week: ${dt.toLocaleDateString('en-IN', opts)} – ${end.toLocaleDateString('en-IN', opts)}`;
+  }
+
+  // ── Auth ─────────────────────────────────────────────────
+  initAuthGuard({
+    requireLogin: true,
+    onReady: async (user) => {
+      currentUser = user;
+      populateSidebarUser(user);
+
+      const isHostelAuthority = ['chief_warden', 'hostel_warden', 'hostel_supervisor'].includes(user.role);
+      const isHostelCategory = user.role === 'admin' || isHostelAuthority ||
+        (user.role !== 'student' && (user.category || '').toLowerCase().trim() === 'hostel');
+      if (!isHostelCategory) {
+        showToast('Access Denied: Only HMC Hostel category members and authorities can view this dashboard.', 'error');
+        window.location.href = 'dashboard.html';
+        return;
+      }
+
+      isHead = user.role === 'admin' ||
+        user.role === 'chief_warden' ||
+        user.role === 'hostel_warden' ||
+        (user.category || '').toLowerCase().trim() === 'hostel' && user.post === 'Head' ||
+        (user.title || '').toLowerCase().includes('hostel head') ||
+        (user.post || '').toLowerCase().includes('hostel head');
+
+      if (isHead) {
+        document.querySelectorAll('.hmc-head-action').forEach(el => el.classList.remove('hidden'));
+      }
+
+      await Promise.all([loadSettings(), loadHostels()]);
+      await Promise.all([loadSessions(), loadMembers(), loadAssignments()]);
+
+      // Check for assignmentId in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const assignmentId = urlParams.get('assignmentId');
+      if (assignmentId) {
+        window.activeAssignmentId = assignmentId;
+        const assSnap = await getDoc(doc(db, 'tds_assignments', assignmentId));
+        if (assSnap.exists()) {
+          const assData = assSnap.data();
+          const hostelId = assData.hostelId;
+          const h = allHostels.find(x => x.id === hostelId);
+          if (h) {
+            openTdsPanel(h.id);
+          }
+        }
+      }
+    }
+  });
+
+  // ── Tab Switching ─────────────────────────────────────────
+  window.switchTab = function(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('tab-' + tab + '-btn').classList.add('active');
+  };
+
+  // ── Load Settings ─────────────────────────────────────────
+  async function loadSettings() {
+    try {
+      const snap = await getDoc(doc(db, 'meta', 'hostel'));
+      if (snap.exists()) {
+        const d = snap.data();
+        tdsThresholds = d.tdsThresholds || tdsThresholds;
+        weekResetConfig = d.weekResetConfig || weekResetConfig;
+      }
+    } catch (e) { console.warn('Could not load settings:', e.message); }
+    currentWeekStart = getWeekStart();
+    document.getElementById('week-label').textContent = formatWeekLabel(currentWeekStart);
+    document.getElementById('panel-week-label').textContent = formatWeekLabel(currentWeekStart);
+  }
+
+  // ── Load Hostels ──────────────────────────────────────────
+  async function loadHostels() {
+    try {
+      const snap = await getDocs(collection(db, 'hostels'));
+      allHostels = [];
+      snap.forEach(d => allHostels.push({ id: d.id, ...d.data() }));
+      allHostels.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } catch (e) { console.warn('Could not load hostels:', e.message); }
+    populateHostelDropdowns();
+  }
+
+  function populateHostelDropdowns() {
+    const logFilter = document.getElementById('log-filter');
+    const assignHostel = document.getElementById('assign-hostel');
+    logFilter.innerHTML = '<option value="all">All Hostels</option>';
+    assignHostel.innerHTML = '<option value="">All Hostels</option>';
+
+    let displayHostels = allHostels;
+    if (currentUser?.role === 'hostel_warden') {
+      const assigned = Array.isArray(currentUser.assignedHostels) && currentUser.assignedHostels.length ? currentUser.assignedHostels : (currentUser.assignedHostel ? [currentUser.assignedHostel] : []);
+      displayHostels = allHostels.filter(h => assigned.includes(h.name));
+    } else if (currentUser?.role === 'hostel_supervisor') {
+      const assigned = currentUser.assignedHostel || (Array.isArray(currentUser.assignedHostels) ? currentUser.assignedHostels[0] : null);
+      if (assigned) displayHostels = allHostels.filter(h => h.name === assigned);
+    }
+
+    displayHostels.forEach(h => {
+      logFilter.innerHTML += `<option value="${h.id}">${h.name}</option>`;
+      assignHostel.innerHTML += `<option value="${h.id}">${h.name}</option>`;
+    });
+  }
+
+  // ── Load Sessions (this week) ─────────────────────────────
+  async function loadSessions() {
+    try {
+      const weekStr = currentWeekStart.toISOString();
+      const q = query(collection(db, 'hostel_tds_sessions'), where('weekStart', '==', weekStr));
+      const snap = await getDocs(q);
+      allSessions = [];
+      snap.forEach(d => allSessions.push({ id: d.id, ...d.data() }));
+      // Also load all for logs tab
+      const allSnap = await getDocs(query(collection(db, 'hostel_tds_sessions'), orderBy('weekStart', 'desc')));
+      allLogsHistory = [];
+      allSnap.forEach(d => allLogsHistory.push({ id: d.id, ...d.data() }));
+    } catch (e) { console.warn('Could not load sessions:', e.message); }
+    renderHostelCards();
+    renderLogsTable();
+    // Also mark incomplete sessions from previous weeks
+    await markIncompleteIfNeeded();
+  }
+
+  async function markIncompleteIfNeeded() {
+    // Sessions from previous weeks that are still in_progress should be marked incomplete
+    const weekStr = currentWeekStart.toISOString();
+    const stale = allLogsHistory.filter(s =>
+      s.weekStart !== weekStr && s.status === 'in_progress'
+    );
+    for (const s of stale) {
+      try {
+        await updateDoc(doc(db, 'hostel_tds_sessions', s.id), { status: 'incomplete' });
+      } catch (e) { /* silent */ }
+    }
+  }
+
+  // ── Status helper ─────────────────────────────────────────
+  function getTdsStatus(ppm) {
+    const v = parseInt(ppm);
+    if (isNaN(v)) return { label: 'Unknown', cls: 'status-caution' };
+    if (v <= tdsThresholds.excellent) return { label: 'Excellent', cls: 'status-safe' };
+    if (v <= tdsThresholds.good)      return { label: 'Good', cls: 'status-safe' };
+    if (v <= tdsThresholds.fair)      return { label: 'Acceptable', cls: 'status-caution' };
+    return { label: 'High TDS', cls: 'status-unsafe' };
+  }
+
+  // ── Render Hostel Cards ───────────────────────────────────
+  function renderHostelCards() {
+    const pendingGrid = document.getElementById('pending-grid');
+    const testedGrid  = document.getElementById('tested-grid');
+
+    const pendingCards = [];
+    const testedCards  = [];
+
+    allHostels.forEach(h => {
+      const session = allSessions.find(s => s.hostelId === h.id);
+      const status = session?.status || 'pending';
+      const readingsCount = session?.readings?.length || 0;
+
+      let badgeClass, badgeLabel, badgeIcon;
+      if (status === 'completed') {
+        badgeClass = 'badge-completed'; badgeLabel = 'Tested ✓'; badgeIcon = '✓';
+      } else if (status === 'in_progress') {
+        badgeClass = 'badge-in-progress'; badgeLabel = 'In Progress'; badgeIcon = '…';
+      } else {
+        badgeClass = 'badge-pending'; badgeLabel = 'Pending'; badgeIcon = '!';
+      }
+
+      const card = `<div class="hostel-card ${status}" onclick="openTdsPanel('${h.id}')">
+        <div class="hostel-card-name">${h.name}</div>
+        <div class="hostel-card-code">${h.code || h.id}</div>
+        ${readingsCount > 0 ? `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:var(--sp-2)">${readingsCount} reading${readingsCount !== 1 ? 's' : ''} logged</div>` : ''}
+        <div><span class="hostel-week-badge ${badgeClass}">${badgeLabel}</span></div>
+      </div>`;
+
+      if (status === 'pending') pendingCards.push(card);
+      else testedCards.push(card);
+    });
+
+    pendingGrid.innerHTML = pendingCards.length
+      ? pendingCards.join('')
+      : `<div style="grid-column:1/-1;text-align:center;padding:var(--sp-4);color:var(--brand-success);font-weight:600">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px"><polyline points="20 6 9 17 4 12"/></svg>
+          All hostels have been tested this week!
+        </div>`;
+
+    testedGrid.innerHTML = testedCards.length
+      ? testedCards.join('')
+      : `<div style="grid-column:1/-1;text-align:center;padding:var(--sp-4);color:var(--text-muted);font-size:0.85rem">No hostels tested yet this week.</div>`;
+  }
+
+  // ── Render Logs Table ─────────────────────────────────────
+  window.renderLogsTable = function() {
+    const tbody = document.getElementById('logs-tbody');
+    const filter = document.getElementById('log-filter').value;
+    let logs = filter === 'all' ? allLogsHistory
+      : allLogsHistory.filter(s => s.hostelId === filter);
+
+    if (!logs.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:var(--sp-6)">No TDS sessions logged yet.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = logs.map(s => {
+      const hostel = allHostels.find(h => h.id === s.hostelId) || { name: s.hostelName || '—' };
+      const readings = s.readings || [];
+      const avgPpm = readings.length
+        ? Math.round(readings.reduce((a, r) => a + (parseFloat(r.ppm) || 0), 0) / readings.length)
+        : null;
+      const weekDt = new Date(s.weekStart);
+      const weekStr = weekDt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+      const updatedDt = s.updatedAt ? new Date(s.updatedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+
+      let statusBadge;
+      if (s.status === 'completed') statusBadge = `<span class="hostel-week-badge badge-completed">Tested</span>`;
+      else if (s.status === 'in_progress') statusBadge = `<span class="hostel-week-badge badge-in-progress">In Progress</span>`;
+      else if (s.status === 'incomplete') statusBadge = `<span class="hostel-week-badge badge-incomplete">Incomplete</span>`;
+      else statusBadge = `<span class="hostel-week-badge badge-pending">Pending</span>`;
+
+      return `<tr>
+        <td style="font-size:0.82rem">${weekStr}</td>
+        <td><strong>${hostel.name}</strong></td>
+        <td>${statusBadge}</td>
+        <td style="text-align:center">${readings.length}</td>
+        <td>${avgPpm != null ? `<strong>${avgPpm} PPM</strong>` : '—'}</td>
+        <td>
+          <div style="font-size:0.85rem;font-weight:600">${s.creatorName || '—'}</div>
+          <div style="font-size:0.72rem;color:var(--text-muted)">${s.creatorUniqueId || ''}</div>
+        </td>
+        <td style="font-size:0.8rem;color:var(--text-secondary)">${updatedDt}</td>
+      </tr>`;
+    }).join('');
+  };
+
+  // ── Open TDS Panel ────────────────────────────────────────
+  window.openTdsPanel = function(hostelId) {
+    const hostel = allHostels.find(h => h.id === hostelId);
+    if (!hostel) return;
+    activeHostelId = hostelId;
+    activeSession = allSessions.find(s => s.hostelId === hostelId) || null;
+
+    document.getElementById('panel-hostel-name').textContent = hostel.name + (hostel.code ? ` (${hostel.code})` : '');
+    renderPanelBody(hostel, activeSession);
+    document.getElementById('tds-panel-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+
+  function renderPanelBody(hostel, session) {
+    const floors = parseInt(hostel.floors || 4);
+    const floorNames = ['Ground Floor','1st Floor','2nd Floor','3rd Floor','4th Floor',
+      '5th Floor','6th Floor','7th Floor','8th Floor','9th Floor','10th Floor'];
+    const readings = session?.readings || [];
+
+    // Group existing readings by floor index
+    const byFloor = {};
+    readings.forEach(r => {
+      const fi = r.floorIndex ?? 0;
+      if (!byFloor[fi]) byFloor[fi] = [];
+      byFloor[fi].push(r);
+    });
+
+    let html = `<div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:var(--sp-4)">Fill TDS readings for each floor. Each row is one water cooler. Add or remove coolers as needed.</div>`;
+
+    for (let i = 0; i < floors; i++) {
+      const fname = floorNames[i] || `Floor ${i}`;
+      const floorReadings = byFloor[i] || [{ coolerCode: '', ppm: '', notes: '' }];
+
+      const coolerRows = floorReadings.map((r, ci) => `
+        <div class="cooler-row" data-floor="${i}" data-cooler="${ci}">
+          <input type="text" class="form-control cooler-code" data-floor="${i}" data-ci="${ci}" placeholder="Cooler Code (e.g. WC-GF-01)" value="${r.coolerCode || ''}">
+          <input type="number" class="form-control cooler-ppm" data-floor="${i}" data-ci="${ci}" placeholder="PPM" min="0" max="2000" value="${r.ppm || ''}" oninput="updatePpmPreview(this)">
+          <span class="ppm-preview status-badge" style="text-align:center;display:block">${r.ppm ? getTdsStatus(r.ppm).label : '—'}</span>
+          <input type="text" class="form-control cooler-notes" data-floor="${i}" data-ci="${ci}" placeholder="Notes" value="${r.notes || ''}">
+          <button class="remove-cooler-btn" onclick="removeCoolerRow(this, ${i})">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      `).join('');
+
+      html += `<div class="floor-section">
+        <div class="floor-section-header" onclick="toggleFloorSection(this)">
+          <span style="font-weight:700;font-size:0.9rem">${fname}</span>
+          <span style="font-size:0.78rem;color:var(--text-muted)">${floorReadings.filter(r => r.ppm).length} / ${floorReadings.length} cooler(s) logged</span>
+        </div>
+        <div class="floor-section-body" id="floor-body-${i}">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;display:grid;grid-template-columns:1fr 90px 120px 110px auto;gap:var(--sp-2);margin-bottom:var(--sp-2);padding:0 2px">
+            <span>Cooler Code</span><span>PPM</span><span>Status</span><span>Notes</span><span></span>
+          </div>
+          <div id="coolers-${i}">${coolerRows}</div>
+          <button class="btn btn-secondary" style="width:100%;margin-top:var(--sp-3);font-size:0.8rem" onclick="addCoolerRow(${i})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Cooler
+          </button>
+        </div>
+      </div>`;
+    }
+
+    document.getElementById('panel-body').innerHTML = html;
+  }
+
+  window.toggleFloorSection = function(header) {
+    const body = header.nextElementSibling;
+    body.style.display = body.style.display === 'none' ? '' : 'none';
+  };
+
+  window.addCoolerRow = function(floorIdx) {
+    const container = document.getElementById(`coolers-${floorIdx}`);
+    const ci = container.querySelectorAll('.cooler-row').length;
+    const row = document.createElement('div');
+    row.className = 'cooler-row';
+    row.dataset.floor = floorIdx;
+    row.dataset.cooler = ci;
+    row.innerHTML = `
+      <input type="text" class="form-control cooler-code" data-floor="${floorIdx}" data-ci="${ci}" placeholder="Cooler Code (e.g. WC-${floorIdx}-0${ci+1})">
+      <input type="number" class="form-control cooler-ppm" data-floor="${floorIdx}" data-ci="${ci}" placeholder="PPM" min="0" max="2000" oninput="updatePpmPreview(this)">
+      <span class="ppm-preview status-badge" style="text-align:center;display:block">—</span>
+      <input type="text" class="form-control cooler-notes" data-floor="${floorIdx}" data-ci="${ci}" placeholder="Notes">
+      <button class="remove-cooler-btn" onclick="removeCoolerRow(this, ${floorIdx})">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>`;
+    container.appendChild(row);
+  };
+
+  window.removeCoolerRow = function(btn, floorIdx) {
+    const container = document.getElementById(`coolers-${floorIdx}`);
+    if (container.querySelectorAll('.cooler-row').length <= 1) {
+      showToast('At least one cooler row must remain per floor.', 'warning');
+      return;
+    }
+    btn.closest('.cooler-row').remove();
+  };
+
+  window.updatePpmPreview = function(input) {
+    const preview = input.nextElementSibling;
+    if (!preview || !preview.classList.contains('ppm-preview')) return;
+    const v = input.value;
+    if (!v) { preview.textContent = '—'; preview.className = 'ppm-preview status-badge'; return; }
+    const s = getTdsStatus(v);
+    preview.textContent = s.label;
+    preview.className = `ppm-preview status-badge ${s.cls}`;
+  };
+
+  // ── Collect form readings ─────────────────────────────────
+  function collectReadingsFromPanel(hostel) {
+    const readings = [];
+    const floors = parseInt(hostel.floors || 4);
+    const floorNames = ['Ground Floor','1st Floor','2nd Floor','3rd Floor','4th Floor',
+      '5th Floor','6th Floor','7th Floor','8th Floor','9th Floor','10th Floor'];
+
+    for (let i = 0; i < floors; i++) {
+      const container = document.getElementById(`coolers-${i}`);
+      if (!container) continue;
+      container.querySelectorAll('.cooler-row').forEach(row => {
+        const code = row.querySelector('.cooler-code')?.value?.trim() || '';
+        const ppm  = row.querySelector('.cooler-ppm')?.value?.trim() || '';
+        const notes = row.querySelector('.cooler-notes')?.value?.trim() || '';
+        const floorName = floorNames[i] || `Floor ${i}`;
+        if (code || ppm) {
+          const s = getTdsStatus(ppm);
+          readings.push({ floorIndex: i, floorName, coolerCode: code, ppm: ppm ? parseFloat(ppm) : null, statusLabel: ppm ? s.label : '', notes, loggedAt: new Date().toISOString() });
+        }
+      });
+    }
+    return readings;
+  }
+
+  // ── Save TDS Session ──────────────────────────────────────
+  window.saveTdsSession = async function(markComplete) {
+    const hostel = allHostels.find(h => h.id === activeHostelId);
+    if (!hostel) return;
+
+    const readings = collectReadingsFromPanel(hostel);
+    if (readings.length === 0 && markComplete) {
+      showToast('Please log at least one cooler reading before marking complete.', 'warning');
+      return;
+    }
+
+    const btn = markComplete ? document.getElementById('panel-complete-btn') : document.getElementById('panel-save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    const weekStr = currentWeekStart.toISOString();
+    const sessionData = {
+      hostelId: hostel.id,
+      hostelName: hostel.name,
+      weekStart: weekStr,
+      status: markComplete ? 'completed' : 'in_progress',
+      readings,
+      creatorUid: currentUser.uid,
+      creatorName: currentUser.name || currentUser.email,
+      creatorUniqueId: currentUser.uniqueId || '—',
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      if (activeSession?.id) {
+        await updateDoc(doc(db, 'hostel_tds_sessions', activeSession.id), sessionData);
+      } else {
+        sessionData.createdAt = new Date().toISOString();
+        const ref = await addDoc(collection(db, 'hostel_tds_sessions'), sessionData);
+        activeSession = { id: ref.id, ...sessionData };
+      }
+
+      if (markComplete) {
+        // Search for any active assignment matching this user and hostel
+        const qAss = query(
+          collection(db, 'tds_assignments'),
+          where('assignedTo', '==', currentUser.uid),
+          where('hostelId', '==', hostel.id),
+          where('status', '==', 'assigned')
+        );
+        const assSnap = await getDocs(qAss);
+        let matchAssignmentId = window.activeAssignmentId;
+        if (!matchAssignmentId && !assSnap.empty) {
+          matchAssignmentId = assSnap.docs[0].id;
+        }
+
+        if (matchAssignmentId) {
+          // Update the assignment status to completed
+          await updateDoc(doc(db, 'tds_assignments', matchAssignmentId), { status: 'completed' });
+          // Update the task status to completed
+          const tasksQ = query(collection(db, 'tasks'), where('assignmentId', '==', matchAssignmentId));
+          const tasksSnap = await getDocs(tasksQ);
+          for (const tDoc of tasksSnap.docs) {
+            await updateDoc(doc(db, 'tasks', tDoc.id), { status: 'completed', completedDate: new Date().toISOString() });
+          }
+          // Increment completed count
+          const userRef = doc(db, 'users', currentUser.uid);
+          const uSnap = await getDoc(userRef);
+          const tr = uSnap.exists() ? (uSnap.data().trackRecordTds || {}) : {};
+          tr.completed = (tr.completed || 0) + 1;
+          await updateDoc(userRef, { trackRecordTds: tr });
+        } else {
+          // Bonus (completed without assignment)
+          const userRef = doc(db, 'users', currentUser.uid);
+          const uSnap = await getDoc(userRef);
+          const tr = uSnap.exists() ? (uSnap.data().trackRecordTds || {}) : {};
+          tr.bonus = (tr.bonus || 0) + 1;
+          await updateDoc(userRef, { trackRecordTds: tr });
+        }
+      }
+
+      showToast(markComplete ? `${hostel.name} marked as Tested!` : `Progress saved for ${hostel.name}`, 'success');
+      logAction({
+        action: markComplete ? 'Completed Water TDS Session' : 'Saved Water TDS Progress',
+        department: 'Water TDS',
+        details: `${markComplete ? 'Marked TDS testing complete' : 'Saved TDS readings'} for ${hostel.name} (${readings.length} cooler reading(s) recorded)`,
+        user: currentUser
+      });
+      await loadSessions();
+      if (markComplete) closePanelDirect();
+    } catch (err) {
+      showToast('Error: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = markComplete ? 'Mark as Complete' : 'Save (In Progress)';
+    }
+  };
+
+  // ── Close Panel ───────────────────────────────────────────
+  window.closeTdsPanel = function(e) {
+    if (e.target === document.getElementById('tds-panel-overlay')) closePanelDirect();
+  };
+  window.closePanelDirect = function() {
+    document.getElementById('tds-panel-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+    activeHostelId = null;
+    activeSession = null;
+  };
+
+  // ── Load Members ──────────────────────────────────────────
+  async function loadMembers() {
+    try {
+      const snap = await getDocs(collection(db, 'users'));
+      allMembers = [];
+      snap.forEach(d => {
+        const data = d.data();
+        if (data.role !== 'student' && data.role !== 'laundry_worker') allMembers.push({ uid: d.id, ...data });
+      });
+      allMembers.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      renderMemberDropdown(allMembers);
+      renderLeaderboard();
+    } catch (e) { console.warn('Could not load members:', e.message); }
+  }
+
+  function renderMemberDropdown(members) {
+    const list = document.getElementById('assign-member-list');
+    list.innerHTML = members.map(m =>
+      `<div style="padding:8px 16px;cursor:pointer;font-size:0.88rem" onclick="selectMember('${m.uid}','${(m.name||m.email||'').replace(/'/g,"\\'")}')">
+        <strong>${m.name || m.email}</strong>
+        <span style="font-size:0.75rem;color:var(--text-muted)"> ${m.uniqueId || m.post || ''}</span>
+      </div>`
+    ).join('');
+  }
+
+  window.filterMemberDropdown = function() {
+    const q = document.getElementById('assign-member-search').value.toLowerCase();
+    renderMemberDropdown(allMembers.filter(m =>
+      (m.name || '').toLowerCase().includes(q) || (m.uniqueId || '').toLowerCase().includes(q)
+    ));
+    document.getElementById('assign-member-list').style.display = 'block';
+  };
+  window.showMemberDropdown = function() {
+    document.getElementById('assign-member-list').style.display = 'block';
+  };
+  window.selectMember = function(uid, name) {
+    selectedMemberUid = uid;
+    document.getElementById('assign-member-search').value = name;
+    document.getElementById('assign-member-uid').value = uid;
+    document.getElementById('assign-member-preview').textContent = `Selected: ${name}`;
+    document.getElementById('assign-member-list').style.display = 'none';
+  };
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#assign-member-list') && !e.target.closest('#assign-member-search')) {
+      document.getElementById('assign-member-list').style.display = 'none';
+    }
+  });
+
+  // ── Load Assignments ──────────────────────────────────────
+  async function loadAssignments() {
+    try {
+      const snap = await getDocs(collection(db, 'tds_assignments'));
+      allAssignments = [];
+      snap.forEach(d => allAssignments.push({ id: d.id, ...d.data() }));
+      allAssignments.sort((a, b) => new Date(b.assignedDate || b.createdAt) - new Date(a.assignedDate || a.createdAt));
+      renderActiveAssignments();
+    } catch (e) { console.warn('Could not load assignments:', e.message); }
+  }
+
+  function renderActiveAssignments() {
+    const container = document.getElementById('active-assignments-list');
+    const active = allAssignments.filter(a => a.status === 'assigned');
+    if (!active.length) { container.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem">No active assignments.</p>`; return; }
+    container.innerHTML = active.map(a => {
+      const hostel = allHostels.find(h => h.id === a.hostelId) || { name: a.hostelId || 'All Hostels' };
+      return `<div style="padding:var(--sp-3);border:1px solid var(--border-subtle);border-radius:var(--radius-md);margin-bottom:var(--sp-3)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-weight:600;font-size:0.88rem">${a.memberName || '—'}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted)">${hostel.name} · ${a.assignedDate || ''}</div>
+            ${a.note ? `<div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px">${a.note}</div>` : ''}
+          </div>
+          <span class="status-badge status-caution">Pending</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  window.saveAssignment = async function() {
+    if (!isHead) { showToast('Only heads can assign duties.', 'error'); return; }
+    const uid  = document.getElementById('assign-member-uid').value;
+    const name = document.getElementById('assign-member-search').value;
+    const date = document.getElementById('assign-date').value;
+    const hostelId = document.getElementById('assign-hostel').value;
+    const note = document.getElementById('assign-note').value.trim();
+    if (!uid || !date) { showToast('Please select a member and date.', 'error'); return; }
+    try {
+      const docRef = await addDoc(collection(db, 'tds_assignments'), {
+        assignedTo: uid, memberName: name, hostelId: hostelId || 'all',
+        assignedDate: date, note, status: 'assigned',
+        assignedBy: currentUser.uid, assignedByName: currentUser.name || currentUser.email,
+        createdAt: new Date().toISOString()
+      });
+
+      const selectedHostel = allHostels.find(h => h.id === hostelId);
+      const hostelName = selectedHostel ? selectedHostel.name : 'All Hostels';
+      const selectedMember = allMembers.find(m => m.uid === uid);
+      const memberUniqueId = selectedMember ? (selectedMember.uniqueId || '—') : '—';
+
+      // Create Task in tasks collection
+      const taskId = `#WT_${Date.now().toString().slice(-5)}`;
+      await addDoc(collection(db, 'tasks'), {
+        taskId,
+        title: `Water TDS report: ${hostelName} on ${date}`,
+        description: `Perform water TDS logging for ${hostelName} hostel on ${date}. Note: ${note || 'None'}. Click Open to log readings.`,
+        category: 'Water TDS Operations',
+        assignedByUid: currentUser.uid,
+        assignedByName: currentUser.name || currentUser.email,
+        assignedByUniqueId: currentUser.uniqueId || '—',
+        assignedToUid: uid,
+        assignedToName: name,
+        assignedToUniqueId: memberUniqueId,
+        assignedDate: new Date().toISOString(),
+        deadline: date,
+        status: 'assigned',
+        dueDate: date,
+        type: 'water_tds',
+        assignmentId: docRef.id,
+        link: `../water-tds.html?assignmentId=${docRef.id}`,
+        createdAt: new Date().toISOString()
+      });
+
+      const userRef = doc(db, 'users', uid);
+      const uSnap = await getDoc(userRef);
+      const tr = uSnap.exists() ? (uSnap.data().trackRecordTds || {}) : {};
+      tr.assigned = (tr.assigned || 0) + 1;
+      await updateDoc(userRef, { trackRecordTds: tr });
+
+      showToast(`TDS duty assigned to ${name} for ${date}!`, 'success');
+      document.getElementById('assign-member-search').value = '';
+      document.getElementById('assign-member-uid').value = '';
+      document.getElementById('assign-member-preview').textContent = '';
+      document.getElementById('assign-note').value = '';
+      await loadAssignments();
+      renderLeaderboard();
+    } catch (err) { showToast('Error: ' + err.message, 'error'); }
+  };
+
+  // ── Render Leaderboard ────────────────────────────────────
+  function renderLeaderboard() {
+    const tbody = document.getElementById('leaderboard-tbody');
+    if (!allMembers.length) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">No members found.</td></tr>`; return; }
+    const rows = allMembers.map(m => {
+      const tr = m.trackRecordTds || {};
+      return { ...m, assigned: tr.assigned || 0, completed: tr.completed || 0, bonus: tr.bonus || 0, total: (tr.completed || 0) + (tr.bonus || 0) };
+    }).sort((a, b) => b.total - a.total || b.completed - a.completed);
+    tbody.innerHTML = rows.map((m, i) => `
+      <tr>
+        <td><strong>#${i + 1}</strong></td>
+        <td><div style="font-weight:600">${m.name || m.email}</div><div style="font-size:0.72rem;color:var(--text-muted)">${m.uniqueId || m.post || ''}</div></td>
+        <td style="text-align:center">${m.assigned}</td>
+        <td style="text-align:center;color:var(--brand-success)">${m.completed}</td>
+        <td style="text-align:center;color:#fbbf24">${m.bonus}</td>
+        <td style="text-align:center"><strong style="font-size:1rem">${m.total}</strong></td>
+      </tr>`
+    ).join('');
+  }
+
+  // ── Weekly CSV Download ───────────────────────────────────
+  window.downloadWeeklyReport = function() {
+    const weekStr = currentWeekStart.toISOString();
+    const weekly = allLogsHistory.filter(s => s.weekStart === weekStr);
+    if (!weekly.length) { showToast('No sessions this week.', 'error'); return; }
+    const headers = ['Hostel','Status','Readings','Avg PPM','Logged By','Updated At'];
+    const rows = weekly.map(s => {
+      const hostel = allHostels.find(h => h.id === s.hostelId)?.name || s.hostelName || '';
+      const readings = s.readings || [];
+      const avgPpm = readings.length ? Math.round(readings.reduce((a,r) => a + (parseFloat(r.ppm)||0), 0) / readings.length) : '';
+      return [hostel, s.status, readings.length, avgPpm, s.creatorName || '', s.updatedAt || '']
+        .map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = `TDS_Report_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click(); URL.revokeObjectURL(url);
+  };
+</script>
+</body>
+</html>

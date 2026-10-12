@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HMC Events — Pass Scanner</title>
+  <meta name="description" content="Scan and verify event entry passes and meal passes for HMC campus events." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── CSS Variables (matches HMC Portal design system) ── */
+    :root {
+      --brand-primary:   #6C63FF;
+      --brand-success:   #10B981;
+      --brand-danger:    #EF4444;
+      --brand-warning:   #F59E0B;
+      --bg-base:         #0A0A1A;
+      --bg-elevated:     #1A1A3E;
+      --bg-card:         #12122A;
+      --text-primary:    #F0F0FF;
+      --text-muted:      #6B6B9A;
+      --border-subtle:   rgba(108, 99, 255, 0.15);
+      --font-primary:    'Inter', sans-serif;
+      --radius-lg:       1rem;
+      --radius-xl:       1.5rem;
+      --transition:      0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-primary);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 1.5rem 1rem 2rem;
+      background: radial-gradient(ellipse at 50% 0%, rgba(108,99,255,0.18) 0%, transparent 65%),
+                  var(--bg-base);
+    }
+
+    /* ── Header ── */
+    .scanner-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-top: 0.5rem;
+    }
+    .brand-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #a78bfa, var(--brand-primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .brand-logo .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--brand-primary);
+      -webkit-text-fill-color: initial;
+      display: inline-block;
+    }
+    .scanner-subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 0.35rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .event-badge {
+      display: inline-block;
+      margin-top: 0.6rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      background: rgba(108,99,255,0.12);
+      border: 1px solid var(--border-subtle);
+      font-size: 0.78rem;
+      color: var(--brand-primary);
+      font-weight: 600;
+    }
+
+    /* ── Main Card ── */
+    .scanner-card {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    /* ── Scan Box ── */
+    .scan-box-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 300px;
+    }
+    .scan-box {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: var(--radius-xl);
+      background: rgba(26, 26, 62, 0.6);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+    /* Scanning line sweep */
+    .scan-box::after {
+      content: '';
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--brand-primary), transparent);
+      border-radius: 999px;
+      animation: scanLine 2.2s ease-in-out infinite;
+      box-shadow: 0 0 12px 2px rgba(108, 99, 255, 0.5);
+    }
+    @keyframes scanLine {
+      0%   { top: 12%; opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { top: 88%; opacity: 0; }
+    }
+
+    /* QR placeholder icon */
+    .scan-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      opacity: 0.45;
+    }
+    .qr-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 12px);
+      grid-template-rows: repeat(5, 12px);
+      gap: 2px;
+    }
+    .qr-cell {
+      border-radius: 2px;
+      background: var(--text-primary);
+    }
+    .qr-cell.empty { background: transparent; }
+    .scan-placeholder-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ── Corner Brackets (pulsing) ── */
+    .corner {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      animation: cornerPulse 1.8s ease-in-out infinite;
+    }
+    .corner-tl { top: 14px; left: 14px; border-top: 3px solid var(--brand-primary); border-left: 3px solid var(--brand-primary); border-radius: 4px 0 0 0; }
+    .corner-tr { top: 14px; right: 14px; border-top: 3px solid var(--brand-primary); border-right: 3px solid var(--brand-primary); border-radius: 0 4px 0 0; animation-delay: 0.45s; }
+    .corner-bl { bottom: 14px; left: 14px; border-bottom: 3px solid var(--brand-primary); border-left: 3px solid var(--brand-primary); border-radius: 0 0 0 4px; animation-delay: 0.9s; }
+    .corner-br { bottom: 14px; right: 14px; border-bottom: 3px solid var(--brand-primary); border-right: 3px solid var(--brand-primary); border-radius: 0 0 4px 0; animation-delay: 1.35s; }
+    @keyframes cornerPulse {
+      0%, 100% { opacity: 1; filter: drop-shadow(0 0 4px rgba(108, 99, 255, 0.7)); }
+      50%       { opacity: 0.45; filter: none; }
+    }
+
+    /* ── Mode pills ── */
+    .mode-pills {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(26,26,62,0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 999px;
+      padding: 0.25rem;
+      width: 100%;
+      max-width: 300px;
+    }
+    .mode-pill {
+      flex: 1;
+      text-align: center;
+      padding: 0.4rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all var(--transition);
+      letter-spacing: 0.02em;
+      user-select: none;
+    }
+    .mode-pill.active {
+      background: var(--brand-primary);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(108,99,255,0.35);
+    }
+
+    /* ── Manual Input ── */
+    .input-group {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .input-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .input-row {
+      display: flex;
+      gap: 0.6rem;
+    }
+    .pass-input {
+      flex: 1;
+      background: rgba(26,26,62,0.7);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 0.85rem 1rem;
+      color: var(--text-primary);
+      font-family: var(--font-primary);
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .pass-input::placeholder { color: var(--text-muted); font-weight: 400; }
+    .pass-input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.18);
+    }
+    .verify-btn {
+      padding: 0.85rem 1.4rem;
+      border-radius: var(--radius-lg);
+      background: var(--brand-primary);
+      color: #fff;
+      font-family: var(--font-primary);
+      font-size: 0.95rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+      box-shadow: 0 4px 20px rgba(108,99,255,0.35);
+      position: relative;
+      overflow: hidden;
+    }
+    .verify-btn:hover { background: #7c75ff; box-shadow: 0 6px 24px rgba(108,99,255,0.5); transform: translateY(-1px); }
+    .verify-btn:active { transform: translateY(0); }
+    .verify-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .verify-btn .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    .verify-btn.loading .btn-text { display: none; }
+    .verify-btn.loading .spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result States ── */
+    .result-panel {
+      display: none;
+      width: 100%;
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+      animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.75rem;
+    }
+    .result-panel.visible { display: flex; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-panel.success {
+      background: linear-gradient(135deg, rgba(16,185,129,0.18), rgba(16,185,129,0.06));
+      border: 1.5px solid rgba(16,185,129,0.4);
+      box-shadow: 0 8px 32px rgba(16,185,129,0.12), inset 0 1px 0 rgba(16,185,129,0.2);
+    }
+    .result-panel.error {
+      background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(239,68,68,0.06));
+      border: 1.5px solid rgba(239,68,68,0.4);
+      box-shadow: 0 8px 32px rgba(239,68,68,0.12), inset 0 1px 0 rgba(239,68,68,0.2);
+    }
+    .result-panel.warning {
+      background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.06));
+      border: 1.5px solid rgba(245,158,11,0.4);
+      box-shadow: 0 8px 32px rgba(245,158,11,0.12), inset 0 1px 0 rgba(245,158,11,0.2);
+    }
+
+    .result-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+    }
+    .success .result-icon { background: rgba(16,185,129,0.15); }
+    .error   .result-icon { background: rgba(239,68,68,0.15); }
+    .warning .result-icon { background: rgba(245,158,11,0.15); }
+
+    .result-status {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .success .result-status { color: var(--brand-success); }
+    .error   .result-status { color: var(--brand-danger); }
+    .warning .result-status { color: var(--brand-warning); }
+
+    .result-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+    .result-meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .result-chip {
+      padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .success .result-chip { background: rgba(16,185,129,0.15); color: var(--brand-success); }
+    .error   .result-chip { background: rgba(239,68,68,0.15);  color: var(--brand-danger); }
+    .warning .result-chip { background: rgba(245,158,11,0.15); color: var(--brand-warning); }
+
+    .result-detail-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.04);
+      border-radius: 0.6rem;
+      padding: 0.6rem 0.9rem;
+    }
+    .rd-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+    .rd-value { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+
+    .result-message {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .scan-again-btn {
+      width: 100%;
+      margin-top: 0.25rem;
+      padding: 0.85rem;
+      border-radius: var(--radius-lg);
+      background: rgba(108,99,255,0.12);
+      border: 1.5px solid var(--border-subtle);
+      color: var(--brand-primary);
+      font-family: var(--font-primary);
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition);
+      letter-spacing: 0.02em;
+    }
+    .scan-again-btn:hover {
+      background: rgba(108,99,255,0.2);
+      border-color: rgba(108,99,255,0.4);
+      transform: translateY(-1px);
+    }
+
+    /* ── Footer ── */
+    .scanner-footer {
+      margin-top: auto;
+      padding-top: 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      letter-spacing: 0.03em;
+    }
+    .scanner-footer span { color: var(--brand-primary); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 0.75rem 1.25rem;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      z-index: 9999;
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Responsive */
+    @media (min-width: 480px) {
+      body { padding: 2rem 1.5rem 3rem; }
+      .scan-box-wrap { max-width: 340px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="scanner-header">
+    <div class="brand-logo">
+      HMC<span class="dot"></span>Events
+    </div>
+    <p class="scanner-subtitle">Pass Verification Terminal</p>
+    <div class="event-badge" id="eventBadge">Loading event…</div>
+  </header>
+
+  <!-- Main Scanner Card -->
+  <main class="scanner-card" id="scannerMain">
+
+    <!-- Scan Viewport -->
+    <div class="scan-box-wrap">
+      <div class="scan-box">
+        <span class="corner corner-tl"></span>
+        <span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span>
+        <span class="corner corner-br"></span>
+        <div class="scan-placeholder">
+          <!-- Stylised QR grid -->
+          <div class="qr-grid">
+            <div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell empty"></div><div class="qr-cell"></div>
+            <div class="qr-cell"></div><div class="qr-cell empty"></div><div class="qr-cell"></div><div class="qr-cell empty"></div><div class="qr-cell"></div>
+            <div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell empty"></div><div class="qr-cell"></div>
+            <div class="qr-cell empty"></div><div class="qr-cell"></div><div class="qr-cell empty"></div><div class="qr-cell"></div><div class="qr-cell empty"></div>
+            <div class="qr-cell"></div><div class="qr-cell empty"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div>
+          </div>
+          <p class="scan-placeholder-text">Position QR code here</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mode Pills -->
+    <div class="mode-pills">
+      <div class="mode-pill active" id="pillGate" onclick="setMode('gate')">Gate</div>
+      <div class="mode-pill" id="pillMeal" onclick="setMode('meal')">Meal</div>
+    </div>
+
+    <!-- Manual Entry -->
+    <div class="input-group">
+      <label class="input-label" for="passInput">Manual Pass Code Entry</label>
+      <div class="input-row">
+        <input
+          type="text"
+          id="passInput"
+          class="pass-input"
+          placeholder="e.g. PASS-2024-ABCD"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+        />
+        <button class="verify-btn" id="verifyBtn" onclick="verifyPass()">
+          <span class="spinner"></span>
+          <span class="btn-text">Verify</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Result: Success -->
+    <div class="result-panel success" id="resultSuccess">
+      <div class="result-icon">[PASS]</div>
+      <div class="result-status">Access Granted</div>
+      <div class="result-name" id="successName">—</div>
+      <div class="result-meta" id="successMeta"></div>
+      <div class="result-detail-row">
+        <span class="rd-label">Pass ID</span>
+        <span class="rd-value" id="successPassId">—</span>
+      </div>
+      <div class="result-detail-row">
+        <span class="rd-label">Marked at</span>
+        <span class="rd-value" id="successTime">—</span>
+      </div>
+      <button class="scan-again-btn" onclick="resetScanner()">↩ Scan Next Pass</button>
+    </div>
+
+    <!-- Result: Already Used -->
+    <div class="result-panel warning" id="resultWarning">
+      <div class="result-icon">[WARN]</div>
+      <div class="result-status">Already Scanned</div>
+      <div class="result-name" id="warningName">—</div>
+      <div class="result-meta" id="warningMeta"></div>
+      <div class="result-detail-row">
+        <span class="rd-label">Previously used at</span>
+        <span class="rd-value" id="warningUsedAt">—</span>
+      </div>
+      <p class="result-message">This pass has already been used for entry. Do not allow re-entry.</p>
+      <button class="scan-again-btn" onclick="resetScanner()">↩ Scan Another</button>
+    </div>
+
+    <!-- Result: Error -->
+    <div class="result-panel error" id="resultError">
+      <div class="result-icon">[FAIL]</div>
+      <div class="result-status">Invalid Pass</div>
+      <p class="result-message" id="errorMessage">No pass found with this code. Please check and try again.</p>
+      <button class="scan-again-btn" onclick="resetScanner()">↩ Try Again</button>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="scanner-footer">
+    Powered by <span>HMC Portal</span> &nbsp;·&nbsp; Authorized personnel only
+  </footer>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { markPassUsed, getEventPasses } from '../js/events.js';
+
+    // ── Globals ──────────────────────────────────────────────────
+    const params   = new URLSearchParams(window.location.search);
+    const eventId  = params.get('eventId') || null;
+    let   passMode = params.get('type') === 'meal' ? 'meal' : 'gate';
+
+    // ── On Load ──────────────────────────────────────────────────
+    window.addEventListener('DOMContentLoaded', () => {
+      // Reflect URL type param in pills
+      setMode(passMode, false);
+
+      if (eventId) {
+        document.getElementById('eventBadge').textContent = `Event: ${eventId}`;
+      } else {
+        document.getElementById('eventBadge').textContent = 'No event selected';
+        showToast('No eventId in URL. Scanning in demo mode.', 4000);
+      }
+    });
+
+    // ── Mode toggle ───────────────────────────────────────────────
+    window.setMode = function (mode, updateURL = true) {
+      passMode = mode;
+      document.getElementById('pillGate').classList.toggle('active', mode === 'gate');
+      document.getElementById('pillMeal').classList.toggle('active', mode === 'meal');
+      if (updateURL && eventId) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('type', mode);
+        history.replaceState(null, '', url);
+      }
+    };
+
+    // ── Verify pass ───────────────────────────────────────────────
+    window.verifyPass = async function () {
+      const passId = document.getElementById('passInput').value.trim();
+      if (!passId) { showToast('Please enter a pass code.'); return; }
+      if (!eventId) { showToast('No eventId configured. Cannot verify.'); return; }
+
+      const btn = document.getElementById('verifyBtn');
+      btn.classList.add('loading');
+      btn.disabled = true;
+      hideAllResults();
+
+      try {
+        const collection = passMode === 'meal' ? 'meal_passes' : 'gate_passes';
+        const result = await markPassUsed(eventId, collection, passId);
+
+        if (result.alreadyUsed) {
+          // Show warning state
+          document.getElementById('warningName').textContent = result.holderName || passId;
+          document.getElementById('warningMeta').innerHTML  = buildChips(result, 'warning');
+          document.getElementById('warningUsedAt').textContent =
+            result.usedAt ? new Date(result.usedAt.seconds * 1000).toLocaleString() : 'Unknown';
+          document.getElementById('resultWarning').classList.add('visible');
+        } else if (result.success) {
+          // Show success state
+          document.getElementById('successName').textContent   = result.holderName || passId;
+          document.getElementById('successMeta').innerHTML     = buildChips(result, 'success');
+          document.getElementById('successPassId').textContent = passId;
+          document.getElementById('successTime').textContent   = new Date().toLocaleTimeString();
+          document.getElementById('resultSuccess').classList.add('visible');
+        } else {
+          // Unknown error from function
+          document.getElementById('errorMessage').textContent = result.message || 'Verification failed. Try again.';
+          document.getElementById('resultError').classList.add('visible');
+        }
+      } catch (err) {
+        console.error('Pass verification error:', err);
+        const isNotFound = err.code === 'not-found' || (err.message && err.message.includes('not found'));
+        document.getElementById('errorMessage').textContent = isNotFound
+          ? 'Pass not found. Check the code and try again.'
+          : `Error: ${err.message}`;
+        document.getElementById('resultError').classList.add('visible');
+      } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    };
+
+    // ── Reset ─────────────────────────────────────────────────────
+    window.resetScanner = function () {
+      document.getElementById('passInput').value = '';
+      hideAllResults();
+      document.getElementById('passInput').focus();
+    };
+
+    // ── Helpers ───────────────────────────────────────────────────
+    function hideAllResults () {
+      ['resultSuccess', 'resultWarning', 'resultError'].forEach(id =>
+        document.getElementById(id).classList.remove('visible')
+      );
+    }
+
+    function buildChips (data, type) {
+      const chips = [];
+      if (data.mealType)  chips.push(data.mealType);
+      if (data.passType)  chips.push(data.passType);
+      if (data.eventName) chips.push(data.eventName);
+      return chips.map(c => `<span class="result-chip">${c}</span>`).join('');
+    }
+
+    function showToast (msg, duration = 2800) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    // ── Enter key shortcut ────────────────────────────────────────
+    document.getElementById('passInput')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') window.verifyPass();
+    });
+  </script>
+</body>
+</html>

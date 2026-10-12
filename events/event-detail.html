@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Detail — HMC Events</title>
+  <meta name="description" content="Manage all aspects of a single campus event.">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  <script type="module">import { initTheme } from '../js/theme.js'; initTheme();</script>
+  <script>
+    function openModal(id) {
+      var m = document.getElementById(id);
+      if (m) {
+        m.classList.remove('hidden');
+        m.classList.add('open');
+        m.style.display = 'flex';
+      }
+    }
+    function closeModal(id) {
+      var m = document.getElementById(id);
+      if (m) {
+        m.classList.add('hidden');
+        m.classList.remove('open');
+        m.style.display = 'none';
+      }
+    }
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+  </script>
+  <style>
+    /* ── Sticky back bar ── */
+    .sticky-top-bar {
+      position: sticky; top: 0; z-index: 200;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+      display: flex; align-items: center; gap: var(--sp-3);
+      padding: 10px var(--sp-6);
+      margin: 0 calc(-1 * var(--sp-6)) var(--sp-5);
+    }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.8rem; font-weight: 700; color: var(--text-muted);
+      background: var(--bg-surface); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md); padding: 5px 12px;
+      cursor: pointer; text-decoration: none; transition: all .15s; flex-shrink: 0;
+    }
+    .back-btn:hover { color: var(--text-primary); border-color: var(--border-normal); }
+    .sticky-title {
+      flex: 1; min-width: 0;
+      font-size: 0.88rem; font-weight: 800; color: var(--text-primary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .sticky-actions { display: flex; gap: var(--sp-2); align-items: center; flex-shrink: 0; }
+
+    /* ── Hero ── */
+    .event-detail-hero {
+      background: linear-gradient(135deg, rgba(108,99,255,0.1) 0%, rgba(167,139,250,0.05) 100%);
+      border: 1px solid var(--border-subtle); border-radius: var(--radius-xl);
+      padding: var(--sp-5) var(--sp-6); margin-bottom: var(--sp-5); position: relative; overflow: hidden;
+    }
+    .event-accent-bar { position: absolute; top:0; left:0; right:0; height:4px; border-radius: var(--radius-xl) var(--radius-xl) 0 0; }
+    .event-detail-title { font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin-bottom: var(--sp-2); padding-top: var(--sp-1); }
+    .event-meta-chips { display:flex; gap:var(--sp-2); flex-wrap:wrap; margin-bottom:var(--sp-3); }
+    .meta-chip { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; color: var(--text-secondary); background: var(--bg-elevated); border: 1px solid var(--border-subtle); padding: 4px 10px; border-radius: 999px; }
+
+    /* ── Tabs ── */
+    .feature-tabs { display: flex; gap: 4px; flex-wrap: wrap; background: var(--bg-elevated); padding: 4px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle); margin-bottom: var(--sp-5); }
+    .feature-tab { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius-md); border: none; background: transparent; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .feature-tab.active { background: var(--brand-primary); color: #fff; box-shadow: 0 4px 12px rgba(108,99,255,0.3); }
+    .feature-tab:not(.active):hover { background: var(--bg-glass); color: var(--text-primary); }
+    .tab-panel { display: none; } .tab-panel.active { display: block; }
+
+    /* ── Section helpers ── */
+    .section-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--sp-4); flex-wrap: wrap; gap: var(--sp-3); }
+    .section-title { font-size: 1rem; font-weight: 800; color: var(--text-primary); }
+    .section-subtitle { font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; }
+
+    /* ── Data table ── */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-subtle); white-space: nowrap; }
+    .data-table td { font-size: 0.82rem; color: var(--text-secondary); padding: 10px 12px; border-bottom: 1px solid var(--border-subtle); vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: rgba(108,99,255,0.03); }
+    .table-wrapper { overflow-x: auto; }
+
+    /* ── Approval table ── */
+    .approval-row { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border-subtle); }
+    .approval-row:last-child { border-bottom: none; }
+    .approval-status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .approval-name { font-weight: 700; font-size: 0.88rem; }
+    .approval-dept { font-size: 0.73rem; color: var(--text-muted); }
+    .approval-select { font-size: 0.78rem; font-weight: 700; padding: 4px 8px; border-radius: var(--radius-md); border: 1px solid var(--border-normal); background: var(--bg-surface); color: var(--text-primary); cursor: pointer; width: 120px; }
+
+    /* ── Equipment list ── */
+    .equip-row { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border-subtle); transition: background .15s; }
+    .equip-row:hover { background: rgba(108,99,255,0.025); }
+    .equip-row:last-child { border-bottom: none; }
+    .equip-name { flex: 1; font-weight: 700; font-size: 0.88rem; }
+    .stock-pill { font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+    .stock-ok { background: rgba(52,211,153,0.12); color: #34D399; }
+    .stock-low { background: rgba(245,158,11,0.12); color: #F59E0B; }
+    .stock-zero { background: rgba(239,68,68,0.12); color: #EF4444; }
+
+    /* ── Stall grid ── */
+    .stall-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: 10px; margin-bottom: var(--sp-4); }
+    .stall-cell {
+      border-radius: var(--radius-md); border: 2px solid var(--border-subtle);
+      background: var(--bg-elevated); padding: var(--sp-3); display: flex;
+      flex-direction: column; align-items: flex-start; justify-content: space-between;
+      cursor: pointer; transition: all 0.2s; min-height: 80px;
+    }
+    .stall-cell:hover:not(.stall-occupied) { border-color: var(--brand-primary); background: rgba(108,99,255,0.06); }
+    .stall-cell.stall-occupied { border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.06); cursor: pointer; }
+    .stall-id { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+    .stall-label-name { font-size: 0.82rem; font-weight: 700; color: var(--text-primary); margin-top: 4px; word-break: break-word; }
+    .stall-status-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 6px; }
+    .stall-available { color: #34D399; }
+    .stall-occupied-text { color: #EF4444; }
+
+    /* ── Pass card ── */
+    .pass-card { background: linear-gradient(135deg, var(--brand-primary) 0%, #A78BFA 100%); border-radius: var(--radius-lg); padding: var(--sp-4); color: #fff; margin-bottom: var(--sp-3); display: flex; align-items: center; gap: var(--sp-4); box-shadow: 0 8px 24px rgba(108,99,255,0.3); }
+    .pass-info { flex: 1; }
+    .pass-name { font-size: 0.95rem; font-weight: 800; margin-bottom: 3px; }
+    .pass-detail { font-size: 0.75rem; opacity: 0.85; }
+    .pass-status-badge { font-size: 0.72rem; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,0.2); }
+
+    /* ── External request expand ── */
+    .ext-row { cursor: pointer; }
+    .ext-row:hover td { background: rgba(108,99,255,0.04) !important; }
+    .ext-detail-row { background: var(--bg-surface); }
+    .ext-detail-inner { padding: var(--sp-4) var(--sp-5); display: none; }
+    .ext-detail-inner.open { display: block; }
+    .ext-field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: var(--sp-3); margin-bottom: var(--sp-3); }
+    .ext-field { }
+    .ext-field-label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 2px; }
+    .ext-field-value { font-size: 0.83rem; color: var(--text-primary); font-weight: 600; }
+
+    /* ── Modals ── */
+    .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px); }
+    .modal-overlay.hidden { display:none; }
+    .modal-box { background:var(--bg-elevated);border:1px solid var(--border-normal);border-radius:var(--radius-xl);padding:var(--sp-6);width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.5); }
+    .modal-hdr { display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-4); }
+    .modal-title { font-size:1rem;font-weight:800;color:var(--text-primary); }
+    .modal-close { background:none;border:none;color:var(--text-muted);cursor:pointer;padding:0;line-height:0; }
+
+    /* ── Inline add-form ── */
+    .inline-add-form { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--sp-4); margin-bottom: var(--sp-4); }
+
+    .icon-btn { background:none;border:none;cursor:pointer;color:var(--text-muted);padding:3px;line-height:0;border-radius:var(--radius-sm);transition:color .15s; }
+    .icon-btn:hover { color:var(--text-primary); }
+    .icon-btn.danger:hover { color:var(--brand-danger,#EF4444); }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+  <main class="main-content">
+
+    <!-- ── Sticky top bar ── -->
+    <div class="sticky-top-bar" id="sticky-bar">
+      <a href="events-portal.html" class="back-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Events
+      </a>
+      <div class="sticky-title" id="sticky-title">Loading event…</div>
+      <div class="sticky-actions" id="sticky-actions"></div>
+    </div>
+
+    <div class="page-body">
+      <!-- Hero -->
+      <div class="event-detail-hero" id="event-hero" style="display:none">
+        <div class="event-accent-bar" id="event-accent"></div>
+        <div class="event-detail-title" id="hero-title"></div>
+        <div class="event-meta-chips" id="hero-meta"></div>
+        <div id="hero-desc" style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;max-width:620px"></div>
+      </div>
+
+      <!-- Feature Tabs -->
+      <div class="feature-tabs" id="feature-tabs" style="display:none"></div>
+
+      <!-- Tab Panels -->
+      <div id="panel-overview" class="tab-panel active"></div>
+      <div id="panel-approvals" class="tab-panel"></div>
+      <div id="panel-equipment" class="tab-panel"></div>
+      <div id="panel-stalls" class="tab-panel"></div>
+      <div id="panel-passes" class="tab-panel"></div>
+      <div id="panel-accommodation" class="tab-panel"></div>
+      <div id="panel-external" class="tab-panel"></div>
+      <div id="panel-registrations" class="tab-panel"></div>
+      <div id="panel-expenditure" class="tab-panel"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Stall Modal ── -->
+<div id="stall-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-title" id="stall-modal-title">Manage Stall</div>
+      <button class="modal-close" onclick="closeModal('stall-modal')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Display Name on Stall <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+      <input type="text" class="form-control" id="stall-name-input" list="stall-names-datalist" placeholder="e.g. Alpha Garments or leave blank">
+      <datalist id="stall-names-datalist"></datalist>
+      <span style="font-size:0.73rem;color:var(--text-muted);margin-top:4px;display:block">Names from external stall requests are shown as suggestions above.</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Vendor / Person (for records)</label>
+      <input type="text" class="form-control" id="stall-vendor-input">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Stall Type</label>
+      <input type="text" class="form-control" id="stall-type-input" placeholder="e.g. Food, Clothing, Services">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contact</label>
+      <input type="text" class="form-control" id="stall-contact-input">
+    </div>
+    <div style="display:flex;gap:var(--sp-3);margin-top:var(--sp-2)">
+      <button class="btn btn-primary" style="flex:1" id="stall-allot-btn" onclick="submitStallAllot()">Allot Stall</button>
+      <button class="btn btn-danger btn-sm hidden" id="stall-clear-btn" onclick="clearStall()">Clear Stall</button>
+      <button class="btn btn-secondary" onclick="closeModal('stall-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Pass Modal ── -->
+<div id="pass-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-hdr">
+      <div class="modal-title">Generate Event Pass</div>
+      <button class="modal-close" onclick="closeModal('pass-modal')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="form-group"><label class="form-label">Holder / Applicant Name *</label><input type="text" class="form-control" id="pass-name" placeholder="e.g. John Doe / Team Alpha"></div>
+    <div class="form-group"><label class="form-label">Pass Category *</label>
+      <select class="form-control" id="pass-type">
+        <option value="gate">Gate / Entry Pass</option>
+        <option value="meal">Meal Pass</option>
+        <option value="vip">VIP / Guest Delegate Pass</option>
+        <option value="vendor">Vendor / Stall Pass</option>
+        <option value="team">Organizing Team Pass</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Valid Date / Duration</label><input type="date" class="form-control" id="pass-date"></div>
+    <div class="form-group"><label class="form-label">Notes / Instructions</label><input type="text" class="form-control" id="pass-notes" placeholder="e.g. Breakfast + Dinner, Stage Access"></div>
+    <div style="display:flex;gap:var(--sp-3);margin-top:var(--sp-2)">
+      <button class="btn btn-primary" style="flex:1" onclick="submitPass()">Generate & Print Pass</button>
+      <button class="btn btn-secondary" onclick="closeModal('pass-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Printable Pass Badge Preview Modal ── -->
+<div id="printable-pass-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:420px;text-align:center">
+    <div class="modal-hdr">
+      <div class="modal-title">Official Event Pass</div>
+      <button class="modal-close" onclick="closeModal('printable-pass-modal')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+
+    <div id="pass-badge-preview-card" style="background:linear-gradient(135deg, #1E1B4B 0%, #312E81 100%);border:2px solid rgba(108,99,255,0.4);border-radius:18px;padding:24px;color:#fff;box-shadow:0 16px 48px rgba(0,0,0,0.5);position:relative;overflow:hidden;margin-bottom:var(--sp-4)">
+      <div style="font-size:0.65rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#A78BFA;margin-bottom:4px" id="badge-event-title">CAMPUS EVENT</div>
+      <div style="font-size:1.3rem;font-weight:900;color:#FFFFFF;margin-bottom:12px" id="badge-holder-name">Holder Name</div>
+      
+      <div style="display:inline-block;padding:4px 14px;border-radius:999px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);font-size:0.75rem;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:16px" id="badge-type-tag">GATE PASS</div>
+
+      <div style="background:#ffffff;padding:12px;border-radius:12px;display:inline-block;margin-bottom:14px">
+        <div id="badge-qr-container"></div>
+      </div>
+
+      <div style="font-size:0.72rem;opacity:0.85" id="badge-valid-date">Valid: Today</div>
+      <div style="font-size:0.7rem;opacity:0.65;margin-top:4px" id="badge-notes"></div>
+      <div style="font-family:monospace;font-size:0.65rem;opacity:0.5;margin-top:8px" id="badge-pass-id">ID: PASS-12345</div>
+    </div>
+
+    <div style="display:flex;gap:var(--sp-3)">
+      <button class="btn btn-primary" style="flex:1" onclick="window.print()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print Pass Badge
+      </button>
+      <button class="btn btn-secondary" onclick="closeModal('printable-pass-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Equipment Edit Modal ── -->
+<div id="equip-edit-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="equip-edit-title">Add Equipment</div>
+      <button class="modal-close" onclick="closeModal('equip-edit-modal')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="form-group"><label class="form-label">Equipment Name *</label><input type="text" class="form-control" id="equip-edit-name"></div>
+    <div class="form-group"><label class="form-label">Total Stock (owned by HMC)</label><input type="number" class="form-control" id="equip-edit-stock" min="0" value="1"></div>
+    <div class="form-group"><label class="form-label">Category / Description</label><input type="text" class="form-control" id="equip-edit-cat" placeholder="e.g. AV, Sports, Furniture"></div>
+    <div style="display:flex;gap:var(--sp-3);margin-top:var(--sp-2)">
+      <button class="btn btn-primary" style="flex:1" onclick="saveEquipItem()">Save</button>
+      <button class="btn btn-secondary" onclick="closeModal('equip-edit-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initAuthGuard, populateSidebarUser } from '../js/auth.js';
+import { renderSidebar, initSidebarTheme } from '../js/sidebar.js';
+import { showToast, openModal, closeModal } from '../js/utils.js';
+import {
+  getCampusEvent, updateCampusEvent,
+  getEventRegistrations, getEquipmentRequests, addEquipmentRequest, updateEquipmentRequest,
+  getEventPasses, createPass, markPassUsed,
+  getStallBookings, bookStall, updateStallBooking,
+  getAccommodationRequests, addAccommodationRequest, updateAccommodation,
+  getExternalRequests, updateExternalRequest,
+  eventStatusBadge, eventTypeColor, formatEventDate
+} from '../js/events.js';
+import { db } from '../js/firebase-config.js';
+import {
+  collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, orderBy, query, where
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+document.getElementById('sidebar-container').innerHTML = renderSidebar('events-portal.html');
+initSidebarTheme();
+
+const params   = new URLSearchParams(window.location.search);
+const EVENT_ID = params.get('id');
+if (!EVENT_ID) { window.location.href = 'events-portal.html'; }
+
+// ── State ─────────────────────────────────────────────────
+let currentEvent = null, currentUser = null;
+let equipCatalog = [];           // [{id, name, stock, category}] from Firestore meta
+let equipRequests = [];          // all requests across all events (for availability)
+let equipReqsThisEvent = [];     // requests for THIS event only
+let stallData = { count: 20, stalls: [] }; // stalls: [{id,name,vendor,type,contact,bookingId}]
+let stallBookings = [];
+let passes = [];
+let accommodations = [];
+let externalReqs = [];
+let registrations = [];
+let expenditures = [];
+let editingEquipId = null;       // null = add new
+let activeStallId  = null;
+
+// ── Helper ────────────────────────────────────────────────
+function isHead() {
+  if (!currentUser) return false;
+  const isEventCategory = ['events', 'event'].includes((currentUser.category || '').toLowerCase().trim());
+  const userPostLower   = (currentUser.post || '').toLowerCase().trim();
+  const userTitleLower  = (currentUser.title || '').toLowerCase().trim();
+
+  const isEventHeadUser = currentUser.role === 'admin' ||
+    currentUser.role === 'subadmin' ||
+    userTitleLower.includes('event head') ||
+    userTitleLower.includes('events head') ||
+    userPostLower.includes('event head') ||
+    userPostLower.includes('events head') ||
+    (isEventCategory && ['head', 'poc', 'coordinator', 'lead'].includes(userPostLower));
+
+  if (isEventHeadUser) return true;
+  if (!currentEvent) return false;
+  return (currentEvent.pocIds && currentEvent.pocIds.includes(currentUser.uid)) ||
+    currentEvent.createdBy === currentUser.uid;
+}
+
+// Expose imported modal helpers globally for inline onclick handlers
+window.openModal  = openModal;
+window.closeModal = closeModal;
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => {
+    if (e.target === m) closeModal(m.id);
+  });
+});
+
+// ── Auth → Load ───────────────────────────────────────────
+initAuthGuard({ requireLogin: true, onReady: async (user) => {
+  currentUser = user;
+  populateSidebarUser(user);
+  await loadEvent();
+}});
+
+async function loadEvent() {
+  try {
+    currentEvent = await getCampusEvent(EVENT_ID);
+    if (!currentEvent) { showToast('Event not found.','error'); window.location.href='events-portal.html'; return; }
+    renderStickyBar();
+    renderHero();
+    renderFeatureTabs();
+    renderOverview();
+    renderApprovals();
+    loadEquipment();
+    loadStalls();
+    loadPasses();
+    loadAccommodation();
+    loadExternalRequests();
+    loadRegistrations();
+    loadExpenditures();
+  } catch(e) { showToast('Error loading event: ' + e.message, 'error'); }
+}
+
+// ══════════════════════════════════════════════════════════
+// STICKY BAR
+// ══════════════════════════════════════════════════════════
+function renderStickyBar() {
+  const ev = currentEvent;
+  document.getElementById('sticky-title').textContent = ev.title || 'Event Detail';
+  document.title = `${ev.title} — HMC Events`;
+
+  const actions = document.getElementById('sticky-actions');
+  const statusOptions = ['draft','pending','approved','live','concluded','cancelled'];
+  if (isHead()) {
+    actions.innerHTML = `
+      <a href="${window.location.origin}/events/event-request.html?eventId=${EVENT_ID}" target="_blank" class="btn btn-secondary btn-sm">Share Link</a>
+      <select class="form-control" id="status-select" onchange="updateStatus(this.value)" style="width:auto;padding:5px 10px;font-size:0.8rem;font-weight:700;margin:0">
+        ${statusOptions.map(s => `<option value="${s}" ${ev.status===s?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
+      </select>`;
+  }
+}
+
+window.updateStatus = async function(status) {
+  try { await updateCampusEvent(EVENT_ID, { status }); currentEvent.status = status; showToast(`Status → ${status}`, 'success'); }
+  catch(e) { showToast('Update failed: '+e.message,'error'); }
+};
+
+// ══════════════════════════════════════════════════════════
+// HERO + TABS
+// ══════════════════════════════════════════════════════════
+function renderHero() {
+  const ev = currentEvent;
+  const color = eventTypeColor(ev.type);
+  document.getElementById('event-accent').style.background = color;
+  document.getElementById('hero-title').textContent = ev.title;
+  document.getElementById('hero-desc').textContent = ev.description || '';
+  document.getElementById('hero-meta').innerHTML = `
+    <span class="meta-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${formatEventDate(ev.startDate)}${ev.endDate&&ev.endDate!==ev.startDate?` — ${formatEventDate(ev.endDate)}`:''}</span>
+    ${ev.venue?`<span class="meta-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${ev.venue}</span>`:''}
+    ${ev.expectedAttendees?`<span class="meta-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${ev.expectedAttendees} attendees</span>`:''}
+    ${ev.budget?.allocated?`<span class="meta-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>&#8377;${Number(ev.budget.allocated).toLocaleString()} budget</span>`:''}
+    <span class="badge ${eventStatusBadge(ev.status).cls}">${eventStatusBadge(ev.status).label}</span>`;
+  document.getElementById('event-hero').style.display = '';
+}
+
+const TABS = [
+  { key:'overview',     label:'Overview',         always:true },
+  { key:'approvals',    label:'Approvals',         always:true },
+  { key:'external',     label:'External Requests', always:true },
+  { key:'equipment',    label:'Equipment',         always:true },
+  { key:'stalls',       label:'Stalls',            always:true },
+  { key:'passes',       label:'Passes',            always:true },
+  { key:'accommodation',label:'Accommodation',     always:true },
+  { key:'registrations',label:'Registrations',     always:true },
+  { key:'expenditure',  label:'Expenditure',       always:true },
+];
+
+function renderFeatureTabs() {
+  const tabs = TABS;
+  document.getElementById('feature-tabs').innerHTML = tabs.map(t =>
+    `<button class="feature-tab ${t.key==='overview'?'active':''}" id="ftab-${t.key}" onclick="switchTab('${t.key}')">${t.label}</button>`
+  ).join('');
+  document.getElementById('feature-tabs').style.display = '';
+}
+window.switchTab = function(key) {
+  document.querySelectorAll('.feature-tab').forEach(t => t.classList.toggle('active', t.id===`ftab-${key}`));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id===`panel-${key}`));
+};
+
+// ══════════════════════════════════════════════════════════
+// OVERVIEW
+// ══════════════════════════════════════════════════════════
+function renderOverview() {
+  const ev = currentEvent;
+  const pocHtml = (ev.pocNames||[]).map(n=>`<span style="font-size:0.82rem;padding:4px 10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:999px">${n}</span>`).join('');
+  document.getElementById('panel-overview').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5);margin-bottom:var(--sp-5)">
+      <div class="card">
+        <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--brand-primary);margin-bottom:var(--sp-3)">Event Info</div>
+        <div style="display:flex;flex-direction:column;gap:var(--sp-2);font-size:0.85rem">
+          ${[['Title',ev.title],['Type',ev.type||'—'],['Venue',ev.venue||'—'],['Start',formatEventDate(ev.startDate)],['End',formatEventDate(ev.endDate)],['Attendees',ev.expectedAttendees||'—']].map(([k,v])=>`<div style="display:flex;justify-content:space-between;gap:var(--sp-4)"><span style="color:var(--text-muted)">${k}</span><strong style="text-align:right">${v}</strong></div>`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--brand-primary);margin-bottom:var(--sp-3)">Budget</div>
+        <div style="font-size:2rem;font-weight:800;color:var(--text-primary);margin-bottom:var(--sp-1)">&#8377;${Number(ev.budget?.allocated||0).toLocaleString()}</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:var(--sp-3)">Allocated</div>
+        <div style="background:var(--bg-surface);border-radius:999px;height:8px;overflow:hidden;margin-bottom:var(--sp-2)">
+          <div style="height:100%;border-radius:999px;background:var(--brand-primary);width:${ev.budget?.allocated?Math.min(100,((ev.budget?.spent||0)/ev.budget.allocated)*100):0}%"></div>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-muted)">Spent: &#8377;${Number(ev.budget?.spent||0).toLocaleString()}</div>
+      </div>
+    </div>
+    ${pocHtml?`<div class="card"><div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--brand-primary);margin-bottom:var(--sp-3)">Points of Contact</div><div style="display:flex;gap:8px;flex-wrap:wrap">${pocHtml}</div></div>`:''}`;
+}
+
+// ══════════════════════════════════════════════════════════
+// APPROVALS — simplified checklist table
+// ══════════════════════════════════════════════════════════
+function renderApprovals() {
+  const perms  = currentEvent.permissions || [];
+  const canEdit = isHead();
+  const statusColor = { approved:'#34D399', rejected:'#EF4444', pending:'#F59E0B' };
+
+  document.getElementById('panel-approvals').innerHTML = `
+    <div class="section-header">
+      <div>
+        <div class="section-title">Institutional Approvals</div>
+        <div class="section-subtitle">Track required clearances before the event goes live. Each row shows the current status.</div>
+      </div>
+      ${canEdit ? `<button class="btn btn-primary btn-sm" onclick="showApprovalAddForm()">+ Add Step</button>` : ''}
+    </div>
+
+    <div class="card" style="overflow:hidden;margin-bottom:var(--sp-4)">
+      <!-- Header row -->
+      <div style="display:flex;gap:var(--sp-4);padding:10px var(--sp-4);border-bottom:1px solid var(--border-subtle);background:var(--bg-surface)">
+        <div style="width:10px;flex-shrink:0"></div>
+        <div style="flex:1;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">Step / Authority</div>
+        <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);width:80px">Required</div>
+        <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);width:130px">Status</div>
+        ${canEdit?`<div style="width:30px"></div>`:''}
+      </div>
+      ${perms.length ? perms.map((p,i) => `
+        <div class="approval-row" id="aprow-${i}">
+          <div class="approval-status-dot" style="background:${statusColor[p.status]||'#94A3B8'}"></div>
+          <div style="flex:1">
+            <div class="approval-name">${p.name}</div>
+            ${p.dept?`<div class="approval-dept">${p.dept}</div>`:''}
+          </div>
+          <div style="width:80px;font-size:0.78rem;color:${p.required?'var(--text-primary)':'var(--text-muted)'};font-weight:${p.required?700:400}">${p.required?'Required':'Optional'}</div>
+          <div style="width:130px">
+            ${canEdit ? `
+              <select class="approval-select" onchange="updateApproval(${i},this.value)">
+                <option value="pending" ${p.status==='pending'?'selected':''}>Pending</option>
+                <option value="approved" ${p.status==='approved'?'selected':''}>Approved</option>
+                <option value="rejected" ${p.status==='rejected'?'selected':''}>Rejected / NA</option>
+              </select>` :
+              `<span class="badge badge-${p.status==='approved'?'success':p.status==='rejected'?'danger':'warning'}">${p.status||'pending'}</span>`
+            }
+          </div>
+          ${canEdit?`<button class="icon-btn danger" onclick="deleteApproval(${i})" title="Remove"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
+        </div>`).join('') : `
+        <div style="padding:var(--sp-6);text-align:center;color:var(--text-muted);font-size:0.85rem">No approval steps added yet.</div>`}
+    </div>
+
+    <!-- Add step inline form -->
+    <div id="approval-add-form" style="display:none">
+      <div class="inline-add-form">
+        <div style="font-weight:800;font-size:0.88rem;margin-bottom:var(--sp-3)">Add Approval Step</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+          <div class="form-group" style="margin:0"><label class="form-label">Step Name *</label><input type="text" class="form-control" id="ap-name" placeholder="e.g. Fire Dept NOC"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Department / Authority</label><input type="text" class="form-control" id="ap-dept" placeholder="e.g. Campus Security"></div>
+        </div>
+        <div class="form-group" style="margin-bottom:var(--sp-3)">
+          <label class="form-label">Required?</label>
+          <select class="form-control" id="ap-required"><option value="true">Required</option><option value="false">Optional</option></select>
+        </div>
+        <div style="display:flex;gap:var(--sp-2)">
+          <button class="btn btn-primary btn-sm" onclick="submitApproval()">Add Step</button>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('approval-add-form').style.display='none'">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+window.showApprovalAddForm = function() {
+  const f = document.getElementById('approval-add-form');
+  f.style.display = f.style.display === 'none' ? '' : 'none';
+  if (f.style.display !== 'none') document.getElementById('ap-name').focus();
+};
+window.updateApproval = async function(idx, status) {
+  const perms = [...(currentEvent.permissions||[])];
+  perms[idx] = { ...perms[idx], status, ...(status==='approved'?{approvedAt:new Date().toISOString()}:{}) };
+  currentEvent.permissions = perms;
+  await updateCampusEvent(EVENT_ID, { permissions: perms });
+  renderApprovals();
+  showToast('Status updated.','success');
+};
+window.deleteApproval = async function(idx) {
+  if (!confirm('Remove this approval step?')) return;
+  const perms = [...(currentEvent.permissions||[])];
+  perms.splice(idx, 1);
+  currentEvent.permissions = perms;
+  await updateCampusEvent(EVENT_ID, { permissions: perms });
+  renderApprovals();
+  showToast('Step removed.','success');
+};
+window.submitApproval = async function() {
+  const name = document.getElementById('ap-name').value.trim();
+  if (!name) { showToast('Step name required.','error'); return; }
+  const dept     = document.getElementById('ap-dept').value.trim();
+  const required = document.getElementById('ap-required').value === 'true';
+  const perms    = [...(currentEvent.permissions||[]), { name, dept, status:'pending', required }];
+  currentEvent.permissions = perms;
+  await updateCampusEvent(EVENT_ID, { permissions: perms });
+  document.getElementById('approval-add-form').style.display = 'none';
+  renderApprovals();
+  showToast('Approval step added.','success');
+};
+
+// ══════════════════════════════════════════════════════════
+// EQUIPMENT — global catalog + cross-event availability
+// ══════════════════════════════════════════════════════════
+async function loadEquipment() {
+  try {
+    // Load global catalog from meta
+    const catSnap = await getDoc(doc(db, 'meta', 'equipment_catalog'));
+    equipCatalog = catSnap.exists() ? (catSnap.data().items || []) : getDefaultCatalog();
+    if (!catSnap.exists()) await setDoc(doc(db, 'meta', 'equipment_catalog'), { items: equipCatalog });
+
+    // Load ALL equipment requests across ALL events for availability calculation
+    const allEventsSnap = await getDocs(collection(db, 'campus_events'));
+    const allReqPromises = allEventsSnap.docs.map(evDoc =>
+      getDocs(collection(db, 'campus_events', evDoc.id, 'equipment_requests')).then(s =>
+        s.docs.map(d => ({ ...d.data(), _eventId: evDoc.id }))
+      ).catch(() => [])
+    );
+    const allReqs = (await Promise.all(allReqPromises)).flat();
+    equipRequests = allReqs.filter(r => r.status !== 'rejected');   // approved+pending
+    equipReqsThisEvent = allReqs.filter(r => r._eventId === EVENT_ID);
+  } catch(e) { console.warn('Equipment load error:', e); equipCatalog = getDefaultCatalog(); }
+  renderEquipment();
+}
+
+function getDefaultCatalog() {
+  return [
+    { id:'speakers',   name:'Speakers / PA System', stock:2,  category:'AV' },
+    { id:'projector',  name:'Projector',             stock:3,  category:'AV' },
+    { id:'mic',        name:'Microphone Set',        stock:6,  category:'AV' },
+    { id:'tables',     name:'Folding Tables',        stock:20, category:'Furniture' },
+    { id:'chairs',     name:'Extra Chairs',          stock:50, category:'Furniture' },
+    { id:'extension',  name:'Extension Cords',       stock:10, category:'Electrical' },
+    { id:'cricket',    name:'Cricket Kit',           stock:2,  category:'Sports' },
+    { id:'football',   name:'Football',              stock:4,  category:'Sports' },
+    { id:'badminton',  name:'Badminton Set',         stock:3,  category:'Sports' },
+    { id:'mattress',   name:'Extra Mattresses',      stock:10, category:'Accommodation' },
+    { id:'generator',  name:'Generator',             stock:1,  category:'Electrical' },
+    { id:'camera',     name:'DSLR Camera',           stock:1,  category:'AV' },
+  ];
+}
+
+function getAvailable(itemId) {
+  const item  = equipCatalog.find(c => c.id === itemId);
+  const total = item ? Number(item.stock||0) : 0;
+  // Sum all approved+pending requests EXCEPT this event's requests for this item
+  const otherUsed = equipRequests
+    .filter(r => r.itemId === itemId && r._eventId !== EVENT_ID)
+    .reduce((s, r) => s + Number(r.qty||1), 0);
+  const thisReq = equipReqsThisEvent.find(r => r.itemId === itemId);
+  return { total, otherUsed, thisQty: thisReq ? Number(thisReq.qty||1) : 0, net: Math.max(0, total - otherUsed) };
+}
+
+function renderEquipment() {
+  const panel   = document.getElementById('panel-equipment');
+  const canEdit = isHead();
+
+  panel.innerHTML = `
+    <div class="section-header">
+      <div>
+        <div class="section-title">Equipment</div>
+        <div class="section-subtitle">Availability accounts for all active events. Net Available = Total Stock − Used by other events.</div>
+      </div>
+      ${canEdit ? `<button class="btn btn-primary btn-sm" onclick="openEquipEdit(null)">+ Add Item</button>` : ''}
+    </div>
+
+    <div class="card" style="overflow:hidden;margin-bottom:var(--sp-5)">
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead><tr>
+            <th>Item</th><th>Category</th><th>Total Stock</th><th>Other Events</th><th>Net Available</th><th>External Req.</th><th>This Event</th>
+            ${canEdit ? '<th>Actions</th>' : ''}
+          </tr></thead>
+          <tbody>
+            ${equipCatalog.map(item => {
+              const { total, otherUsed, thisQty, net } = getAvailable(item.id);
+              const extReqQty = externalReqs
+                .filter(r => (r.requestType === 'equipment' || r.requestType === 'Equipment Rental') && (r.itemId === item.id || (r.equipmentName||'').toLowerCase().includes(item.name.toLowerCase())))
+                .reduce((s, r) => s + (parseInt(r.qty || r.quantity || 1) || 1), 0);
+              const cls = net === 0 ? 'stock-zero' : net <= 2 ? 'stock-low' : 'stock-ok';
+              return `<tr>
+                <td><strong>${item.name}</strong></td>
+                <td style="color:var(--text-muted)">${item.category||'—'}</td>
+                <td>${total}</td>
+                <td style="color:${otherUsed>0?'#F59E0B':'var(--text-muted)'}">${otherUsed > 0 ? `${otherUsed} in use` : '—'}</td>
+                <td><span class="stock-pill ${cls}">${net} available</span></td>
+                <td>${extReqQty > 0 ? `<span class="badge badge-info">${extReqQty} requested</span>` : '<span style="color:var(--text-muted)">0</span>'}</td>
+                <td>
+                  ${thisQty > 0
+                    ? `<span class="badge badge-warning">${thisQty} requested</span>`
+                    : (net > 0 && canEdit
+                        ? `<button class="btn btn-sm btn-secondary" onclick="requestEquip('${item.id}','${item.name}',${net})" style="font-size:0.72rem;padding:3px 10px">Request</button>`
+                        : `<span style="color:var(--text-muted);font-size:0.78rem">${net===0?'Unavailable':'—'}</span>`)
+                  }
+                </td>
+                ${canEdit ? `
+                <td style="display:flex;gap:6px;align-items:center">
+                  <button class="icon-btn" onclick="openEquipEdit('${item.id}')" title="Edit">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="icon-btn danger" onclick="deleteEquipItem('${item.id}')" title="Remove">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                  </button>
+                </td>` : ''}
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Requests for this event -->
+    ${equipReqsThisEvent.length ? `
+    <div class="section-header" style="margin-top:var(--sp-2)">
+      <div class="section-title">Requests for This Event</div>
+    </div>
+    <div class="card" style="overflow:hidden">
+      <div class="table-wrapper"><table class="data-table">
+        <thead><tr><th>Item</th><th>Qty</th><th>Required By</th><th>Notes</th><th>Status</th>${canEdit?'<th>Update</th>':''}</tr></thead>
+        <tbody>
+          ${equipReqsThisEvent.map(r => `<tr>
+            <td><strong>${equipCatalog.find(c=>c.id===r.itemId)?.name||r.itemId}</strong></td>
+            <td>${r.qty||1}</td>
+            <td>${r.requiredBy||'—'}</td>
+            <td style="max-width:160px;color:var(--text-muted)">${r.notes||'—'}</td>
+            <td><span class="badge badge-${r.status==='approved'?'success':r.status==='rejected'?'danger':'warning'}">${r.status||'pending'}</span></td>
+            ${canEdit?`<td><select class="form-control" onchange="updateEquipReq('${r.id}',this.value)" style="width:120px;margin:0;padding:4px 8px;font-size:0.75rem">
+              <option value="pending" ${r.status==='pending'?'selected':''}>Pending</option>
+              <option value="approved" ${r.status==='approved'?'selected':''}>Approved</option>
+              <option value="rejected" ${r.status==='rejected'?'selected':''}>Rejected</option>
+            </select></td>`:''}
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>` : ''}`;
+}
+
+window.openEquipEdit = function(id) {
+  editingEquipId = id;
+  const item = id ? equipCatalog.find(c => c.id === id) : null;
+  document.getElementById('equip-edit-title').textContent = id ? 'Edit Equipment' : 'Add Equipment';
+  document.getElementById('equip-edit-name').value  = item?.name     || '';
+  document.getElementById('equip-edit-stock').value = item?.stock    ?? 1;
+  document.getElementById('equip-edit-cat').value   = item?.category || '';
+  openModal('equip-edit-modal');
+};
+window.saveEquipItem = async function() {
+  const name     = document.getElementById('equip-edit-name').value.trim();
+  const stock    = parseInt(document.getElementById('equip-edit-stock').value) || 0;
+  const category = document.getElementById('equip-edit-cat').value.trim();
+  if (!name) { showToast('Name required.','error'); return; }
+  if (editingEquipId) {
+    const idx = equipCatalog.findIndex(c => c.id === editingEquipId);
+    if (idx >= 0) equipCatalog[idx] = { ...equipCatalog[idx], name, stock, category };
+  } else {
+    equipCatalog.push({ id: 'custom_'+Date.now(), name, stock, category });
+  }
+  await setDoc(doc(db,'meta','equipment_catalog'), { items: equipCatalog }, { merge: true });
+  closeModal('equip-edit-modal');
+  renderEquipment();
+  showToast('Equipment catalog updated.','success');
+};
+window.deleteEquipItem = async function(id) {
+  if (!confirm('Remove this item from the catalog?')) return;
+  equipCatalog = equipCatalog.filter(c => c.id !== id);
+  await setDoc(doc(db,'meta','equipment_catalog'), { items: equipCatalog }, { merge: true });
+  renderEquipment();
+  showToast('Item removed.','success');
+};
+window.requestEquip = function(id, name, maxQty) {
+  const qty = parseInt(prompt(`How many "${name}" do you need? (max ${maxQty}):`));
+  if (!qty || qty < 1) return;
+  if (qty > maxQty) { showToast(`Only ${maxQty} available.`,'error'); return; }
+  const date  = prompt('Required by date (YYYY-MM-DD):') || '';
+  const notes = prompt('Notes / purpose:') || '';
+  addEquipmentRequest(EVENT_ID, { itemId:id, qty, requiredBy:date, notes, requestedBy:currentUser.uid, requestedByName:currentUser.name, status:'pending' })
+    .then(ref => {
+      const r = { id:ref.id, itemId:id, qty, requiredBy:date, notes, status:'pending', _eventId:EVENT_ID };
+      equipReqsThisEvent.push(r); equipRequests.push(r);
+      renderEquipment(); showToast('Equipment requested!','success');
+    }).catch(e => showToast('Error: '+e.message,'error'));
+};
+window.updateEquipReq = async function(id, status) {
+  await updateEquipmentRequest(EVENT_ID, id, { status });
+  const r = equipReqsThisEvent.find(x=>x.id===id);
+  if (r) r.status = status;
+  renderEquipment(); showToast('Status updated.','success');
+};
+
+// ══════════════════════════════════════════════════════════
+// STALLS — head-editable, dynamic names, external request integration
+// ══════════════════════════════════════════════════════════
+async function loadStalls() {
+  stallBookings = await getStallBookings(EVENT_ID).catch(()=>[]);
+  // Load stall config from event doc (count + custom stall list)
+  stallData = {
+    count: currentEvent.stallCount || 20,
+    stalls: currentEvent.stalls   || []
+  };
+  // Ensure stall array has enough slots
+  while (stallData.stalls.length < stallData.count) {
+    stallData.stalls.push({ id: `S${String(stallData.stalls.length+1).padStart(2,'0')}`, name:'', vendor:'', type:'', contact:'', bookingId:null });
+  }
+  renderStalls();
+}
+
+function renderStalls() {
+  const panel   = document.getElementById('panel-fleaMarket') || document.getElementById('panel-stalls');
+  if (!panel) return;
+  const canEdit = isHead();
+
+  // External stall requests from external_requests for stall name suggestions
+  const extStallReqs = externalReqs.filter(r => r.requestType === 'stall' || r.requestType === 'Stall Booking');
+
+  const stallsHtml = stallData.stalls.slice(0, stallData.count).map(stall => {
+    const occupied = !!(stall.bookingId || stall.vendor);
+    return `
+      <div class="stall-cell ${occupied?'stall-occupied':''}" onclick="openStallModal('${stall.id}')">
+        <div class="stall-id">${stall.id}</div>
+        <div class="stall-label-name">${stall.name || stall.vendor || ''}</div>
+        <div class="stall-status-label ${occupied?'stall-occupied-text':'stall-available'}">${occupied ? 'Occupied' : 'Available'}</div>
+      </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="section-header">
+      <div>
+        <div class="section-title">Stall Management</div>
+        <div class="section-subtitle">${stallData.stalls.filter(s=>s.vendor||s.bookingId).length}/${stallData.count} occupied · Click a stall to allot or clear it</div>
+      </div>
+      ${canEdit ? `
+      <div style="display:flex;gap:var(--sp-2);align-items:center">
+        <label style="font-size:0.8rem;font-weight:700;color:var(--text-muted)">Total stalls:</label>
+        <input type="number" class="form-control" id="stall-count-input" value="${stallData.count}" min="1" max="200" style="width:80px;margin:0;padding:5px 10px;font-size:0.85rem">
+        <button class="btn btn-secondary btn-sm" onclick="updateStallCount()">Apply</button>
+      </div>` : ''}
+    </div>
+
+    <!-- Stall grid -->
+    <div class="stall-grid">${stallsHtml}</div>
+
+    <!-- Occupied stalls table -->
+    ${stallData.stalls.filter(s=>s.vendor||s.bookingId).length ? `
+    <div class="section-header" style="margin-top:var(--sp-4)">
+      <div class="section-title">Allotted Stalls</div>
+    </div>
+    <div class="card" style="overflow:hidden">
+      <div class="table-wrapper"><table class="data-table">
+        <thead><tr><th>Stall</th><th>Display Name</th><th>Vendor</th><th>Type</th><th>Contact</th>${canEdit?'<th>Action</th>':''}</tr></thead>
+        <tbody>
+          ${stallData.stalls.filter(s=>s.vendor||s.bookingId).map(s => `<tr>
+            <td><strong>${s.id}</strong></td>
+            <td>${s.name||'—'}</td>
+            <td>${s.vendor||'—'}</td>
+            <td>${s.type||'—'}</td>
+            <td>${s.contact||'—'}</td>
+            ${canEdit?`<td><button class="btn btn-sm btn-secondary" onclick="openStallModal('${s.id}')" style="font-size:0.72rem;padding:3px 10px">Edit</button></td>`:''}
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>` : ''}`;
+}
+
+window.updateStallCount = async function() {
+  const n = parseInt(document.getElementById('stall-count-input').value)||20;
+  stallData.count = n;
+  while (stallData.stalls.length < n) {
+    stallData.stalls.push({ id:`S${String(stallData.stalls.length+1).padStart(2,'0')}`, name:'',vendor:'',type:'',contact:'',bookingId:null });
+  }
+  await updateCampusEvent(EVENT_ID, { stallCount: n, stalls: stallData.stalls });
+  currentEvent.stallCount = n; currentEvent.stalls = stallData.stalls;
+  renderStalls(); showToast(`Stall count updated to ${n}.`,'success');
+};
+
+window.openStallModal = function(stallId) {
+  activeStallId = stallId;
+  const stall   = (stallData.stalls || []).find(s => s.id === stallId) || { id: stallId };
+  const occupied = !!(stall.vendor || stall.bookingId);
+
+  const titleEl = document.getElementById('stall-modal-title');
+  const nameEl  = document.getElementById('stall-name-input');
+  const vendEl  = document.getElementById('stall-vendor-input');
+  const typeEl  = document.getElementById('stall-type-input');
+  const contEl  = document.getElementById('stall-contact-input');
+  const btnEl   = document.getElementById('stall-allot-btn');
+
+  if (titleEl) titleEl.textContent = `Manage Stall ${stallId}`;
+  if (nameEl)  nameEl.value  = stall.name    || '';
+  if (vendEl)  vendEl.value  = stall.vendor  || '';
+  if (typeEl)  typeEl.value  = stall.type    || '';
+  if (contEl)  contEl.value  = stall.contact || '';
+  if (btnEl)   btnEl.textContent = occupied ? 'Update Stall Allotment' : 'Allot Stall';
+
+  const clearBtn = document.getElementById('stall-clear-btn');
+  if (clearBtn) {
+    if (occupied) clearBtn.classList.remove('hidden');
+    else clearBtn.classList.add('hidden');
+  }
+
+  // Populate datalist from external stall requests
+  const dl = document.getElementById('stall-names-datalist');
+  if (dl) {
+    dl.innerHTML = '';
+    (externalReqs || []).filter(r => r.requestType === 'stall' || r.requestType === 'Stall Booking').forEach(r => {
+      const name = r.contactName || r.orgName || r.name;
+      if (name) {
+        const opt = document.createElement('option');
+        opt.value = name;
+        dl.appendChild(opt);
+      }
+    });
+  }
+
+  openModal('stall-modal');
+};
+
+window.submitStallAllot = async function() {
+  const stall   = stallData.stalls.find(s => s.id === activeStallId);
+  if (!stall) return;
+  stall.name    = document.getElementById('stall-name-input').value.trim();
+  stall.vendor  = document.getElementById('stall-vendor-input').value.trim();
+  stall.type    = document.getElementById('stall-type-input').value.trim();
+  stall.contact = document.getElementById('stall-contact-input').value.trim();
+  if (!stall.vendor && !stall.name) { showToast('Enter at least a name or vendor.','error'); return; }
+  stall.bookingId = stall.bookingId || `manual_${Date.now()}`;
+  await updateCampusEvent(EVENT_ID, { stalls: stallData.stalls });
+  currentEvent.stalls = stallData.stalls;
+  closeModal('stall-modal');
+  renderStalls();
+  showToast(`Stall ${activeStallId} allotted.`,'success');
+};
+
+window.clearStall = async function() {
+  if (!confirm('Clear this stall and mark it available?')) return;
+  const stall = stallData.stalls.find(s => s.id === activeStallId);
+  if (stall) { stall.name=''; stall.vendor=''; stall.type=''; stall.contact=''; stall.bookingId=null; }
+  await updateCampusEvent(EVENT_ID, { stalls: stallData.stalls });
+  currentEvent.stalls = stallData.stalls;
+  closeModal('stall-modal');
+  renderStalls();
+  showToast('Stall cleared.','success');
+};
+
+// ══════════════════════════════════════════════════════════
+// PASSES
+// ══════════════════════════════════════════════════════════
+async function loadPasses() {
+  const [gate, meal, vip, vendor, team] = await Promise.all([
+    getEventPasses(EVENT_ID,'gate').catch(()=>[]),
+    getEventPasses(EVENT_ID,'meal').catch(()=>[]),
+    getEventPasses(EVENT_ID,'vip').catch(()=>[]),
+    getEventPasses(EVENT_ID,'vendor').catch(()=>[]),
+    getEventPasses(EVENT_ID,'team').catch(()=>[])
+  ]);
+  passes = [
+    ...gate.map(p=>({...p,type:'gate'})),
+    ...meal.map(p=>({...p,type:'meal'})),
+    ...vip.map(p=>({...p,type:'vip'})),
+    ...vendor.map(p=>({...p,type:'vendor'})),
+    ...team.map(p=>({...p,type:'team'}))
+  ];
+  renderPasses();
+}
+function renderPasses() {
+  const panel   = document.getElementById('panel-passes');
+  if (!panel) return;
+  const canEdit = isHead();
+
+  const typeLabels = {
+    gate: 'Gate / Entry Pass',
+    meal: 'Meal Pass',
+    vip: 'VIP / Delegate Pass',
+    vendor: 'Vendor / Stall Pass',
+    team: 'Organizing Team Pass'
+  };
+
+  panel.innerHTML = `
+    <div class="section-header">
+      <div>
+        <div class="section-title">Passes & Badges</div>
+        <div class="section-subtitle">Issue, view, and print official gate, meal, VIP, vendor, and team passes for this event.</div>
+      </div>
+      ${canEdit ? `<button class="btn btn-primary btn-sm" onclick="openModal('pass-modal')">+ Generate Pass</button>` : ''}
+    </div>
+    ${passes.length ? passes.map((p, idx) => `
+      <div class="pass-card">
+        <div style="flex:1">
+          <div class="pass-name">${p.holderName||'—'}</div>
+          <div class="pass-detail">${typeLabels[p.type] || p.type} · Valid: ${p.validDate||'Event Duration'}</div>
+          ${p.notes?`<div class="pass-detail" style="margin-top:3px;opacity:.85">${p.notes}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <span class="pass-status-badge"> ${p.used?'Used':'Valid Pass'}</span>
+          <div style="display:flex;gap:6px">
+            <button onclick="openPrintablePass(${idx})" style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:var(--radius-sm);padding:4px 10px;font-size:0.72rem;font-weight:700;cursor:pointer">View / Print</button>
+            ${canEdit&&!p.used?`<button onclick="markUsed('${p.id}','${p.type}')" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:var(--radius-sm);padding:4px 8px;font-size:0.7rem;cursor:pointer">Mark Used</button>`:''}
+          </div>
+        </div>
+      </div>`).join('') : `<div style="color:var(--text-muted);font-size:0.82rem;padding:var(--sp-6);text-align:center">No passes generated yet. Click "+ Generate Pass" to issue pass badges.</div>`}`;
+}
+
+window.openPrintablePass = function(idx) {
+  const p = passes[idx];
+  if (!p) return;
+
+  const typeLabels = {
+    gate: 'GATE / ENTRY PASS',
+    meal: 'MEAL PASS',
+    vip: 'VIP / DELEGATE PASS',
+    vendor: 'VENDOR / STALL PASS',
+    team: 'ORGANIZING TEAM PASS'
+  };
+
+  document.getElementById('badge-event-title').textContent = ((currentEvent && currentEvent.title) || 'CAMPUS EVENT').toUpperCase();
+  document.getElementById('badge-holder-name').textContent = p.holderName || 'Holder Name';
+  document.getElementById('badge-type-tag').textContent  = typeLabels[p.type] || 'OFFICIAL PASS';
+  document.getElementById('badge-valid-date').textContent = 'Valid: ' + (p.validDate || 'Event Duration');
+  document.getElementById('badge-notes').textContent      = p.notes || '';
+  document.getElementById('badge-pass-id').textContent    = 'ID: PASS-' + (p.id || Date.now()).toString().slice(-6).toUpperCase();
+
+  const qrContainer = document.getElementById('badge-qr-container');
+  qrContainer.innerHTML = '';
+  const qrUrl = `${window.location.origin}/events/event-request.html?eventId=${EVENT_ID}&passId=${p.id}`;
+  if (window.QRCode) {
+    try {
+      new QRCode(qrContainer, { text: qrUrl, width: 140, height: 140, colorDark: '#000', colorLight: '#fff' });
+    } catch(e) {
+      qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrUrl)}" style="width:140px;height:140px;display:block" />`;
+    }
+  } else {
+    qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrUrl)}" style="width:140px;height:140px;display:block" />`;
+  }
+
+  openModal('printable-pass-modal');
+};
+
+window.submitPass = async function() {
+  const holderName = document.getElementById('pass-name').value.trim();
+  const type       = document.getElementById('pass-type').value;
+  const validDate  = document.getElementById('pass-date').value;
+  const notes      = document.getElementById('pass-notes').value.trim();
+  if (!holderName) { showToast('Holder name required.','error'); document.getElementById('pass-name').focus(); return; }
+  try {
+    const ref = await createPass(EVENT_ID, type, { holderName, validDate, notes, createdBy: currentUser ? currentUser.uid : 'admin' });
+    const newPass = { id: ref ? ref.id : ('custom_' + Date.now()), holderName, type, validDate, notes, used: false };
+    passes.push(newPass);
+    closeModal('pass-modal');
+    renderPasses();
+    showToast('Pass generated! Opening preview...', 'success');
+    openPrintablePass(passes.length - 1);
+  } catch(e) { showToast('Error: '+e.message,'error'); }
+};
+window.markUsed = async function(id, type) {
+  await markPassUsed(EVENT_ID, type, id);
+  const p = passes.find(x=>x.id===id); if(p) p.used=true;
+  renderPasses(); showToast('Pass marked as used.','success');
+};
+
+// ══════════════════════════════════════════════════════════
+// ACCOMMODATION
+// ══════════════════════════════════════════════════════════
+async function loadAccommodation() {
+  accommodations = await getAccommodationRequests(EVENT_ID).catch(()=>[]);
+  renderAccommodation();
+}
+function renderAccommodation() {
+  const panel   = document.getElementById('panel-accommodation');
+  if (!panel) return;
+  const canEdit = isHead();
+  panel.innerHTML = `
+    <div class="section-header">
+      <div><div class="section-title">Guest Accommodation</div><div class="section-subtitle">Allocate hostel rooms for external guests</div></div>
+      ${canEdit ? `<button class="btn btn-primary btn-sm" onclick="showAccomForm()">+ Add Request</button>` : ''}
+    </div>
+    <div id="accom-form-area"></div>
+    ${accommodations.length ? `
+    <div class="card" style="overflow:hidden"><div class="table-wrapper"><table class="data-table">
+      <thead><tr><th>Guest / Team</th><th>Persons</th><th>Rooms</th><th>Check-In</th><th>Check-Out</th><th>Status</th>${canEdit?'<th>Update</th>':''}</tr></thead>
+      <tbody>${accommodations.map(a=>`<tr>
+        <td><strong>${a.guestName||'—'}</strong></td><td>${a.guestCount||1}</td><td>${a.rooms||'—'}</td>
+        <td>${a.checkIn||'—'}</td><td>${a.checkOut||'—'}</td>
+        <td><span class="badge badge-${a.status==='approved'?'success':a.status==='rejected'?'danger':'warning'}">${a.status||'pending'}</span></td>
+        ${canEdit?`<td><select class="form-control" onchange="updateAccom('${a.id}',this.value)" style="width:110px;margin:0;padding:4px 8px;font-size:0.75rem">
+          <option value="pending" ${a.status==='pending'?'selected':''}>Pending</option>
+          <option value="approved" ${a.status==='approved'?'selected':''}>Approved</option>
+          <option value="rejected" ${a.status==='rejected'?'selected':''}>Rejected</option>
+        </select></td>`:''}
+      </tr>`).join('')}</tbody>
+    </table></div></div>` : `<div style="color:var(--text-muted);font-size:0.82rem;text-align:center;padding:var(--sp-6)">No accommodation requests yet.</div>`}`;
+}
+window.showAccomForm = function(prefill={}) {
+  document.getElementById('accom-form-area').innerHTML = `
+    <div class="inline-add-form" style="margin-bottom:var(--sp-4)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        <div class="form-group" style="margin:0"><label class="form-label">Guest / Team Name *</label><input type="text" class="form-control" id="ac-guest" value="${prefill.guestName||''}"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">No. of Persons</label><input type="number" class="form-control" id="ac-count" value="${prefill.guestCount||1}" min="1"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Check-In</label><input type="date" class="form-control" id="ac-checkin" value="${prefill.checkIn||''}"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Check-Out</label><input type="date" class="form-control" id="ac-checkout" value="${prefill.checkOut||''}"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:var(--sp-3)"><label class="form-label">Rooms Allocated</label><input type="text" class="form-control" id="ac-rooms" placeholder="e.g. Room 101, 102" value="${prefill.rooms||''}"></div>
+      <div style="display:flex;gap:var(--sp-2)">
+        <button class="btn btn-primary btn-sm" onclick="submitAccom()">Save</button>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('accom-form-area').innerHTML=''">Cancel</button>
+      </div>
+    </div>`;
+  document.getElementById('ac-guest').focus();
+};
+window.submitAccom = async function() {
+  const data = {
+    guestName:  document.getElementById('ac-guest').value.trim(),
+    guestCount: parseInt(document.getElementById('ac-count').value)||1,
+    checkIn:    document.getElementById('ac-checkin').value,
+    checkOut:   document.getElementById('ac-checkout').value,
+    rooms:      document.getElementById('ac-rooms').value.trim(),
+    requestedBy: currentUser.uid
+  };
+  if (!data.guestName) { showToast('Guest name required.','error'); return; }
+  const ref = await addAccommodationRequest(EVENT_ID, data);
+  accommodations.push({ id:ref.id, ...data, status:'pending' });
+  document.getElementById('accom-form-area').innerHTML = '';
+  renderAccommodation(); showToast('Accommodation request saved!','success');
+};
+window.updateAccom = async function(id, status) {
+  await updateAccommodation(EVENT_ID, id, { status });
+  const a = accommodations.find(x=>x.id===id); if(a) a.status=status;
+  renderAccommodation(); showToast('Status updated.','success');
+};
+
+// ══════════════════════════════════════════════════════════
+// EXTERNAL REQUESTS — expandable rows + "Use" actions
+// ══════════════════════════════════════════════════════════
+async function loadExternalRequests() {
+  externalReqs = await getExternalRequests(EVENT_ID).catch(()=>[]);
+  renderExternal();
+}
+
+function renderExternal() {
+  const panel   = document.getElementById('panel-external');
+  const canEdit = isHead();
+  const typeColors = { accommodation:'#60A5FA', equipment:'#34D399', stall:'#F59E0B', mealPass:'#A78BFA', general:'#94A3B8' };
+
+  panel.innerHTML = `
+    <div class="section-header">
+      <div>
+        <div class="section-title">External Requests</div>
+        <div class="section-subtitle">${externalReqs.length} request${externalReqs.length!==1?'s':''} · Click a row to expand details and use the data</div>
+      </div>
+      <div style="display:flex;gap:var(--sp-2);align-items:center">
+        <select class="form-control" id="ext-filter" onchange="filterExternal(this.value)" style="width:auto;padding:5px 10px;font-size:0.8rem;margin:0">
+          <option value="">All Types</option>
+          <option value="accommodation">Accommodation</option>
+          <option value="equipment">Equipment</option>
+          <option value="stall">Stall Booking</option>
+          <option value="mealPass">Meal Pass</option>
+          <option value="general">General</option>
+        </select>
+        <a href="${window.location.origin}/events/event-request.html?eventId=${EVENT_ID}" target="_blank" class="btn btn-secondary btn-sm">Open Form</a>
+      </div>
+    </div>
+    ${externalReqs.length ? `
+    <div class="card" style="overflow:hidden">
+      <div class="table-wrapper">
+        <table class="data-table" id="ext-table">
+          <thead><tr>
+            <th style="width:18px"></th>
+            <th>Name / Org</th><th>Type</th><th>Contact</th><th>Submitted</th><th>Status</th>
+            ${canEdit?'<th>Update</th>':''}
+          </tr></thead>
+          <tbody id="ext-tbody">
+            ${externalReqs.map(r => buildExtRow(r, canEdit, typeColors)).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` :
+    `<div style="color:var(--text-muted);font-size:0.82rem;text-align:center;padding:var(--sp-8);border:1px dashed var(--border-subtle);border-radius:var(--radius-lg)">No external requests yet. Share the form link for others to submit.</div>`}`;
+}
+
+function buildExtRow(r, canEdit, typeColors) {
+  const tc = typeColors;
+  const color = tc[r.requestType] || '#94A3B8';
+  const submittedAt = r.submittedAt ? new Date(r.submittedAt).toLocaleDateString('en-IN') : (r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN') : '—');
+  const trackingId = r.trackingId || ('REQ-' + r.id.slice(0,6).toUpperCase());
+
+  // Build details object from all fields
+  const skipKeys = new Set(['id','eventId','requestType','status','submittedAt','createdAt','_eventId','trackingId']);
+  const detailFields = Object.entries(r)
+    .filter(([k]) => !skipKeys.has(k) && r[k] !== undefined && r[k] !== '')
+    .map(([k,v]) => ({ label: k.replace(/([A-Z])/g,' $1').replace(/^./,c=>c.toUpperCase()), value: String(v) }));
+
+  // "Use" buttons based on type
+  const useButtons = buildUseButtons(r);
+
+  return `
+    <tr class="ext-row" onclick="toggleExtRow('${r.id}')">
+      <td style="color:var(--text-muted)">
+        <svg id="ext-chevron-${r.id}" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform .2s"><polyline points="9 18 15 12 9 6"/></svg>
+      </td>
+      <td>
+        <strong>${r.contactName||r.orgName||r.name||'—'}</strong>
+        <div style="font-size:0.7rem;color:var(--brand-secondary);font-family:monospace;font-weight:700">${trackingId}</div>
+        ${r.orgName&&r.contactName?`<div style="font-size:0.72rem;color:var(--text-muted)">${r.orgName}</div>`:''}
+      </td>
+      <td><span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:${color}22;color:${color}">${r.requestType||'general'}</span></td>
+      <td style="font-size:0.78rem">${r.contactEmail||r.email||'—'}${r.contactPhone?`<div style="color:var(--text-muted)">${r.contactPhone}</div>`:''}</td>
+      <td style="font-size:0.78rem;color:var(--text-muted)">${submittedAt}</td>
+      <td><span class="badge badge-${r.status==='approved'?'success':r.status==='rejected'?'danger':'warning'}">${r.status||'pending'}</span></td>
+      ${canEdit?`<td onclick="event.stopPropagation()">
+        <div style="display:flex;gap:6px;align-items:center">
+          <select class="form-control" onchange="updateExtReq('${r.id}',this.value)" style="width:105px;margin:0;padding:4px 6px;font-size:0.75rem">
+            <option value="pending" ${r.status==='pending'?'selected':''}>Pending</option>
+            <option value="approved" ${r.status==='approved'?'selected':''}>Approved</option>
+            <option value="rejected" ${r.status==='rejected'?'selected':''}>Rejected</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="openHeadChat('${r.id}','${(r.contactName||r.name||'Applicant').replace(/'/g,"&#39;")}')" style="font-size:0.7rem;padding:3px 8px">Chat</button>
+        </div>
+      </td>`:''}
+    </tr>
+    <tr class="ext-detail-row" id="ext-detail-${r.id}">
+      <td colspan="${canEdit?7:6}" style="padding:0">
+        <div class="ext-detail-inner" id="ext-inner-${r.id}">
+          <div class="ext-field-grid">
+            ${detailFields.map(f=>`<div class="ext-field"><div class="ext-field-label">${f.label}</div><div class="ext-field-value">${f.value}</div></div>`).join('')}
+          </div>
+          ${useButtons ? `<div style="display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-top:var(--sp-2);padding-top:var(--sp-2);border-top:1px solid var(--border-subtle)">${useButtons}</div>` : ''}
+        </div>
+      </td>
+    </tr>`;
+}
+
+function buildUseButtons(r) {
+  if (!isHead()) return '';
+  const btns = [];
+  const safe = (s) => (s||'').replace(/'/g,"&#39;");
+
+  switch (r.requestType) {
+    case 'accommodation':
+      btns.push(`<button class="btn btn-secondary btn-sm" onclick="useForAccom('${r.id}')">Use: Fill Accommodation</button>`);
+      break;
+    case 'equipment':
+      btns.push(`<button class="btn btn-secondary btn-sm" onclick="switchTab('equipment');showToast('See equipment tab','info')">Use: View Equipment Tab</button>`);
+      break;
+    case 'stall':
+    case 'Stall Booking':
+      btns.push(`<button class="btn btn-secondary btn-sm" onclick="useForStall('${safe(r.contactName||r.orgName||r.name||'')}','${safe(r.stallType||r.stallDesc||'')}','${safe(r.contactPhone||r.phone||'')}')">Use: Pre-fill Stall</button>`);
+      break;
+    case 'mealPass':
+    case 'Meal Pass Request':
+      btns.push(`<button class="btn btn-secondary btn-sm" onclick="useForPass('${safe(r.contactName||r.name||'')}')">Use: Generate Pass</button>`);
+      break;
+  }
+  return btns.join('');
+}
+
+window.toggleExtRow = function(id) {
+  const inner   = document.getElementById('ext-inner-'+id);
+  const chevron = document.getElementById('ext-chevron-'+id);
+  const isOpen  = inner.classList.contains('open');
+  // Close all others
+  document.querySelectorAll('.ext-detail-inner.open').forEach(el => el.classList.remove('open'));
+  document.querySelectorAll('[id^=ext-chevron-]').forEach(el => el.style.transform='');
+  if (!isOpen) {
+    inner.classList.add('open');
+    chevron.style.transform = 'rotate(90deg)';
+  }
+};
+window.filterExternal = function(type) {
+  const rows = document.querySelectorAll('#ext-tbody .ext-row');
+  rows.forEach(row => {
+    const nextRow = row.nextElementSibling;
+    const typeBadge = row.querySelector('[style*="border-radius:999px"]');
+    const visible = !type || (typeBadge && typeBadge.textContent.trim().toLowerCase().includes(type.toLowerCase()));
+    row.style.display         = visible ? '' : 'none';
+    if (nextRow) nextRow.style.display = visible ? '' : 'none';
+  });
+};
+window.updateExtReq = async function(id, status) {
+  await updateExternalRequest(EVENT_ID, id, { status });
+  const r = externalReqs.find(x=>x.id===id); if(r) r.status=status;
+  renderExternal(); showToast('Status updated.','success');
+};
+
+// Use buttons — auto-fill other tabs
+window.useForAccom = function(id) {
+  const r = externalReqs.find(x=>x.id===id);
+  if (!r) return;
+  switchTab('accommodation');
+  showAccomForm({
+    guestName:  r.contactName||r.orgName||r.name||'',
+    guestCount: r.accGuests||r.numGuests||1,
+    checkIn:    r.accCheckin||r.checkIn||'',
+    checkOut:   r.accCheckout||r.checkOut||'',
+  });
+  showToast('Accommodation form pre-filled from external request.','success');
+};
+window.useForStall = function(name, type, contact) {
+  switchTab('stalls');
+  setTimeout(() => {
+    // Find first available stall
+    const free = stallData.stalls.find(s => !s.vendor && !s.bookingId);
+    if (free) {
+      activeStallId = free.id;
+      document.getElementById('stall-name-input').value    = name;
+      document.getElementById('stall-vendor-input').value  = name;
+      document.getElementById('stall-type-input').value    = type;
+      document.getElementById('stall-contact-input').value = contact;
+      openModal('stall-modal');
+      document.getElementById('stall-modal-title').textContent = `Stall ${free.id} — Pre-filled`;
+    } else { showToast('No available stalls.','error'); }
+  }, 200);
+};
+window.useForPass = function(name) {
+  switchTab('passes');
+  setTimeout(() => {
+    openModal('pass-modal');
+    document.getElementById('pass-name').value = name;
+  }, 200);
+};
+
+// ══════════════════════════════════════════════════════════
+// REGISTRATIONS
+// ══════════════════════════════════════════════════════════
+async function loadRegistrations() {
+  registrations = await getEventRegistrations(EVENT_ID).catch(()=>[]);
+  const panel   = document.getElementById('panel-registrations');
+  panel.innerHTML = `
+    <div class="section-header">
+      <div><div class="section-title">Registrations</div><div class="section-subtitle">${registrations.length} registered</div></div>
+    </div>
+    ${registrations.length ? `
+    <div class="card" style="overflow:hidden"><div class="table-wrapper"><table class="data-table">
+      <thead><tr><th>Name</th><th>ID</th><th>Registered At</th><th>Status</th></tr></thead>
+      <tbody>${registrations.map(r=>`<tr>
+        <td><strong>${r.name||'—'}</strong></td>
+        <td style="color:var(--text-muted)">${r.uniqueId||r.uid||'—'}</td>
+        <td>${r.registeredAt?.toDate?.()?.toLocaleDateString('en-IN')||'—'}</td>
+        <td><span class="badge badge-success">${r.status||'registered'}</span></td>
+      </tr>`).join('')}</tbody>
+    </table></div></div>` :
+    `<div style="color:var(--text-muted);font-size:0.82rem;text-align:center;padding:var(--sp-6)">No registrations yet.</div>`}`;
+}
+
+// ══════════════════════════════════════════════════════════
+// EXPENDITURE
+// ══════════════════════════════════════════════════════════
+async function loadExpenditures() {
+  try {
+    const snap = await getDocs(query(collection(db,'campus_events',EVENT_ID,'expenditures'),orderBy('date','asc')));
+    expenditures = snap.docs.map(d=>({id:d.id,...d.data()}));
+  } catch { expenditures = []; }
+  renderExpenditures();
+}
+function renderExpenditures() {
+  const panel   = document.getElementById('panel-expenditure');
+  const canEdit = isHead();
+  const total   = expenditures.reduce((s,e)=>s+Number(e.amount||0),0);
+  const alloc   = Number(currentEvent.budget?.allocated||0);
+  const pct     = alloc ? Math.min(100,(total/alloc)*100) : 0;
+  const catColor= {Venue:'#6C63FF',Food:'#F59E0B',Equipment:'#34D399',Transport:'#60A5FA',Marketing:'#EC4899',Misc:'#94A3B8'};
+
+  panel.innerHTML = `
+    <div class="section-header">
+      <div><div class="section-title">Expenditure Ledger</div><div class="section-subtitle">Track all expenses against the allocated budget</div></div>
+      ${canEdit?`<button class="btn btn-primary btn-sm" onclick="showExpForm()">+ Add Entry</button>`:''}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-4);margin-bottom:var(--sp-4)">
+      <div class="card" style="text-align:center"><div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:var(--sp-2)">Allocated</div><div style="font-size:1.5rem;font-weight:800">&#8377;${alloc.toLocaleString('en-IN')}</div></div>
+      <div class="card" style="text-align:center"><div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:var(--sp-2)">Spent</div><div style="font-size:1.5rem;font-weight:800;color:${total>alloc&&alloc?'var(--brand-danger)':'var(--brand-success)'}">&#8377;${total.toLocaleString('en-IN')}</div></div>
+      <div class="card" style="text-align:center"><div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:var(--sp-2)">Remaining</div><div style="font-size:1.5rem;font-weight:800">&#8377;${Math.max(0,alloc-total).toLocaleString('en-IN')}</div></div>
+    </div>
+    <div style="background:var(--bg-surface);border-radius:999px;height:8px;overflow:hidden;margin-bottom:var(--sp-5)">
+      <div style="height:100%;border-radius:999px;background:${pct>90?'var(--brand-danger)':'var(--brand-primary)'};width:${pct}%;transition:width .4s"></div>
+    </div>
+    <div id="exp-form-area"></div>
+    ${expenditures.length?`
+    <div class="card" style="overflow:hidden"><div class="table-wrapper"><table class="data-table">
+      <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Paid By</th><th>Status</th><th>Ref</th>${canEdit?'<th></th>':''}</tr></thead>
+      <tbody>
+        ${expenditures.map(e=>`<tr>
+          <td>${e.date||'—'}</td>
+          <td><span style="font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:${catColor[e.category]||'#94A3B8'}22;color:${catColor[e.category]||'#94A3B8'}">${e.category||'—'}</span></td>
+          <td style="max-width:180px;word-break:break-word">${e.description||'—'}</td>
+          <td><strong>&#8377;${Number(e.amount||0).toLocaleString('en-IN')}</strong></td>
+          <td>${e.paidBy||'—'}</td>
+          <td><span class="badge badge-${e.status==='Paid'?'success':e.status==='Approved'?'info':'warning'}">${e.status||'Pending'}</span></td>
+          <td style="color:var(--text-muted);font-size:.75rem">${e.refNo||'—'}</td>
+          ${canEdit?`<td><button class="icon-btn danger" onclick="deleteExp('${e.id}')" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button></td>`:''}
+        </tr>`).join('')}
+        <tr style="background:rgba(108,99,255,.06);font-weight:800">
+          <td colspan="3" style="text-align:right;font-size:.8rem;color:var(--text-muted)">TOTAL</td>
+          <td><strong style="color:var(--brand-primary)">&#8377;${total.toLocaleString('en-IN')}</strong></td>
+          <td colspan="${canEdit?4:3}"></td>
+        </tr>
+      </tbody>
+    </table></div></div>` :
+    `<div style="color:var(--text-muted);font-size:.85rem;text-align:center;padding:var(--sp-8);border:1px dashed var(--border-subtle);border-radius:var(--radius-lg)">No expenditure entries yet. Click "Add Entry" to start tracking.</div>`}`;
+}
+window.showExpForm = function() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('exp-form-area').innerHTML = `
+    <div class="inline-add-form" style="margin-bottom:var(--sp-4)">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        <div class="form-group" style="margin:0"><label class="form-label">Date *</label><input type="date" class="form-control" id="exp-date" value="${today}"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Category *</label><select class="form-control" id="exp-cat"><option>Venue</option><option>Food</option><option>Equipment</option><option>Transport</option><option>Marketing</option><option>Misc</option></select></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Amount (&#8377;) *</label><input type="number" class="form-control" id="exp-amount" placeholder="0" min="0"></div>
+        <div class="form-group" style="margin:0;grid-column:1/-1"><label class="form-label">Description *</label><input type="text" class="form-control" id="exp-desc" placeholder="What was purchased / paid for?"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Paid By</label><input type="text" class="form-control" id="exp-paidby" value="${currentUser?.name||''}"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Receipt / Ref No.</label><input type="text" class="form-control" id="exp-ref" placeholder="e.g. INV-001"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Status</label><select class="form-control" id="exp-status"><option>Pending Reimbursement</option><option>Paid</option><option>Approved</option></select></div>
+      </div>
+      <div style="display:flex;gap:var(--sp-2)">
+        <button class="btn btn-primary btn-sm" onclick="submitExp()">Save Entry</button>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('exp-form-area').innerHTML=''">Cancel</button>
+      </div>
+    </div>`;
+};
+window.submitExp = async function() {
+  const date = document.getElementById('exp-date').value;
+  const category = document.getElementById('exp-cat').value;
+  const amount = parseFloat(document.getElementById('exp-amount').value)||0;
+  const description = document.getElementById('exp-desc').value.trim();
+  const paidBy = document.getElementById('exp-paidby').value.trim();
+  const refNo = document.getElementById('exp-ref').value.trim();
+  const status = document.getElementById('exp-status').value;
+  if (!description||!amount||!date){showToast('Date, description and amount required.','error');return;}
+  try {
+    const ref = await addDoc(collection(db,'campus_events',EVENT_ID,'expenditures'),{date,category,amount,description,paidBy,refNo,status,addedBy:currentUser.uid,addedAt:new Date().toISOString()});
+    expenditures.push({id:ref.id,date,category,amount,description,paidBy,refNo,status});
+    const newTotal=expenditures.reduce((s,e)=>s+Number(e.amount||0),0);
+    await updateDoc(doc(db,'campus_events',EVENT_ID),{'budget.spent':newTotal});
+    document.getElementById('exp-form-area').innerHTML='';
+    renderExpenditures(); showToast('Entry saved!','success');
+  } catch(e){showToast('Error: '+e.message,'error');}
+};
+window.deleteExp = async function(id) {
+  if(!confirm('Delete this entry?'))return;
+  try {
+    await deleteDoc(doc(db,'campus_events',EVENT_ID,'expenditures',id));
+    expenditures=expenditures.filter(e=>e.id!==id);
+    const newTotal=expenditures.reduce((s,e)=>s+Number(e.amount||0),0);
+    await updateDoc(doc(db,'campus_events',EVENT_ID),{'budget.spent':newTotal});
+    renderExpenditures(); showToast('Entry deleted.','success');
+  } catch(e){showToast('Error: '+e.message,'error');}
+};
+
+// ── Head Applicant Chat ───────────────────────────────────
+let activeHeadChatReqId = null;
+
+window.openHeadChat = async function(reqId, applicantName) {
+  activeHeadChatReqId = reqId;
+  document.getElementById('headChatTitle').textContent = `Chat with ${applicantName}`;
+  openModal('head-chat-modal');
+  loadHeadChatMessages();
+};
+
+async function loadHeadChatMessages() {
+  if (!activeHeadChatReqId) return;
+  const box = document.getElementById('headChatList');
+  box.innerHTML = '<div style="color:var(--text-muted);font-size:0.75rem;text-align:center">Loading messages…</div>';
+  try {
+    const snap = await getDocs(query(collection(db, 'campus_events', EVENT_ID, 'external_requests', activeHeadChatReqId, 'messages'), orderBy('createdAt', 'asc')));
+    if (snap.empty) {
+      box.innerHTML = '<div style="color:var(--text-muted);font-size:0.75rem;text-align:center;padding:1rem">No messages yet. Send a note to the applicant below.</div>';
+      return;
+    }
+    box.innerHTML = snap.docs.map(d => {
+      const m = d.data();
+      const isHeadSender = m.senderType !== 'applicant';
+      return `
+        <div style="margin-bottom:8px;text-align:${isHeadSender?'right':'left'}">
+          <div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:2px">${m.senderName || (isHeadSender?'You':'Applicant')}</div>
+          <div style="display:inline-block;padding:8px 12px;border-radius:12px;max-width:85%;font-size:0.82rem;background:${isHeadSender?'var(--brand-primary)':'var(--bg-surface)'};color:#fff;border:1px solid ${isHeadSender?'transparent':'var(--border-subtle)'}">${m.text}</div>
+        </div>`;
+    }).join('');
+    box.scrollTop = box.scrollHeight;
+  } catch(e) { box.innerHTML = '<div style="color:var(--brand-danger);font-size:0.75rem">Error loading chat</div>'; }
+}
+
+window.sendHeadMsg = async function() {
+  if (!activeHeadChatReqId) return;
+  const input = document.getElementById('headChatInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  try {
+    await addDoc(collection(db, 'campus_events', EVENT_ID, 'external_requests', activeHeadChatReqId, 'messages'), {
+      text,
+      senderName: currentUser?.name || 'Event Head',
+      senderType: 'head',
+      createdAt: new Date()
+    });
+    loadHeadChatMessages();
+    showToast('Message sent to applicant.','success');
+  } catch(e) { showToast('Send failed: ' + e.message,'error'); }
+};
+</script>
+
+<!-- Head Chat Modal -->
+<div id="head-chat-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="headChatTitle">Chat with Applicant</div>
+      <button class="modal-close" onclick="closeModal('head-chat-modal')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:10px;margin-bottom:1rem">
+      <div id="headChatList" style="max-height:220px;overflow-y:auto;margin-bottom:10px;padding-right:4px"></div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="headChatInput" class="form-control" placeholder="Type a message/update to applicant…" style="font-size:0.8rem" onkeydown="if(event.key==='Enter'){event.preventDefault();sendHeadMsg();}" />
+        <button class="btn btn-primary btn-sm" onclick="sendHeadMsg()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

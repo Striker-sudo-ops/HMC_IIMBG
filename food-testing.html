@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Food Testing Board — HMC Portal</title>
+  <link rel="stylesheet" href="./css/main.css">
+  <link rel="stylesheet" href="./css/theme.css">
+  <script type="module">import { initTheme } from './js/theme.js'; initTheme();</script>
+  <style>
+    .testing-container {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-6);
+    }
+
+    .editor-panel {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-5);
+    }
+
+    .control-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--brand-primary);
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: var(--sp-3);
+      margin-bottom: var(--sp-2);
+      letter-spacing: 0.02em;
+    }
+
+    .premium-form-control {
+      width: 100%;
+      padding: 11px 16px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-normal);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: var(--transition-fast);
+      box-sizing: border-box;
+    }
+
+    .premium-form-control:focus {
+      background: var(--bg-surface);
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+      outline: none;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: var(--sp-2) var(--sp-4);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: var(--radius-md);
+      transition: var(--transition-fast);
+    }
+
+    .tab-btn:hover {
+      color: var(--text-normal);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tab-btn.active {
+      color: var(--brand-primary);
+      background: rgba(124, 58, 237, 0.12);
+    }
+
+    .star-btn {
+      transition: var(--transition-fast);
+    }
+    .star-btn:hover, .star-btn.active {
+      color: #fbbf24 !important;
+      transform: scale(1.15);
+    }
+
+    .dropdown-container {
+      position: relative;
+      width: 100%;
+    }
+
+    .dropdown-search-input {
+      width: 100%;
+      padding: 11px 16px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-normal);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      box-sizing: border-box;
+    }
+
+    .dropdown-menu-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      max-height: 200px;
+      overflow-y: auto;
+      background: var(--bg-elevated);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      z-index: 10;
+      display: none;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .dropdown-menu-item {
+      padding: 10px 16px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: var(--transition-fast);
+    }
+
+    .dropdown-menu-item:hover {
+      background: var(--brand-primary);
+      color: white;
+    }
+
+    /* Checklist checkboxes styles */
+    .checkbox-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: var(--transition-fast);
+    }
+
+    .checkbox-pill:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-normal);
+    }
+
+    .checkbox-pill input:checked + span {
+      color: var(--brand-primary);
+      font-weight: 700;
+    }
+
+    .checkbox-pill input {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Food Testing Board</h1>
+        <p class="page-subtitle">Assign testers, submit testing reviews, and view kitchen quality logs</p>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="testing-container">
+        <!-- Navigation Tabs -->
+        <div class="tab-nav" style="display: flex; gap: var(--sp-2); margin-bottom: var(--sp-4); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--sp-3)">
+          <button class="tab-btn hidden" id="tab-btn-assign" onclick="switchTestingTab('tab-assign')">Assign Tester</button>
+          <button class="tab-btn hidden" id="tab-btn-logs" onclick="switchTestingTab('tab-logs')">Submission Logs</button>
+        </div>
+
+        <!-- Tab 1: Assign Tester & Track Record (Mess Head / Admin only) -->
+        <div id="tab-assign" class="tab-content" style="display:none">
+          <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: var(--sp-6)">
+            
+            <!-- Assign Tester Card -->
+            <div class="editor-panel">
+              <div class="control-title">Assign Food Tester</div>
+              <div style="display: flex; flex-direction: column; gap: var(--sp-3)">
+                <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: var(--sp-3)">
+                  <div style="display: flex; flex-direction: column; gap: 4px">
+                    <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary)">Date</label>
+                    <input type="date" id="assign-date-input" class="form-control" onchange="onAssignDateChange()" style="margin-bottom:0">
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 4px">
+                    <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary)">Day</label>
+                    <div id="assign-day-display" style="padding: 10px; background: var(--bg-base); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.85rem; font-weight: 700; text-align: center; color: var(--brand-primary); height: 38px; display: flex; align-items: center; justify-content: center">Select Date</div>
+                  </div>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary)">Meal Category</label>
+                  <select id="assign-meal-select" class="form-control" onchange="onAssignMealChange()">
+                    <option value="Breakfast">Breakfast</option>
+                    <option value="Lunch">Lunch</option>
+                    <option value="Snacks">Snacks</option>
+                    <option value="Dinner">Dinner</option>
+                  </select>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary)">Food Items (From Active Menu)</label>
+                  <div id="assign-items-preview" style="padding: var(--sp-3); background: var(--bg-base); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-muted); min-height: 50px">
+                    No active menu item found for selected day & meal.
+                  </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary)">Assign Food Tester</label>
+                  <div class="dropdown-container">
+                    <input type="text" id="tester-search-input" class="dropdown-search-input" placeholder="Search HMC Member..." onfocus="showTesterDropdown()" oninput="filterTesterDropdown()">
+                    <input type="hidden" id="selected-tester-uid">
+                    <div class="dropdown-menu-list" id="tester-dropdown-menu">
+                      <!-- Populated dynamically -->
+                    </div>
+                  </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="saveTesterAssignment()" style="margin-top: var(--sp-2); font-weight:700">Assign Tester</button>
+              </div>
+            </div>
+
+            <!-- Track Record and Leaderboard -->
+            <div class="editor-panel">
+              <div class="control-title">HMC Members Track Record</div>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0">
+                Track how many food testing duties HMC members have completed. Mess Heads can edit the <b>Bonus</b> score (tasks completed which were not assigned).
+              </p>
+              <div class="table-wrapper" style="max-height: 420px; overflow-y: auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Member</th>
+                      <th style="text-align: center">Assigned</th>
+                      <th style="text-align: center">Completed</th>
+                      <th style="text-align: center">Rating</th>
+                    </tr>
+                  </thead>
+                  <tbody id="track-record-tbody">
+                    <tr><td colspan="4" style="text-align:center;padding:var(--sp-6)"><div class="spinner" style="margin:0 auto"></div></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab 2: Submission Logs -->
+        <div id="tab-logs" class="tab-content" style="display:none">
+          <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--sp-2)">
+              <h3 class="card-title" style="margin:0">Food Testing Logs</h3>
+              <button class="btn btn-primary mess-member-only hidden" id="btn-lodge-adhoc" onclick="openTestingForm('new')" style="display:flex; align-items:center; gap:6px; font-weight:700">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Lodge New Quality Log
+              </button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date / Day</th>
+                    <th>Meal</th>
+                    <th>Tester</th>
+                    <th>Items Served</th>
+                    <th>Extra Items</th>
+                    <th>Feedback Rating</th>
+                    <th>Photo</th>
+                  </tr>
+                </thead>
+                <tbody id="review-logs-tbody">
+                  <tr><td colspan="7" style="text-align:center;padding:var(--sp-6)"><div class="spinner" style="margin:0 auto"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Testing Submission Modal -->
+<div class="modal-overlay" id="testing-modal-overlay">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 class="modal-title" style="text-align: center; width: 100%">Submit Food Quality Report</h3>
+      <button class="modal-close" onclick="closeTestingModal()">&times;</button>
+    </div>
+    <div class="modal-body" style="padding-top: var(--sp-2)">
+      <div style="display: flex; flex-direction: column; gap: var(--sp-4)">
+        <div id="modal-details-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); font-size: 0.88rem; background: rgba(255,255,255,0.02); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle)">
+          <!-- Loaded dynamically -->
+        </div>
+
+        <!-- Food checklist -->
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase">Food Items Served (Check all that apply):</label>
+          <div id="form-food-checkboxes" style="display: flex; flex-wrap: wrap; gap: var(--sp-2); padding: 12px; background: var(--bg-base); border-radius: var(--radius-md); border: 1px solid var(--border-subtle)">
+            <!-- Loaded dynamically -->
+          </div>
+        </div>
+
+        <!-- Extra items served -->
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase">Extra Items Served (if any):</label>
+          <input type="text" id="form-extra-input" class="premium-form-control" placeholder="e.g. Special sweets or side dish served">
+        </div>
+
+        <!-- Stars Selector -->
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase">Quality Rating:</label>
+          <div id="star-rating-container" style="display: flex; gap: 8px; font-size: 2rem; color: var(--text-muted); cursor: pointer">
+            <span class="star-btn" data-value="1" onclick="setRating(1)">★</span>
+            <span class="star-btn" data-value="2" onclick="setRating(2)">★</span>
+            <span class="star-btn" data-value="3" onclick="setRating(3)">★</span>
+            <span class="star-btn" data-value="4" onclick="setRating(4)">★</span>
+            <span class="star-btn" data-value="5" onclick="setRating(5)">★</span>
+          </div>
+        </div>
+
+        <!-- Written Feedback -->
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase">Feedback & Comments:</label>
+          <textarea id="form-review-textarea" class="premium-form-control" rows="3" placeholder="Taste, portion sizes, hygiene notes..."></textarea>
+        </div>
+
+        <!-- Picture Upload -->
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase">Upload Food Photo:</label>
+          <input type="file" id="form-image-input" class="premium-form-control" accept="image/*">
+          <div id="image-upload-preview" style="display:none; margin-top: 10px; align-items: center; gap: 12px">
+            <img id="form-image-preview" src="" style="max-height: 150px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle)">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="removeFoodPhoto()" style="color:var(--brand-danger); border-color:rgba(239,68,68,0.3); font-weight:700">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Remove Photo
+            </button>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="width: 100%; font-weight:700" onclick="submitFoodTestReport()">Tested / Submit Report</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from './js/auth.js';
+  import { renderSidebar, initSidebarTheme } from './js/sidebar.js';
+  import { getAllMembers, updateTrackRecord } from './js/members.js';
+  import { showToast, openModal, closeModal, renderAvatar } from './js/utils.js';
+  import { db } from './js/firebase-config.js';
+  import { logAction } from './js/audit-logger.js';
+  import { 
+    doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc, query, where, deleteDoc 
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // Inject sidebar
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('food-testing.html');
+  initSidebarTheme();
+
+  // Global States
+  let currentUser = null;
+  let allowedDesigners = [];
+  let currentActiveMenuId = null;
+  let currentActiveMenuObj = null; 
+  let allMembersList = [];
+  let isMessHead = false;
+
+  let activeAssignmentId = null;
+  let selectedRating = 0;
+
+  const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  // Initialize
+  initAuthGuard({
+    requireLogin: true,
+    onReady: async (user) => {
+      currentUser = user;
+      populateSidebarUser(user);
+      
+      isMessHead = (user.role === 'admin' || 
+                    user.title?.toLowerCase().includes('mess head') || 
+                    user.post?.toLowerCase().includes('mess head') || 
+                    user.post?.toLowerCase().includes('mess committee head') || 
+                    user.post?.toLowerCase().includes('mess coordinator') ||
+                    (user.category === 'mess' && user.post === 'Head'));
+      
+      const isMessMember = isMessHead || user.role === 'admin' || (user.role !== 'student' && (user.category || '').toLowerCase().trim() === 'mess');
+      if (isMessMember) {
+        document.querySelectorAll('.mess-member-only').forEach(el => el.classList.remove('hidden'));
+      }
+
+      try {
+        await loadActiveMenuData();
+      } catch (err) {
+        console.error("Error loading active menu:", err);
+      }
+
+      // Check if current user is Mess Head to enable assignment controls & list
+      if (isMessHead) {
+        document.getElementById('tab-btn-assign').classList.remove('hidden');
+        document.getElementById('tab-btn-logs').classList.remove('hidden');
+        switchTestingTab('tab-assign'); // Default tab for Mess Head
+        
+        try {
+          await loadHmcMembersForTesting();
+        } catch (err) {
+          console.error("Error loading HMC members:", err);
+        }
+        
+        try {
+          await loadTrackRecords();
+        } catch (err) {
+          console.error("Error loading track records:", err);
+        }
+      } else {
+        // Normal HMC members can only see logs tab
+        document.getElementById('tab-btn-assign').classList.add('hidden');
+        document.getElementById('tab-btn-logs').classList.remove('hidden');
+        switchTestingTab('tab-logs'); // Default tab for normal HMC members
+      }
+
+      // Check URL query parameters for direct report submission loading
+      const urlParams = new URLSearchParams(window.location.search);
+      const assignmentParam = urlParams.get('assignmentId');
+      if (assignmentParam) {
+        loadSpecificAssignment(assignmentParam);
+      }
+      
+      // Auto load logs
+      await loadSubmittedReports();
+    }
+  });
+
+  // Switch tabs
+  window.switchTestingTab = function(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
+    
+    const activeBtn = document.getElementById(`tab-btn-${tabId.split('-')[1]}`);
+    if (activeBtn) activeBtn.classList.add('active');
+    
+    const activeContent = document.getElementById(tabId);
+    if (activeContent) activeContent.style.display = 'block';
+  };
+
+  // Close testing form modal
+  window.closeTestingModal = function() {
+    const modal = document.getElementById('testing-modal-overlay');
+    if (modal) modal.classList.remove('show');
+    activeAssignmentId = null;
+    
+    // Clear URL query parameters to avoid re-opening modal on refresh
+    const url = new URL(window.location);
+    url.searchParams.delete('assignmentId');
+    window.history.replaceState({}, '', url);
+  };
+
+  // Load Active Menu
+  async function loadActiveMenuData() {
+    const menuMetaSnap = await getDoc(doc(db, 'meta', 'menu'));
+    if (menuMetaSnap.exists()) {
+      allowedDesigners = menuMetaSnap.data().allowedDesigners || [];
+      currentActiveMenuId = menuMetaSnap.data().currentMenuId || null;
+      
+      if (currentActiveMenuId) {
+        const menuSnap = await getDoc(doc(db, 'menus', currentActiveMenuId));
+        if (menuSnap.exists()) {
+          currentActiveMenuObj = menuSnap.data();
+        }
+      }
+    }
+
+    // Set initial date to today for assignment form
+    const dateInput = document.getElementById('assign-date-input');
+    if (dateInput) {
+      const today = new Date();
+      dateInput.value = today.toISOString().split('T')[0];
+      onAssignDateChange();
+    }
+  }
+
+  // Load HMC Members list for dropdown list
+  async function loadHmcMembersForTesting() {
+    allMembersList = await getAllMembers();
+    const dropdown = document.getElementById('tester-dropdown-menu');
+
+    // Restrict food tester dropdown to Mess category members ONLY (exclude wardens, chief warden, supervisors, etc.)
+    const assignableTesters = allMembersList.filter(m => {
+      if (['chief_warden', 'hostel_warden', 'hostel_supervisor', 'student', 'laundry_worker'].includes(m.role)) return false;
+      return (
+        (m.category || '').toLowerCase().trim() === 'mess' ||
+        m.post?.toLowerCase().includes('mess head') ||
+        m.post?.toLowerCase().includes('mess committee head') ||
+        m.post?.toLowerCase().includes('mess coordinator') ||
+        m.post?.toLowerCase().includes('mess member')
+      );
+    });
+
+    let html = '';
+    assignableTesters.forEach(m => {
+      const isSelf = m.uid === currentUser.uid;
+      html += `
+        <div class="dropdown-menu-item" onclick="selectTester('${m.uid}', '${m.name} (${m.uniqueId || '\u2014'})')">
+          ${m.name}${isSelf ? ' <em style="color:var(--brand-primary);font-size:0.72rem;font-style:normal;font-weight:700">(You)</em>' : ''}
+          <span style="font-family:var(--font-mono);font-size:0.75rem;margin-left:4px">(${m.uniqueId || '\u2014'})</span>
+        </div>
+      `;
+    });
+    dropdown.innerHTML = html || '<div class="dropdown-menu-item" style="color:var(--text-muted);cursor:default">No Mess members found</div>';
+  }
+
+  // Dropdown selectors controls
+  window.showTesterDropdown = function() {
+    document.getElementById('tester-dropdown-menu').style.display = 'block';
+  };
+
+  // Hide dropdown menu on click outside
+  document.addEventListener('click', function(e) {
+    const searchInput = document.getElementById('tester-search-input');
+    const dropdown = document.getElementById('tester-dropdown-menu');
+    if (searchInput && dropdown && !searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+
+  window.filterTesterDropdown = function() {
+    const q = document.getElementById('tester-search-input').value.toLowerCase();
+    const items = document.querySelectorAll('.dropdown-menu-item');
+    items.forEach(item => {
+      const txt = item.textContent.toLowerCase();
+      item.style.display = txt.includes(q) ? 'block' : 'none';
+    });
+  };
+
+  window.selectTester = function(uid, displayText) {
+    document.getElementById('selected-tester-uid').value = uid;
+    document.getElementById('tester-search-input').value = displayText;
+    document.getElementById('tester-dropdown-menu').style.display = 'none';
+  };
+
+  // On assignment Date change
+  window.onAssignDateChange = function() {
+    const dateVal = document.getElementById('assign-date-input').value;
+    const dayDisplay = document.getElementById('assign-day-display');
+    if (!dateVal) {
+      dayDisplay.textContent = 'Select Date';
+      return;
+    }
+
+    const dateObj = new Date(dateVal);
+    const dayName = DAYS[(dateObj.getDay() + 6) % 7]; // Adjust to Monday index 0
+    dayDisplay.textContent = dayName;
+
+    onAssignMealChange();
+  };
+
+  // On assignment Meal change
+  window.onAssignMealChange = function() {
+    const day = document.getElementById('assign-day-display').textContent;
+    const meal = document.getElementById('assign-meal-select').value;
+    const previewDiv = document.getElementById('assign-items-preview');
+
+    if (!day || day === 'Select Date' || !currentActiveMenuObj) {
+      previewDiv.textContent = 'No active menu items available.';
+      return;
+    }
+
+    const key = `${day.toLowerCase()}_${meal.toLowerCase()}`;
+    const items = currentActiveMenuObj.grid?.[key] || [];
+
+    if (items.length === 0) {
+      previewDiv.innerHTML = `<span style="color:var(--brand-danger)">Not configured in active menu</span>`;
+    } else {
+      previewDiv.innerHTML = `<strong>Items:</strong> ` + items.join(', ');
+    }
+  };
+
+  // Create Assignment
+  window.saveTesterAssignment = async function() {
+    const dateInput = document.getElementById('assign-date-input').value;
+    const day = document.getElementById('assign-day-display').textContent;
+    const meal = document.getElementById('assign-meal-select').value;
+    const testerUid = document.getElementById('selected-tester-uid').value;
+    const testerNameFull = document.getElementById('tester-search-input').value;
+
+    if (!dateInput || !testerUid) {
+      showToast("Please choose a date and select a tester HMC member.", "warning");
+      return;
+    }
+
+    const testerObj = allMembersList.find(m => m.uid === testerUid);
+    if (!testerObj) {
+      showToast("Selected tester details not found.", "error");
+      return;
+    }
+
+    try {
+      // 1. Verify duplicates
+      const snap = await getDocs(collection(db, 'food_assignments'));
+      let duplicate = false;
+      snap.forEach(d => {
+        const assignment = d.data();
+        if (assignment.date === dateInput && assignment.meal === meal && assignment.status === 'assigned') {
+          duplicate = true;
+        }
+      });
+
+      if (duplicate) {
+        showToast(`A tester is already assigned for ${meal} on ${dateInput}.`, "warning");
+        return;
+      }
+
+      // 2. Create Assignment document
+      const itemsKey = `${day.toLowerCase()}_${meal.toLowerCase()}`;
+      const itemsToTest = currentActiveMenuObj?.grid?.[itemsKey] || [];
+
+      const docRef = await addDoc(collection(db, 'food_assignments'), {
+        date: dateInput,
+        day,
+        meal,
+        testerUid,
+        testerName: testerObj.name,
+        testerUniqueId: testerObj.uniqueId || '—',
+        itemsToTest,
+        status: 'assigned',
+        createdAt: new Date().toISOString()
+      });
+
+      // 3. Create Task for assigned user
+      const taskId = `#FT_${Date.now().toString().slice(-5)}`;
+      await addDoc(collection(db, 'tasks'), {
+        taskId,
+        title: `Food testing report: ${meal} on ${dateInput}`,
+        description: `Perform food testing for ${meal} on ${dateInput}. Verify served menu: ${itemsToTest.join(', ') || 'Not set'}. Click Open to submit your quality ratings.`,
+        category: 'Mess Operations',
+        assignedByUid: currentUser.uid,
+        assignedByName: currentUser.name,
+        assignedByUniqueId: currentUser.uniqueId || '—',
+        assignedToUid: testerUid,
+        assignedToName: testerObj.name,
+        assignedToUniqueId: testerObj.uniqueId || '—',
+        assignedDate: new Date().toISOString(),
+        deadline: dateInput,
+        status: 'assigned',
+        dueDate: dateInput,
+        type: 'food_testing',
+        assignmentId: docRef.id,
+        link: `../food-testing.html?assignmentId=${docRef.id}`,
+        createdAt: new Date().toISOString()
+      });
+
+      // 4. Update user's track record count
+      const assignedCount = (testerObj.trackRecord?.assigned || 0) + 1;
+      await updateDoc(doc(db, 'users', testerUid), {
+        'trackRecord.assigned': assignedCount
+      });
+
+      showToast(`Testing task successfully assigned to ${testerObj.name}!`, "success");
+      
+      // Audit log
+      logAction({
+        action: 'Assigned Food Tester',
+        department: 'Mess',
+        details: `Assigned food tester ${testerObj.name} (${testerObj.uniqueId || '—'}) for ${meal} on ${dateInput}.`,
+        user: currentUser
+      });
+
+      // Reset search inputs
+      document.getElementById('tester-search-input').value = '';
+      document.getElementById('selected-tester-uid').value = '';
+
+      await loadTrackRecords();
+    } catch(err) {
+      showToast("Error creating assignment: " + err.message, "error");
+    }
+  };
+
+  // Load Track Records List
+  async function loadTrackRecords() {
+    const tbody = document.getElementById('track-record-tbody');
+    try {
+      const snap = await getDocs(collection(db, 'users'));
+      let html = '';
+      
+      snap.forEach(d => {
+        // Skip students, laundry workers, and hostel authorities (wardens, chief warden, supervisors)
+        if (['student', 'laundry_worker', 'chief_warden', 'hostel_warden', 'hostel_supervisor'].includes(u.role)) return;
+
+        // ONLY Mess members belong in the Food Tester track record
+        const isMessMember =
+          (u.category || '').toLowerCase().trim() === 'mess' ||
+          u.post?.toLowerCase().includes('mess head') ||
+          u.post?.toLowerCase().includes('mess committee head') ||
+          u.post?.toLowerCase().includes('mess coordinator') ||
+          u.post?.toLowerCase().includes('mess member');
+        if (!isMessMember) return;
+
+        const tr = u.trackRecord || { assigned: 0, completed: 0, avgRating: 0, ratings: [] };
+        
+        // Clean and validate ratings array
+        const rawRatings = Array.isArray(tr.ratings) ? tr.ratings : [];
+        const cleanRatings = rawRatings.map(r => Number(r)).filter(r => !isNaN(r) && r >= 1 && r <= 5);
+        
+        let avgNum = 0;
+        if (cleanRatings.length > 0) {
+          avgNum = cleanRatings.reduce((a, b) => a + b, 0) / cleanRatings.length;
+        } else if (tr.avgRating) {
+          const r = Number(tr.avgRating);
+          avgNum = (!isNaN(r) && r <= 5 && r >= 1) ? r : 0;
+        }
+
+        // Auto-repair corrupt track record entries in Firestore if avgRating > 5 or invalid rating entries exist
+        if (tr.avgRating > 5 || rawRatings.some(r => typeof r === 'string' || Number(r) > 5)) {
+          const fixedAvg = Number(avgNum.toFixed(2));
+          updateDoc(doc(db, 'users', d.id), {
+            'trackRecord.ratings': cleanRatings,
+            'trackRecord.avgRating': fixedAvg
+          }).catch(e => console.warn('Auto-repair track record error:', e));
+        }
+
+        const avgText = avgNum > 0 ? avgNum.toFixed(1) + ' / 5' : '—';
+
+        html += `
+          <tr>
+            <td>
+              <div style="display:flex; align-items:center; gap:var(--sp-2)">
+                ${renderAvatar(u, 'xs')}
+                <div><strong>${u.name}</strong><br><span style="font-size:0.7rem;color:var(--text-muted)">${u.post || 'HMC Member'}</span></div>
+              </div>
+            </td>
+            <td style="text-align: center; font-weight:700">${tr.assigned || 0}</td>
+            <td style="text-align: center; font-weight:700; color:var(--brand-success)">${tr.completed || 0}</td>
+            <td style="text-align: center; color:#fbbf24; font-weight:700">${avgText}</td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html || '<tr><td colspan="4" style="text-align:center">No active members found.</td></tr>';
+    } catch(err) {
+      console.error(err);
+      tbody.innerHTML = `<tr><td colspan="4" style="color:var(--brand-danger);text-align:center">Error loading track records: ${err.message}</td></tr>`;
+    }
+  }
+
+  // Load Submitted & Pending Reports for Logs
+  async function loadSubmittedReports() {
+    const tbody = document.getElementById('review-logs-tbody');
+    try {
+      const snap = await getDocs(collection(db, 'food_assignments'));
+      let html = '';
+      
+      const isMessMember = isMessHead || currentUser.role === 'admin' || (currentUser.role !== 'student' && (currentUser.category || '').toLowerCase().trim() === 'mess');
+
+      const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
+      const nowTime = new Date().getTime();
+      const toDeleteDocs = [];
+
+      const assignments = [];
+      snap.forEach(d => {
+        const rep = d.data();
+        let isExpired = false;
+        if (rep.completedAt) {
+          const completedTime = new Date(rep.completedAt).getTime();
+          if (nowTime - completedTime > TEN_DAYS_MS) {
+            isExpired = true;
+          }
+        } else if (rep.date) {
+          const repTime = new Date(rep.date + 'T00:00:00').getTime();
+          if (nowTime - repTime > TEN_DAYS_MS) {
+            isExpired = true;
+          }
+        }
+        
+        if (isExpired) {
+          toDeleteDocs.push(d.ref);
+        } else {
+          assignments.push({ id: d.id, ...rep });
+        }
+      });
+
+      // Background cleanup
+      toDeleteDocs.forEach(async (docRef) => {
+        try {
+          await deleteDoc(docRef);
+        } catch (e) {
+          console.warn("Failed to auto-prune expired log document:", e);
+        }
+      });
+
+      assignments.sort((a, b) => new Date(b.date + 'T00:00:00') - new Date(a.date + 'T00:00:00'));
+
+      assignments.forEach(rep => {
+        const isCompleted = rep.status === 'completed';
+        const dateFormatted = rep.date;
+        
+        let ratingHtml = '';
+        if (isCompleted) {
+          const ratingVal = parseInt(rep.rating) || 0;
+          const starsHtml = Array.from({length: 5}, (_, i) => `<svg width="14" height="14" viewBox="0 0 24 24" fill="${i < ratingVal ? '#fbbf24' : 'none'}" stroke="#fbbf24" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`).join('');
+          const reviewTextClean = (rep.review || '').trim();
+          ratingHtml = `
+            <span style="display:inline-flex;gap:2px;align-items:center">${starsHtml}</span>
+            ${reviewTextClean ? `<p style="margin-top:4px;line-height:1.3;max-width:280px;font-style:italic">"${reviewTextClean}"</p>` : ''}
+          `;
+        } else {
+          const isAssignedTester = rep.testerUid === currentUser.uid;
+          if (isMessMember || isAssignedTester) {
+            ratingHtml = `
+              <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:var(--sp-2) 0">
+                <span class="badge badge-warning" style="font-weight:700">Pending</span>
+                <button class="btn btn-sm btn-primary" onclick="openTestingForm('${rep.id}', null)" style="padding: 6px 12px; font-size: 0.75rem; font-weight:700">Submit Report</button>
+              </div>
+            `;
+          } else {
+            ratingHtml = `
+              <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:var(--sp-2) 0">
+                <span class="badge badge-warning" style="font-weight:700">Pending</span>
+                <span style="font-size:0.75rem; color:var(--text-muted)">Waiting for tester</span>
+              </div>
+            `;
+          }
+        }
+
+        const itemsDisplay = isCompleted 
+          ? (rep.actualItemsServed || []).join(', ') || '<span style="color:var(--brand-danger)">None</span>'
+          : (rep.itemsToTest || []).join(', ') || '<span style="color:var(--text-muted)">Menu not set</span>';
+
+        const extraTextClean = isCompleted ? (rep.extraItemsServed || '').trim() : '';
+        const extraServed = extraTextClean ? extraTextClean : '<span style="color:var(--text-muted)">—</span>';
+        const photoHtml = isCompleted 
+          ? (rep.imageUrl ? `<img src="${rep.imageUrl}" style="max-width: 80px; max-height: 80px; border-radius: var(--radius-sm); border:1px solid var(--border-subtle); cursor:pointer; object-fit:cover" onclick="viewFullImagePopup('${rep.imageUrl}')">` : '<span style="color:var(--text-muted)">No photo</span>')
+          : '<span style="color:var(--text-muted)">—</span>';
+
+        html += `
+          <tr>
+            <td><strong>${dateFormatted}</strong><br><span style="font-size:0.7rem;color:var(--text-muted)">${rep.day}</span></td>
+            <td style="color:var(--brand-primary);font-weight:700">${rep.meal}</td>
+            <td><strong>${rep.testerName}</strong><br><span style="font-size:0.7rem;color:var(--text-muted)">${rep.testerUniqueId}</span></td>
+            <td>${itemsDisplay}</td>
+            <td>${extraServed}</td>
+            <td>${ratingHtml}</td>
+            <td>${photoHtml}</td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html || '<tr><td colspan="7" style="text-align:center;padding:var(--sp-4);color:var(--text-muted)">No testing reports found.</td></tr>';
+    } catch(err) {
+      console.error("Error in loadSubmittedReports:", err);
+      tbody.innerHTML = `<tr><td colspan="7" style="color:var(--brand-danger)">Error loading logs: ${err.message}</td></tr>`;
+    }
+  }
+
+  // Modal full image view popup
+  window.viewFullImagePopup = function(imgSrc) {
+    const win = window.open('', '_blank');
+    win.document.write(`<html><body style="margin:0;background:#0f172a;display:flex;align-items:center;justify-content:center;height:100vh"><img src="${imgSrc}" style="max-width:95%;max-height:95%;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.5)"></body></html>`);
+    win.document.close();
+  };
+
+  // Load specific assignment into popup report modal
+  window.loadSpecificAssignment = async function(assignmentId) {
+    if (!assignmentId) return;
+    try {
+      let assignment = null;
+      let realDocId = assignmentId;
+
+      const snap = await getDoc(doc(db, 'food_assignments', assignmentId));
+      if (snap.exists()) {
+        assignment = snap.data();
+      } else {
+        // Check if assignmentId is a Task document ID
+        try {
+          const taskSnap = await getDoc(doc(db, 'tasks', assignmentId));
+          if (taskSnap.exists() && taskSnap.data().assignmentId) {
+            realDocId = taskSnap.data().assignmentId;
+            const realSnap = await getDoc(doc(db, 'food_assignments', realDocId));
+            if (realSnap.exists()) assignment = realSnap.data();
+          }
+        } catch (e) { /* ignore fallback error */ }
+      }
+
+      if (assignment) {
+        const userCatLower = (currentUser?.category || '').toLowerCase().trim();
+        const isMessMember = currentUser?.role === 'admin' || (currentUser?.role !== 'student' && userCatLower === 'mess');
+        const isAssignedTester = assignment.testerUid === currentUser?.uid;
+
+        if (isMessMember || isAssignedTester) {
+          openTestingForm(realDocId, assignment);
+        } else {
+          showToast("Only Mess Committee members or the assigned tester can submit this report.", "warning");
+        }
+      } else {
+        showToast("Food assignment record not found.", "warning");
+      }
+    } catch(err) {
+      showToast("Error loading assignment: " + err.message, "error");
+    }
+  };
+
+  // Open Quality Report Modal Form
+  window.openTestingForm = function(assignmentId, assignmentObj = null) {
+    activeAssignmentId = assignmentId;
+    
+    const isMessMember = isMessHead || currentUser.role === 'admin' || (currentUser.role !== 'student' && (currentUser.category || '').toLowerCase().trim() === 'mess');
+
+    if (assignmentId === 'new') {
+      if (!isMessMember) {
+        showToast("Only Mess Committee members can lodge a new quality log.", "warning");
+        return;
+      }
+      
+      // Render input controls for ad-hoc log creation
+      document.getElementById('modal-details-container').innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:4px">
+          <label style="font-size:0.75rem; font-weight:600; color:var(--text-secondary)">Date</label>
+          <input type="date" id="form-date-input" class="form-control" style="margin-bottom:0; background:var(--bg-base); border-color:var(--border-subtle); color:var(--text-primary)" onchange="onFormDateOrMealChange()">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px">
+          <label style="font-size:0.75rem; font-weight:600; color:var(--text-secondary)">Day</label>
+          <div id="form-day-display" style="padding:10px; background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:var(--radius-md); font-weight:700; text-align:center; height:38px; display:flex; align-items:center; justify-content:center; color:var(--brand-primary)">—</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px">
+          <label style="font-size:0.75rem; font-weight:600; color:var(--text-secondary)">Meal</label>
+          <select id="form-meal-select" class="form-control premium-select" style="margin-bottom:0; background:var(--bg-base); border-color:var(--border-subtle); color:var(--text-primary)" onchange="onFormDateOrMealChange()">
+            <option value="Breakfast">Breakfast</option>
+            <option value="Lunch">Lunch</option>
+            <option value="Snacks">Snacks</option>
+            <option value="Dinner">Dinner</option>
+          </select>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px">
+          <label style="font-size:0.75rem; font-weight:600; color:var(--text-secondary)">Tester</label>
+          <div style="padding:10px; background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:var(--radius-md); height:38px; display:flex; align-items:center; font-weight:700">${currentUser.name} (${currentUser.uniqueId || '—'})</div>
+        </div>
+      `;
+
+      // Reset inputs & rating
+      document.getElementById('form-extra-input').value = '';
+      document.getElementById('form-review-textarea').value = '';
+      document.getElementById('form-image-input').value = '';
+      document.getElementById('image-upload-preview').style.display = 'none';
+      document.getElementById('form-image-preview').src = '';
+      setRating(0);
+
+      // Set default date input to today
+      const todayVal = new Date().toISOString().split('T')[0];
+      const dateEl = document.getElementById('form-date-input');
+      if (dateEl) {
+        dateEl.value = todayVal;
+        onFormDateOrMealChange();
+      }
+
+      const modal = document.getElementById('testing-modal-overlay');
+      if (modal) modal.classList.add('show');
+      return;
+    }
+
+    const proceed = (assignment) => {
+      const isAssignedTester = assignment.testerUid === currentUser.uid;
+      if (isMessMember || isAssignedTester) {
+        // Render static display text for assigned tasks
+        document.getElementById('modal-details-container').innerHTML = `
+          <div><strong>Date:</strong> <span id="form-date-display">${assignment.date || '—'}</span></div>
+          <div><strong>Day:</strong> <span id="form-day-display">${assignment.day || '—'}</span></div>
+          <div><strong>Meal:</strong> <span id="form-meal-display" style="color:var(--brand-primary); font-weight:700">${assignment.meal || '—'}</span></div>
+          <div><strong>Tester:</strong> <span id="form-tester-display">${assignment.testerName || '—'}</span></div>
+        `;
+
+        const checkboxesDiv = document.getElementById('form-food-checkboxes');
+        const items = assignment.itemsToTest || [];
+        
+        if (items.length === 0) {
+          checkboxesDiv.innerHTML = `<span style="color:var(--text-muted)">No items set in menu</span>`;
+        } else {
+          checkboxesDiv.innerHTML = items.map(item => `
+            <label class="checkbox-pill">
+              <input type="checkbox" name="served-items" value="${item}" checked>
+              <span>${item}</span>
+            </label>
+          `).join('');
+        }
+
+        // Reset inputs & rating
+        document.getElementById('form-extra-input').value = '';
+        document.getElementById('form-review-textarea').value = '';
+        document.getElementById('form-image-input').value = '';
+        document.getElementById('image-upload-preview').style.display = 'none';
+        document.getElementById('form-image-preview').src = '';
+        setRating(0);
+
+        const modal = document.getElementById('testing-modal-overlay');
+        if (modal) modal.classList.add('show');
+      } else {
+        showToast("Only Mess Committee members or the assigned tester can submit this report.", "warning");
+      }
+    };
+
+    if (assignmentObj) {
+      proceed(assignmentObj);
+    } else {
+      getDoc(doc(db, 'food_assignments', assignmentId)).then(snap => {
+        if (snap.exists()) proceed(snap.data());
+      });
+    }
+  };
+
+  window.onFormDateOrMealChange = function() {
+    const dateInput = document.getElementById('form-date-input');
+    const mealSelect = document.getElementById('form-meal-select');
+    const dayDisplay = document.getElementById('form-day-display');
+    const checkboxesDiv = document.getElementById('form-food-checkboxes');
+    
+    if (!dateInput || !mealSelect || !dayDisplay || !checkboxesDiv) return;
+    
+    const dateVal = dateInput.value;
+    if (!dateVal) {
+      dayDisplay.textContent = '—';
+      checkboxesDiv.innerHTML = `<span style="color:var(--text-muted)">Select a date to load food items</span>`;
+      return;
+    }
+    
+    const dateObj = new Date(dateVal);
+    const dayName = DAYS[(dateObj.getDay() + 6) % 7];
+    dayDisplay.textContent = dayName;
+    
+    const mealVal = mealSelect.value;
+    
+    if (!currentActiveMenuObj) {
+      checkboxesDiv.innerHTML = `<span style="color:var(--text-muted)">No active menu configured</span>`;
+      return;
+    }
+    
+    const key = `${dayName.toLowerCase()}_${mealVal.toLowerCase()}`;
+    const items = currentActiveMenuObj.grid?.[key] || [];
+    
+    if (items.length === 0) {
+      checkboxesDiv.innerHTML = `<span style="color:var(--text-muted)">No items set in menu for ${dayName} ${mealVal}</span>`;
+    } else {
+      checkboxesDiv.innerHTML = items.map(item => `
+        <label class="checkbox-pill">
+          <input type="checkbox" name="served-items" value="${item}" checked>
+          <span>${item}</span>
+        </label>
+      `).join('');
+    }
+  };
+
+  // Handle Stars Selector Click
+  window.setRating = function(ratingVal) {
+    selectedRating = ratingVal;
+    const stars = document.querySelectorAll('#star-rating-container .star-btn');
+    stars.forEach(star => {
+      const val = parseInt(star.getAttribute('data-value'));
+      if (val <= ratingVal) {
+        star.classList.add('active');
+      } else {
+        star.classList.remove('active');
+      }
+    });
+  };
+
+  // Preview picture upload client-side
+  document.getElementById('form-image-input')?.addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('form-image-preview').src = e.target.result;
+        document.getElementById('image-upload-preview').style.display = 'flex';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  window.removeFoodPhoto = function() {
+    const fileInput = document.getElementById('form-image-input');
+    if (fileInput) fileInput.value = '';
+    const previewImg = document.getElementById('form-image-preview');
+    if (previewImg) previewImg.src = '';
+    const previewDiv = document.getElementById('image-upload-preview');
+    if (previewDiv) previewDiv.style.display = 'none';
+  };
+
+  async function getOrUploadImageUrl(imageFile, pathPrefix) {
+    if (!imageFile) return null;
+
+    // Helper: compress image file using canvas to JPEG (max 1024px, 0.82 quality)
+    const compressImage = (file) => new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1024;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        };
+        img.onerror = () => resolve(e.target.result);
+        img.src = e.target.result;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+
+    try {
+      const storagePromise = import('./js/members.js').then(m => m.uploadProfilePic(`${pathPrefix}_${Date.now()}`, imageFile));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage timeout')), 2000));
+      const url = await Promise.race([storagePromise, timeoutPromise]);
+      if (url) return url;
+    } catch (err) {
+      console.warn("Storage upload skipped/failed, using compressed Data URL fallback:", err.message);
+    }
+
+    return await compressImage(imageFile);
+  }
+
+  // Submit report to database
+  window.submitFoodTestReport = async function() {
+    if (!activeAssignmentId) return;
+
+    const checkedBoxes = document.querySelectorAll('input[name="served-items"]:checked');
+    const actualItemsServed = Array.from(checkedBoxes).map(cb => cb.value);
+    const extraItemsServed = document.getElementById('form-extra-input').value.trim();
+    const reviewText = document.getElementById('form-review-textarea').value.trim();
+    const fileInput = document.getElementById('form-image-input');
+    const imageFile = fileInput.files[0];
+
+    if (selectedRating === 0) {
+      showToast("Please choose a rating score.", "warning");
+      return;
+    }
+
+    if (!imageFile) {
+      showToast("Please attach a photo of the food/kitchen before submitting the quality report.", "warning");
+      return;
+    }
+
+    showToast("Submitting quality report...", "info");
+
+    try {
+      if (activeAssignmentId === 'new') {
+        const dateVal = document.getElementById('form-date-input').value;
+        const dayVal = document.getElementById('form-day-display').textContent;
+        const mealVal = document.getElementById('form-meal-select').value;
+        
+        if (!dateVal || dayVal === '—') {
+          showToast("Please choose a valid date.", "warning");
+          return;
+        }
+
+        const itemsToTest = Array.from(document.querySelectorAll('#form-food-checkboxes input[name="served-items"]')).map(el => el.value);
+
+        const imageUrl = await getOrUploadImageUrl(imageFile, `food-testing/adhoc`);
+
+        const docData = {
+          date: dateVal,
+          day: dayVal,
+          meal: mealVal,
+          testerUid: currentUser.uid,
+          testerName: currentUser.name,
+          testerUniqueId: currentUser.uniqueId || '—',
+          itemsToTest,
+          actualItemsServed,
+          extraItemsServed,
+          rating: selectedRating,
+          review: reviewText,
+          status: 'completed',
+          completedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        };
+        if (imageUrl) {
+          docData.imageUrl = imageUrl;
+        }
+
+        await addDoc(collection(db, 'food_assignments'), docData);
+
+        // Award 1 bonus point + completed + assigned to track record
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          const tr = userData.trackRecord || { assigned: 0, completed: 0, avgRating: 0, ratings: [] };
+          tr.bonus = (tr.bonus || 0) + 1;
+          tr.assigned = (tr.assigned || 0) + 1;
+          tr.completed = (tr.completed || 0) + 1;
+          
+          const numRating = Number(selectedRating) || 0;
+          const cleanRatings = [...(tr.ratings || []).map(r => Number(r)), numRating]
+            .filter(r => !isNaN(r) && r >= 1 && r <= 5);
+          tr.ratings = cleanRatings;
+          tr.avgRating = cleanRatings.length ? Number((cleanRatings.reduce((a, b) => a + b, 0) / cleanRatings.length).toFixed(2)) : 0;
+          
+          await updateDoc(userRef, { trackRecord: tr });
+        }
+
+        logAction({
+          action: 'Submitted Food Quality Report',
+          department: 'Mess',
+          details: `Submitted new food quality report for ${mealVal} on ${dateVal} with rating ${selectedRating}/5.`,
+          user: currentUser
+        });
+
+        showToast("Quality report successfully logged! Thank you.", "success");
+        closeTestingModal();
+        await loadSubmittedReports();
+        switchTestingTab('tab-logs');
+        if (isMessHead) {
+          await loadTrackRecords();
+        }
+        return;
+      }
+
+      // Existing Assigned Report Submission
+      const assRef = doc(db, 'food_assignments', activeAssignmentId);
+      const assSnap = await getDoc(assRef);
+      if (!assSnap.exists()) {
+        showToast("Food assignment record not found.", "error");
+        return;
+      }
+      
+      const assignment = assSnap.data();
+      const isOriginalTester = assignment.testerUid === currentUser.uid;
+
+      const imageUrl = await getOrUploadImageUrl(imageFile, `food-testing/assigned`);
+
+      // 1. Update assignment document in Firebase
+      const updateData = {
+        actualItemsServed,
+        extraItemsServed,
+        rating: selectedRating,
+        review: reviewText,
+        status: 'completed',
+        completedAt: new Date().toISOString()
+      };
+      if (imageUrl) {
+        updateData.imageUrl = imageUrl;
+      }
+
+      // If not the original assigned tester, override fields to show actual tester info
+      if (!isOriginalTester) {
+        updateData.testerUid = currentUser.uid;
+        updateData.testerName = currentUser.name;
+        updateData.testerUniqueId = currentUser.uniqueId || '—';
+      }
+
+      await updateDoc(assRef, updateData);
+
+      // 2. Mark task as completed automatically (skips pending_verification for food testing tasks)
+      try {
+        const tasksQ = query(collection(db, 'tasks'), where('assignmentId', '==', activeAssignmentId));
+        const tasksSnap = await getDocs(tasksQ);
+        for (const tDoc of tasksSnap.docs) {
+          if (tDoc.data().status !== 'completed') {
+            await updateDoc(doc(db, 'tasks', tDoc.id), {
+              status: 'completed',
+              completedDate: new Date().toISOString(),
+              completedAt: new Date().toISOString()
+            });
+          }
+        }
+      } catch (taskErr) {
+        console.warn('Could not update related task:', taskErr.message);
+      }
+
+      // 3. Update tester track record scores & award bonus point if unassigned
+      if (isOriginalTester) {
+        await updateTrackRecord(currentUser.uid, { completed: true, rating: selectedRating });
+      } else {
+        // Automatically award 1 bonus point to track record since they completed an unassigned slot
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          const tr = userData.trackRecord || { assigned: 0, completed: 0, avgRating: 0, ratings: [] };
+          tr.bonus = (tr.bonus || 0) + 1;
+          tr.assigned = (tr.assigned || 0) + 1;
+          tr.completed = (tr.completed || 0) + 1;
+          
+          const numRating = Number(selectedRating) || 0;
+          const cleanRatings = [...(tr.ratings || []).map(r => Number(r)), numRating]
+            .filter(r => !isNaN(r) && r >= 1 && r <= 5);
+          tr.ratings = cleanRatings;
+          tr.avgRating = cleanRatings.length ? Number((cleanRatings.reduce((a, b) => a + b, 0) / cleanRatings.length).toFixed(2)) : 0;
+          
+          await updateDoc(userRef, { trackRecord: tr });
+        }
+      }
+
+      logAction({
+        action: 'Submitted Food Quality Report',
+        department: 'Mess',
+        details: `Submitted food quality report for ${assignment.meal || 'Meal'} on ${assignment.date || 'Date'} with rating ${selectedRating}/5. Task auto-completed.`,
+        user: currentUser
+      });
+
+      showToast("Quality report successfully submitted! Thank you.", "success");
+      closeTestingModal();
+      
+      await loadSubmittedReports();
+      switchTestingTab('tab-logs');
+      if (isMessHead) {
+        await loadTrackRecords();
+      }
+    } catch(err) {
+      showToast("Failed to submit quality report: " + err.message, "error");
+    }
+  };
+
+</script>
+</body>
+</html>

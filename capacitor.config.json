@@ -1,0 +1,21 @@
+{
+  "appId": "ac.in.iimbg.hmc",
+  "appName": "HMC Portal",
+  "webDir": "www",
+  "server": {
+    "url": "https://hmc-iimbodhgaya.web.app",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "backgroundColor": "#0F172A"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0F172A",
+      "showSpinner": false
+    }
+  }
+}

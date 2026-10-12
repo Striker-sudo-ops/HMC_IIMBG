@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HMC Setup Verifier</title>
+  <style>
+    body { font-family: monospace; background: #0f172a; color: #e2e8f0; padding: 2rem; max-width: 700px; margin: auto; }
+    h2 { color: #7c3aed; }
+    .check { margin: 1rem 0; padding: 1rem; border-radius: 8px; font-size: 0.95rem; }
+    .pass { background: #14532d; border-left: 4px solid #22c55e; }
+    .fail { background: #7f1d1d; border-left: 4px solid #ef4444; }
+    .info { background: #1e3a5f; border-left: 4px solid #3b82f6; }
+    input { width: 100%; padding: 0.6rem 0.8rem; background: #1e293b; border: 1px solid #334155;
+            border-radius: 6px; color: #e2e8f0; font-size: 1rem; box-sizing: border-box; margin-bottom: 0.8rem; }
+    button { background: #7c3aed; color: white; border: none; padding: 0.75rem 2rem;
+             border-radius: 6px; font-size: 1rem; cursor: pointer; width: 100%; }
+    button:hover { background: #6d28d9; }
+    #login-box { background: #1e293b; padding: 1.5rem; border-radius: 10px; margin-top: 1rem; }
+    #status { font-size: 1.1rem; font-weight: bold; margin-top: 1.5rem; padding: 1rem; border-radius: 8px; text-align: center; }
+  </style>
+</head>
+<body>
+  <h2>HMC Firebase Setup Verifier</h2>
+
+  <div id="login-box">
+    <p style="color:#94a3b8;margin-top:0">Sign in with your admin account to verify the setup:</p>
+    <input type="email" id="v-email" placeholder="admin@iimbg.ac.in">
+    <input type="password" id="v-pass" placeholder="Your password">
+    <button onclick="startVerify()">Sign In & Verify</button>
+    <div id="login-err" style="color:#ef4444;margin-top:0.5rem;font-size:0.9rem"></div>
+  </div>
+
+  <div id="results"></div>
+  <div id="status"></div>
+
+  <script type="module">
+    import { auth, db } from './js/firebase-config.js';
+    import { signInWithEmailAndPassword, signOut } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { doc, getDoc } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const results = document.getElementById('results');
+    const statusEl = document.getElementById('status');
+
+    function addCheck(label, passed, details = '') {
+      const div = document.createElement('div');
+      div.className = `check ${passed ? 'pass' : 'fail'}`;
+      const badge = passed ? '[PASS]' : '[FAIL]';
+      div.innerHTML = `<strong>${badge} ${label}</strong>` + (details ? `<br><small style="color:#cbd5e1">${details}</small>` : '');
+      results.appendChild(div);
+      return passed;
+    }
+
+    window.startVerify = async function() {
+      const email = document.getElementById('v-email').value.trim();
+      const pass  = document.getElementById('v-pass').value;
+      const errEl = document.getElementById('login-err');
+      errEl.textContent = '';
+      results.innerHTML = '';
+      statusEl.textContent = '';
+
+      let allPass = true;
+
+      try {
+        // Step 1: Sign in
+        const cred = await signInWithEmailAndPassword(auth, email, pass);
+        const uid = cred.user.uid;
+        document.getElementById('login-box').innerHTML =
+          `<div class="check info">Signed in as <strong>${email}</strong> (UID: ${uid})</div>`;
+
+        // Step 2: Check meta/setup
+        const metaSnap = await getDoc(doc(db, 'meta', 'setup'));
+        if (!metaSnap.exists()) {
+          allPass = false;
+          addCheck('meta/setup document', false,
+            'Missing! Create collection "meta", document "setup" with adminCreated=true and adminUid=your UID');
+        } else {
+          const meta = metaSnap.data();
+          const ok = meta.adminCreated === true && !!meta.adminUid;
+          if (!addCheck('meta/setup document', ok,
+            ok ? `adminCreated=true | adminUid=${meta.adminUid}` :
+                 `adminCreated must be true and adminUid must be set. Found: ${JSON.stringify(meta)}`)) allPass = false;
+        }
+
+        // Step 3: Check users/{uid}
+        const userSnap = await getDoc(doc(db, 'users', uid));
+        if (!userSnap.exists()) {
+          allPass = false;
+          addCheck('users/{UID} document', false,
+            `Document "users/${uid}" not found. Make sure the Document ID matches your Firebase Auth UID exactly.`);
+        } else {
+          const u = userSnap.data();
+          addCheck('users/{UID} document', true,
+            `name: ${u.name} | email: ${u.email} | role: ${u.role} | uniqueId: ${u.uniqueId}`);
+
+          // role check
+          if (!addCheck('role = "admin"', u.role === 'admin',
+            u.role === 'admin' ? 'Role is correctly admin' : `role is "${u.role}" — must be exactly "admin"`)) allPass = false;
+
+          // email domain check
+          if (!addCheck('Email domain (@iimbg.ac.in)', u.email?.endsWith('@iimbg.ac.in'),
+            u.email?.endsWith('@iimbg.ac.in') ? `Email: ${u.email}` :
+            `"${u.email}" does not end with @iimbg.ac.in`)) allPass = false;
+
+          // uniqueId check
+          if (!u.uniqueId) {
+            allPass = false;
+            addCheck('uniqueId field', false, 'uniqueId field is missing from user document');
+          } else {
+            results.innerHTML += `<div class="check info">Debug: Looking up uniqueIds collection for document ID = <strong>"${u.uniqueId}"</strong> (length: ${u.uniqueId.length} chars)</div>`;
+            try {
+              // Scan entire uniqueIds collection to find what's actually stored
+              const { collection: col, getDocs: gd } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+              const allDocs = await gd(col(db, 'uniqueIds'));
+              if (allDocs.empty) {
+                allPass = false;
+                addCheck('uniqueIds collection scan', false, 'uniqueIds collection is completely empty in Firestore. Please create the document again.');
+              } else {
+                let found = false;
+                let docList = '';
+                allDocs.forEach(d => {
+                  docList += `<br>→ ID: "<strong>${d.id}</strong>" (length: ${d.id.length})`;
+                  if (d.id === u.uniqueId) found = true;
+                });
+                if (found) {
+                  addCheck('uniqueIds document found', true, `Found matching document for "${u.uniqueId}"`);
+                } else {
+                  allPass = false;
+                  addCheck('uniqueIds document', false,
+                    `Documents found in collection: ${docList}<br><br>None match "<strong>${u.uniqueId}</strong>". There may be a hidden character difference.`);
+                }
+              }
+            } catch(rulesErr) {
+              allPass = false;
+              addCheck('uniqueIds read', false, `Permission error: ${rulesErr.message}.<br>Your Firestore Rules may not be published. Go to Firestore → Rules tab → paste firestore.rules content → click Publish.`);
+            }
+          }
+
+
+
+          // counter check
+          const yr = u.graduationYear;
+          if (!yr) {
+            allPass = false;
+            addCheck('graduationYear field', false, 'Missing graduationYear in user document');
+          } else {
+            const cSnap = await getDoc(doc(db, 'counters', String(yr)));
+            if (!addCheck(`counters/${yr} document`, cSnap.exists(),
+              cSnap.exists() ? `count = ${cSnap.data().count}` :
+              `Missing! Create collection "counters", document "${yr}" with field count = 1`)) allPass = false;
+          }
+        }
+
+        // Final result
+        if (allPass) {
+          statusEl.style.background = '#14532d';
+          statusEl.style.color = '#86efac';
+          statusEl.textContent = 'All checks passed! Your setup is correct. Go to http://localhost:8080 and log in!';
+        } else {
+          statusEl.style.background = '#7f1d1d';
+          statusEl.style.color = '#fca5a5';
+          statusEl.textContent = 'Some checks failed. Fix the issues above in Firebase Console and click the button again to re-verify.';
+        }
+
+        await signOut(auth); // sign out after verifying
+
+      } catch (err) {
+        if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+          errEl.textContent = 'Wrong email or password.';
+        } else if (err.code === 'auth/user-not-found') {
+          errEl.textContent = 'No user found with this email in Firebase Auth.';
+        } else {
+          errEl.textContent = `Error: ${err.message}`;
+        }
+      }
+    };
+  </script>
+</body>
+</html>

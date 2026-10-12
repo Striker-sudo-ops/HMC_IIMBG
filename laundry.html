@@ -1,0 +1,2985 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Laundry Management — HMC Portal</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script type="module">import { initTheme } from './js/theme.js'; initTheme();</script>
+  <style>
+    .laundry-container {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-6);
+    }
+    .tabs-header {
+      display: flex;
+      gap: var(--sp-2);
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 1px;
+      margin-bottom: var(--sp-6);
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: var(--sp-3) var(--sp-5);
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: var(--transition-fast);
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tab-btn:hover {
+      color: var(--text-primary);
+    }
+    .tab-btn.active {
+      color: var(--brand-primary);
+      border-bottom-color: var(--brand-primary);
+    }
+    .section-title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--sp-4);
+      padding-bottom: var(--sp-2);
+      border-bottom: 1px dashed var(--border-subtle);
+    }
+    .section-title-text {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .hostel-schedule-card {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      padding: var(--sp-6);
+      margin-bottom: var(--sp-5);
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition-normal);
+    }
+    .hostel-schedule-card:hover {
+      box-shadow: var(--shadow-md);
+    }
+    .card-meta-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: var(--sp-4);
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: var(--sp-4);
+      margin-bottom: var(--sp-4);
+    }
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .meta-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .meta-value {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    .card-group-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--brand-primary);
+    }
+    .collection-id-badge {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 800;
+      background: rgba(124, 58, 237, 0.12);
+      color: var(--brand-primary);
+      padding: 4px 10px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(124, 58, 237, 0.25);
+    }
+    /* Batch Configuration Panel */
+    .batch-config-panel {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      border: 1.5px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      padding: var(--sp-6);
+      margin-top: var(--sp-6);
+      margin-bottom: var(--sp-6);
+      box-shadow: var(--shadow-sm);
+    }
+    .batch-config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--sp-4);
+      align-items: end;
+    }
+    .batch-config-panel .field-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      letter-spacing: 0.04em;
+      display: block;
+    }
+    .batch-id-pill {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(124, 58, 237, 0.3);
+      background: rgba(124, 58, 237, 0.07);
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: var(--brand-primary);
+      letter-spacing: 0.04em;
+      font-family: var(--font-mono);
+    }
+    /* Group Cards Grid */
+    .group-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--sp-4);
+    }
+    .group-card {
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-4) var(--sp-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-3);
+      transition: var(--transition-fast);
+      cursor: pointer;
+    }
+    .group-card:hover {
+      border-color: var(--brand-primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .group-card.selected {
+      border-color: var(--brand-primary);
+      background: rgba(124, 58, 237, 0.05);
+      box-shadow: 0 0 0 2px var(--brand-primary);
+    }
+    .group-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .group-tag {
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: var(--brand-primary);
+    }
+    .group-edit-btn {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: none;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 2px 8px;
+      cursor: pointer;
+    }
+    .group-edit-btn:hover {
+      color: var(--brand-primary);
+      border-color: var(--brand-primary);
+    }
+    .group-hostels-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .group-hostel-item {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+    .schedule-groups-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: var(--sp-4);
+      margin-bottom: var(--sp-6);
+    }
+    .tabs-bar-container {
+      margin-top: var(--sp-4);
+      margin-bottom: var(--sp-4);
+    }
+    .tabs-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tab-pill {
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-base);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+    .tab-pill:hover {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+    }
+    .tab-pill.active {
+      background: var(--brand-primary);
+      color: #ffffff;
+      border-color: var(--brand-primary);
+    }
+    .tab-pill-floor {
+      padding: 5px 12px;
+      font-size: 0.75rem;
+      border-radius: var(--radius-md);
+    }
+    .tile-box {
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-3) var(--sp-4);
+    }
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--sp-4);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-backdrop.show, .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-container {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-normal);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+      width: 100%;
+      max-width: 540px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalSlide 0.25s ease-out;
+    }
+    @keyframes modalSlide {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      padding: var(--sp-5) var(--sp-6);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body {
+      padding: var(--sp-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-4);
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .modal-footer {
+      padding: var(--sp-4) var(--sp-6);
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-base);
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--sp-3);
+    }
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 12px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+    }
+  </style>
+</head>
+<body class="app-layout">
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+
+    
+    <!-- Initial Loading State -->
+    <div id="laundry-initial-loader" style="padding:var(--sp-12); text-align:center">
+      <div class="spinner" style="margin:0 auto var(--sp-4)"></div>
+      <div style="color:var(--text-muted); font-size:0.9rem; font-weight:600">Loading laundry portal…</div>
+    </div>
+
+    <!-- 1. STUDENT VIEW -->
+    <div id="student-laundry-view" class="hidden">
+      <div class="page-header" style="margin-bottom:var(--sp-6)">
+        <div>
+          <h1 class="page-title" style="display:flex; align-items:center; gap:12px">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.38 3.46L16 6.05V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3.05L3.62 3.46a1 1 0 0 0-1.37.37l-1 1.73a1 1 0 0 0 .37 1.37L5 8.76V20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.76l3.38-1.93a1 1 0 0 0 .37-1.37l-1-1.73a1 1 0 0 0-1.37-.37z"/><path d="M12 2v4"/></svg>
+            My Laundry Status
+          </h1>
+          <p class="page-subtitle">Live collection, washing, delivery tracking, and receipt confirmation</p>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <div id="student-laundry-cards" style="display:flex; flex-direction:column; gap:var(--sp-5)">
+          <div class="card" style="padding:var(--sp-8); text-align:center; color:var(--text-muted)">
+            Loading your laundry status…
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. HMC / WORKER VIEW -->
+    <div id="hmc-laundry-view" class="hidden">
+      <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--sp-4); margin-bottom:var(--sp-6)">
+        <div>
+          <h1 class="page-title" style="display:flex; align-items:center; gap:12px">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.38 3.46L16 6.05V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3.05L3.62 3.46a1 1 0 0 0-1.37.37l-1 1.73a1 1 0 0 0 .37 1.37L5 8.76V20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.76l3.38-1.93a1 1 0 0 0 .37-1.37l-1-1.73a1 1 0 0 0-1.37-.37z"/><path d="M12 2v4"/></svg>
+            Laundry Management
+          </h1>
+          <p class="page-subtitle">Batch collection scheduling, automated status transitions, room logging &amp; QR delivery</p>
+        </div>
+        <div style="font-size:0.88rem; font-weight:700; color:var(--brand-primary); background:rgba(124,58,237,0.1); padding:8px 16px; border-radius:var(--radius-full); border:1px solid rgba(124,58,237,0.25)" id="today-date-display">
+          —
+        </div>
+      </div>
+
+      <div class="page-body">
+        <!-- Navigation Tabs -->
+        <div class="tabs-header">
+          <button type="button" class="tab-btn active" id="tab-current-btn" onclick="switchTab('current')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Active Today
+          </button>
+          <button type="button" class="tab-btn" id="tab-scheduled-btn" onclick="switchTab('scheduled')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Upcoming Schedules
+          </button>
+          <button type="button" class="tab-btn" id="tab-completed-logs-btn" onclick="switchTab('completed-logs')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Completed Batches (Ready for Delivery)
+          </button>
+          <button type="button" class="tab-btn" id="tab-previous-logs-btn" onclick="switchTab('previous-logs')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Delivered History
+          </button>
+          <button type="button" class="tab-btn" id="tab-schedule-btn" onclick="switchTab('schedule-form')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Schedule Batch
+          </button>
+        </div>
+
+        <!-- TAB 1: CURRENT (Active Today) -->
+        <div id="current-section" class="tab-content">
+          <div id="active-cards-container">
+            <div class="card" style="text-align:center; padding:var(--sp-8); color:var(--text-muted)">
+              Loading today's active collections…
+            </div>
+          </div>
+          <div style="margin-top:var(--sp-8)">
+            <h3 style="font-size:1.15rem; font-weight:800; color:var(--brand-primary); margin-bottom:var(--sp-4); display:flex; align-items:center; gap:8px">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Upcoming Collections
+            </h3>
+            <div id="upcoming-cards-container"></div>
+          </div>
+        </div>
+
+        <!-- TAB 2: SCHEDULED -->
+        <div id="scheduled-section" class="tab-content hidden">
+          <div id="scheduled-cards-container"></div>
+        </div>
+
+        <!-- TAB 3: COMPLETED LOGS -->
+        <div id="completed-logs-section" class="tab-content hidden">
+          <div id="completed-cards-container"></div>
+        </div>
+
+        <!-- TAB 4: PREVIOUS DELIVERED LOGS -->
+        <div id="previous-logs-section" class="tab-content hidden">
+          <div class="card" style="padding:var(--sp-5)">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--sp-4); margin-bottom:var(--sp-4)">
+              <h3 style="margin:0; font-size:1.1rem; font-weight:800; color:var(--text-primary)" id="logs-table-title">
+                Delivered History
+              </h3>
+              <div id="previous-logs-toolbar" class="hidden" style="display:flex; gap:10px; align-items:center">
+                <input type="month" id="log-month-filter" class="form-control" style="width:160px; height:38px; font-size:0.85rem">
+                <button class="btn btn-secondary btn-sm" onclick="loadPreviousLogs()">Filter</button>
+              </div>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Batch ID</th>
+                    <th>Collection Date</th>
+                    <th>Location</th>
+                    <th>Rooms Delivered</th>
+                    <th>Clothes &amp; Weight</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="logs-tbody">
+                  <tr><td colspan="6" style="text-align:center; padding:var(--sp-6); color:var(--text-muted)">Loading delivered logs…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 5: SCHEDULE BATCH FORM -->
+        <div id="schedule-form-section" class="tab-content hidden">
+          <!-- Monthly Groups Management -->
+          <div class="card" style="padding:var(--sp-6); margin-bottom:var(--sp-6)">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--sp-3); margin-bottom:var(--sp-4); border-bottom:1px solid var(--border-subtle); padding-bottom:var(--sp-3)">
+              <div>
+                <h3 style="margin:0; font-size:1.2rem; font-weight:800; color:var(--brand-primary)">Monthly Hostel Groups (<span id="current-month-name">—</span>)</h3>
+                <span style="font-size:0.8rem; color:var(--text-muted)">Group hostels into G1, G2, G3... for this month to schedule batch collections</span>
+              </div>
+              <div style="display:flex; gap:8px">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="copyPreviousMonthGroups()">Copy Last Month</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="openCreateGroupModal()">+ Add Group</button>
+              </div>
+            </div>
+            <div id="monthly-groups-grid" class="group-card-grid"></div>
+          </div>
+
+          <!-- Schedule Batch for Selected Group -->
+          <div class="card" style="padding:var(--sp-6)">
+            <h3 style="margin:0 0 var(--sp-4) 0; font-size:1.2rem; font-weight:800; color:var(--brand-primary)">Schedule Collection for Hostel Group</h3>
+            <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:var(--sp-4)">
+              Step 1: Select a Hostel Group card from below
+            </div>
+            <div id="schedule-groups-grid" class="group-card-grid" style="margin-bottom:var(--sp-6)"></div>
+
+            <!-- Shared Batch Configuration Panel -->
+            <div class="batch-config-panel">
+              <div style="font-size:0.78rem; font-weight:700; text-transform:uppercase; color:var(--brand-primary); letter-spacing:0.06em; margin-bottom:var(--sp-4); display:flex; align-items:center; gap:8px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Step 2: Configure Collection &amp; Delivery Dates
+              </div>
+              <div class="batch-config-grid">
+                <div>
+                  <label class="field-label" for="global-date">Collection Date *</label>
+                  <input type="date" id="global-date" class="form-control" style="height:44px" onchange="handleGlobalDateChange(this.value)">
+                </div>
+                <div>
+                  <label class="field-label" for="global-delivery-date">Expected Delivery Date *</label>
+                  <input type="date" id="global-delivery-date" class="form-control" style="height:44px">
+                </div>
+                <div>
+                  <label class="field-label">Day of Week</label>
+                  <div class="batch-id-pill" id="global-day" style="color:var(--text-secondary); font-size:0.9rem">—</div>
+                </div>
+                <div>
+                  <label class="field-label">Collection Batch ID</label>
+                  <div class="batch-id-pill" id="global-batch-id">—</div>
+                </div>
+                <div>
+                  <label class="field-label" for="global-location">Collection Location *</label>
+                  <select id="global-location" class="form-control" style="height:44px">
+                    <option value="">Select location…</option>
+                  </select>
+                </div>
+                <div>
+                  <button type="button" class="btn btn-primary" id="schedule-submit-btn" onclick="handleCreateGroupSchedule()" style="width:100%; height:44px; font-weight:800">
+                    Schedule Laundry
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div><!-- end hmc-laundry-view -->
+  </main>
+</div>
+
+<!-- Modal: Creating / Editing Monthly Group -->
+<div id="group-modal-backdrop" class="modal-backdrop">
+  <div class="modal-container">
+    <div class="modal-header">
+      <div>
+        <h3 id="group-modal-title" style="margin:0; font-size:1.3rem; font-weight:800; color:var(--brand-primary)">Create Monthly Hostel Group</h3>
+        <span id="group-modal-subtitle" style="font-size:0.8rem; color:var(--text-muted)">Group hostels into G1, G2, G3... for this month</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="closeGroupModal()" style="font-weight:700; font-size:1rem; padding: 4px 10px">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:var(--sp-4)">
+        <div class="form-group">
+          <label class="form-label" for="group-month-select">Select Month *</label>
+          <input type="month" id="group-month-select" class="form-control" onchange="handleGroupMonthChange(this.value)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="group-id-input">Group ID *</label>
+          <input type="text" id="group-id-input" class="form-control" placeholder="e.g. G1" style="font-weight:800; color:var(--brand-primary)">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Select Hostels for this Group *</label>
+        <div class="checkbox-grid" id="modal-hostels-checkbox-grid">
+          <span style="color:var(--text-muted);font-size:0.85rem">Loading hostels...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" id="group-modal-delete-btn" class="btn btn-danger hidden" onclick="deleteMonthlyGroup()" style="font-weight:700">Delete Group</button>
+      <div style="display:flex; gap:var(--sp-3); margin-left:auto">
+        <button type="button" class="btn btn-secondary" onclick="closeGroupModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveMonthlyGroup()" style="font-weight:800">Save Group</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Reschedule / Edit Dates -->
+<div id="reschedule-modal-backdrop" class="modal-backdrop">
+  <div class="modal-container" style="max-width:480px">
+    <div class="modal-header">
+      <div>
+        <h3 style="margin:0; font-size:1.2rem; font-weight:800; color:var(--brand-primary)">Edit Schedule / Delivery Dates</h3>
+        <span id="reschedule-modal-subtitle" style="font-size:0.8rem; color:var(--text-muted)">Update collection date, expected delivery date, or location</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="closeRescheduleModal()" style="font-weight:700; font-size:1rem; padding:4px 10px">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="reschedule-sched-id">
+      <div class="form-group">
+        <label class="form-label" for="reschedule-date-input">Collection Date *</label>
+        <input type="date" id="reschedule-date-input" class="form-control" onchange="handleRescheduleDateChange(this.value)">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="reschedule-delivery-date-input">Expected Delivery Date *</label>
+        <input type="date" id="reschedule-delivery-date-input" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="reschedule-day-display">Day of Week</label>
+        <div id="reschedule-day-display" style="padding:10px 14px; background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:var(--radius-md); font-weight:700; color:var(--brand-primary); min-height:42px; display:flex; align-items:center">—</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="reschedule-location-select">Collection Location *</label>
+        <select id="reschedule-location-select" class="form-control"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" id="reschedule-save-btn" onclick="saveReschedule()" style="font-weight:800">Save Dates</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Delivery QR Code (Worker View) -->
+<div id="delivery-qr-modal-backdrop" class="modal-backdrop">
+  <div class="modal-container" style="max-width:440px; text-align:center">
+    <div class="modal-header">
+      <div>
+        <h3 style="margin:0; font-size:1.2rem; font-weight:800; color:var(--brand-primary)">Delivery Confirmation QR</h3>
+        <span id="delivery-qr-subtitle" style="font-size:0.8rem; color:var(--text-muted)">Student scans this QR to confirm delivery</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="closeDeliveryQrModal()" style="font-weight:700; font-size:1rem; padding:4px 10px">&times;</button>
+    </div>
+    <div class="modal-body" style="align-items:center; justify-content:center; padding:var(--sp-6) var(--sp-4)">
+      <div id="delivery-qr-canvas-container" style="background:#ffffff; padding:16px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.1); min-width:200px; min-height:200px">
+      </div>
+      <div id="delivery-qr-info" style="margin-top:16px; font-size:0.88rem; color:var(--text-secondary); line-height:1.4">
+      </div>
+      <div style="margin-top:14px; width:100%">
+        <input type="text" id="delivery-qr-url-input" class="form-control" readonly style="font-size:0.75rem; text-align:center; margin-bottom:8px; cursor:pointer" onclick="this.select()">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="copyDeliveryQrLink()" style="width:100%; font-size:0.8rem">Copy Confirmation Link</button>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:center">
+      <button type="button" class="btn btn-primary" onclick="closeDeliveryQrModal()" style="min-width:120px">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Student Delivery Confirmation Prompt -->
+<div id="student-confirm-modal-backdrop" class="modal-backdrop">
+  <div class="modal-container" style="max-width:460px; text-align:center">
+    <div class="modal-header" style="justify-content:center">
+      <h3 style="margin:0; font-size:1.25rem; font-weight:800; color:var(--brand-success)">Confirm Laundry Delivery</h3>
+    </div>
+    <div class="modal-body" style="padding:var(--sp-6) var(--sp-4); text-align:center">
+      <div style="width:64px; height:64px; border-radius:50%; background:rgba(16,185,129,0.15); color:var(--brand-success); display:flex; align-items:center; justify-content:center; margin:0 auto var(--sp-4)">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h4 style="margin:0 0 8px 0; font-size:1.1rem; color:var(--text-primary)" id="student-confirm-title">Have you received your clothes?</h4>
+      <p style="font-size:0.88rem; color:var(--text-secondary); line-height:1.5; margin:0 0 var(--sp-4) 0" id="student-confirm-details">
+        Please confirm that you have collected your laundry bag.
+      </p>
+      <input type="hidden" id="student-confirm-sched-id">
+      <input type="hidden" id="student-confirm-room-idx">
+    </div>
+    <div class="modal-footer" style="display:flex; gap:12px; justify-content:center">
+      <button type="button" class="btn btn-secondary" onclick="closeStudentConfirmModal()" style="flex:1">Cancel</button>
+      <button type="button" class="btn btn-success" id="student-confirm-btn" onclick="executeStudentDeliveryConfirmation()" style="flex:2; font-weight:800">I Have Received My Laundry</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function formatDateDMY(dateStr) {
+  if (!dateStr) return '—';
+  if (typeof dateStr === 'string' && dateStr.includes('-')) {
+    const parts = dateStr.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+  }
+  return dateStr;
+}
+
+import { initAuthGuard, populateSidebarUser } from './js/auth.js';
+import { renderSidebar, initSidebarTheme } from './js/sidebar.js';
+import { showToast } from './js/utils.js';
+import { db } from './js/firebase-config.js';
+import { logAction } from './js/audit-logger.js';
+import { 
+  collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+document.getElementById('sidebar-container').innerHTML = renderSidebar('laundry.html');
+initSidebarTheme();
+
+let currentUser = null;
+let allHostels = [];
+let currentMonthGroups = [];
+let allSchedules = [];
+let isLaundryHead = false;
+let selectedGroupId = null;
+let allLogsCache = [];
+let hostelStudentCache = {};
+
+// ── Cache student records for name/email lookups ─────────────
+async function loadHostelStudents() {
+  try {
+    const snap = await getDocs(collection(db, 'hostel_students'));
+    hostelStudentCache = {};
+    snap.forEach(d => {
+      const data = d.data();
+      const cleanRoom = String(data.roomNo || '').replace(/^room\s*/i, '').toLowerCase().trim();
+      const info = {
+        name: data.name || data.studentName || '',
+        email: data.email || '',
+        rollNo: data.rollNo || ''
+      };
+      if (!cleanRoom) return;
+
+      if (data.hostelName) {
+        hostelStudentCache[`${data.hostelName.toLowerCase().trim()}__${cleanRoom}`] = info;
+      }
+      if (data.hostelId) {
+        hostelStudentCache[`${data.hostelId.toLowerCase().trim()}__${cleanRoom}`] = info;
+      }
+      if (data.hostelCode) {
+        hostelStudentCache[`${data.hostelCode.toLowerCase().trim()}__${cleanRoom}`] = info;
+      }
+      hostelStudentCache[`__${cleanRoom}`] = hostelStudentCache[`__${cleanRoom}`] || info;
+    });
+  } catch(err) {
+    console.warn('Could not load hostel students:', err.message);
+  }
+}
+
+function getStudentInfo(hostelName, roomNo) {
+  const cleanRoom = String(roomNo || '').replace(/^room\s*/i, '').toLowerCase().trim();
+  const cleanHostel = String(hostelName || '').toLowerCase().trim();
+
+  if (cleanHostel) {
+    const directKey = `${cleanHostel}__${cleanRoom}`;
+    if (hostelStudentCache[directKey]) return hostelStudentCache[directKey];
+
+    const hObj = allHostels.find(h => 
+      (h.name || '').toLowerCase().trim() === cleanHostel ||
+      (h.id || '').toLowerCase().trim() === cleanHostel ||
+      (h.code || '').toLowerCase().trim() === cleanHostel
+    );
+    if (hObj) {
+      if (hObj.name && hostelStudentCache[`${hObj.name.toLowerCase().trim()}__${cleanRoom}`]) {
+        return hostelStudentCache[`${hObj.name.toLowerCase().trim()}__${cleanRoom}`];
+      }
+      if (hObj.id && hostelStudentCache[`${hObj.id.toLowerCase().trim()}__${cleanRoom}`]) {
+        return hostelStudentCache[`${hObj.id.toLowerCase().trim()}__${cleanRoom}`];
+      }
+      if (hObj.code && hostelStudentCache[`${hObj.code.toLowerCase().trim()}__${cleanRoom}`]) {
+        return hostelStudentCache[`${hObj.code.toLowerCase().trim()}__${cleanRoom}`];
+      }
+    }
+  }
+
+  return hostelStudentCache[`__${cleanRoom}`] || { name: '', email: '', rollNo: '' };
+}
+
+function getStudentName(hostelName, roomNo) {
+  const info = getStudentInfo(hostelName, roomNo);
+  return info.name || '';
+}
+
+function getStudentEmail(hostelName, roomNo) {
+  const info = getStudentInfo(hostelName, roomNo);
+  return info.email || '';
+}
+
+// ── Automated Status Transition Rules ────────────────────────
+
+function getLocalTodayStr() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function addDaysToDateStr(dateStr, days) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    d.setDate(d.getDate() + days);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  return '';
+}
+
+function evaluateAutoStatus(currentStatus, collectionDate, deliveryDate, entry = null) {
+  if (!currentStatus || currentStatus === 'N/A' || currentStatus === 'No laundry given') {
+    return 'No laundry given';
+  }
+
+  const todayStr = getLocalTodayStr();
+
+  // If delivery date is in the future (todayStr < deliveryDate), it CANNOT be Delivered or Completed yet
+  if (deliveryDate && todayStr < deliveryDate) {
+    if (collectionDate && todayStr > collectionDate) {
+      return 'In washing';
+    }
+    if (collectionDate && todayStr === collectionDate) {
+      return 'Collected';
+    }
+    return 'In washing';
+  }
+
+  // 1. Check delivery date reached -> 'Completed' (Ready for Delivery)
+  if (deliveryDate && todayStr >= deliveryDate) {
+    if (currentStatus === 'Collected' || currentStatus === 'In washing' || currentStatus === 'In Process') {
+      return 'Completed';
+    }
+    if (currentStatus === 'Delivered') {
+      return 'Delivered';
+    }
+    return 'Completed';
+  }
+
+  // 2. If after collection date and before delivery date -> 'In washing'
+  if (collectionDate && todayStr > collectionDate) {
+    if (currentStatus === 'Collected') {
+      return 'In washing';
+    }
+  }
+
+  return currentStatus;
+}
+
+// Evaluate and sync auto status transitions for a schedule in memory and in Firestore
+async function applyAutoTransitionsToSchedule(sched) {
+  if (!sched || !sched.roomEntries || sched.roomEntries.length === 0) return false;
+
+  let hasChanges = false;
+  const updatedEntries = sched.roomEntries.map(entry => {
+    const origStatus = entry.status;
+    if (!origStatus || origStatus === 'N/A' || origStatus === 'Delivered') return entry;
+
+    const collDate = entry.collectionDate || sched.date;
+    const delivDate = entry.deliveryDate || sched.deliveryDate;
+    const newStatus = evaluateAutoStatus(origStatus, collDate, delivDate);
+
+    if (newStatus !== origStatus) {
+      hasChanges = true;
+      return { ...entry, status: newStatus };
+    }
+    return entry;
+  });
+
+  if (hasChanges) {
+    sched.roomEntries = updatedEntries;
+    updateDoc(doc(db, 'laundry_schedules', sched.id), { roomEntries: updatedEntries }).catch(e => {
+      console.warn('Could not auto-sync status in DB:', e.message);
+    });
+  }
+  return hasChanges;
+}
+
+// ── Auth Guard Initialization ────────────────────────────────
+initAuthGuard({
+  requireLogin: true,
+  onReady: async (user) => {
+    currentUser = user;
+    populateSidebarUser(user);
+
+    const initialLoader = document.getElementById('laundry-initial-loader');
+    if (initialLoader) initialLoader.classList.add('hidden');
+
+    const isWorker = user.role === 'laundry_worker';
+    isLaundryHead = user.role === 'admin' || 
+                    user.title?.toLowerCase().includes('laundry head') || 
+                    user.title?.toLowerCase().includes('laundary head') || 
+                    user.post?.toLowerCase().includes('laundry head') || 
+                    user.post?.toLowerCase().includes('laundary head') || 
+                    ((['laundry', 'laundary'].includes((user.category || '').toLowerCase().trim())) && user.post === 'Head');
+
+    const isLaundryCategory = user.role === 'admin' || 
+                              isWorker ||
+                              (user.role !== 'student' && ['laundry', 'laundary'].includes((user.category || '').toLowerCase().trim()));
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const isPersonalViewRequested = urlParams.get('view') === 'personal';
+
+    // ── Personal Laundry View (Students, other HMC members, or Admin/Laundry staff with ?view=personal) ──
+    if (user.role === 'student' || isPersonalViewRequested || (!isLaundryCategory && !isLaundryHead)) {
+      document.getElementById('hmc-laundry-view').classList.add('hidden');
+      document.getElementById('student-laundry-view').classList.remove('hidden');
+
+      // If user is Admin/Laundry Head, show a button to switch to Management View
+      const switcherContainer = document.getElementById('student-view-switcher-container');
+      if (switcherContainer) {
+        if (isLaundryCategory || isLaundryHead) {
+          switcherContainer.innerHTML = `<a href="laundry.html" class="btn btn-secondary btn-sm" style="font-weight:700;display:inline-flex;align-items:center;gap:6px">Go to Laundry Management &rarr;</a>`;
+        } else {
+          switcherContainer.innerHTML = '';
+        }
+      }
+
+      await loadHostelStudents();
+      await renderStudentLaundryStatus(user);
+      await checkDeliveryConfirmationQuery(user);
+      return;
+    }
+
+    // Official Laundry Management view
+    document.getElementById('student-laundry-view').classList.add('hidden');
+    document.getElementById('hmc-laundry-view').classList.remove('hidden');
+
+    if (isWorker) {
+      document.getElementById('tab-schedule-btn')?.classList.add('hidden');
+    }
+
+    await loadHostelStudents();
+
+    // Display today's date
+    const today = new Date();
+    const todayStr = getLocalTodayStr();
+    document.getElementById('today-date-display').textContent = `Today: ${formatDateDMY(todayStr)} (${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getDay()]})`;
+
+    await loadHostels();
+    await switchTab('current');
+    await checkDeliveryConfirmationQuery(user);
+  }
+});
+
+// ── Student Laundry Status Renderer ──────────────────────────
+async function renderStudentLaundryStatus(user) {
+  const container = document.getElementById('student-laundry-cards');
+  if (!container) return;
+  const hostelName = (user.hostelName || '').trim();
+  const roomNo     = (user.roomNo || '').trim();
+
+  if (!roomNo || roomNo === '—' || roomNo === '-' || !hostelName || hostelName === 'Not Allocated') {
+    container.innerHTML = `
+      <div class="card" style="padding:var(--sp-8);text-align:center">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" style="margin:0 auto var(--sp-4);display:block"><path d="M20.38 3.46L16 6.05V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3.05L3.62 3.46a1 1 0 0 0-1.37.37l-1 1.73a1 1 0 0 0 .37 1.37L5 8.76V20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.76l3.38-1.93a1 1 0 0 0 .37-1.37l-1-1.73a1 1 0 0 0-1.37-.37z"/><path d="M12 2v4"/></svg>
+        <h3 style="color:var(--text-primary);margin-bottom:var(--sp-2)">Hostel / Room Details Incomplete</h3>
+        <p style="color:var(--text-muted);font-size:0.9rem">Your hostel (${escapeHtml(hostelName) || 'Not Allocated'}) or Room number (${escapeHtml(roomNo) || 'Not Set'}) is not properly linked to your account. Please update your profile or contact HMC.</p>
+        <a href="profile.html" class="btn btn-primary" style="margin-top:var(--sp-4);display:inline-flex;gap:6px">Go to Profile</a>
+      </div>`;
+    return;
+  }
+
+  const todayStr = getLocalTodayStr();
+
+  try {
+    const snap = await getDocs(collection(db, 'laundry_schedules'));
+    const allSchedules = [];
+    snap.forEach(d => {
+      const sched = { id: d.id, ...d.data() };
+      applyAutoTransitionsToSchedule(sched);
+      allSchedules.push(sched);
+    });
+
+    const normRoom = (r) => String(r || '').replace(/^room\s*[-#:]*\s*/i, '').replace(/[\s\-_]/g, '').toLowerCase().trim();
+    const normHostel = (h) => String(h || '').toLowerCase().trim();
+
+    const myNormRoom = normRoom(roomNo);
+    const myNormHostel = normHostel(hostelName);
+
+    const matchesHostel = (sched) => {
+      if (!myNormHostel) return false;
+      if (sched.hostelNames && Array.isArray(sched.hostelNames)) {
+        if (sched.hostelNames.some(name => {
+          const n = normHostel(name);
+          return n && (myNormHostel.includes(n) || n.includes(myNormHostel));
+        })) return true;
+      }
+      if (sched.hostelName) {
+        const sh = normHostel(sched.hostelName);
+        if (sh && (myNormHostel.includes(sh) || sh.includes(myNormHostel))) return true;
+      }
+      if (sched.hostelIds && Array.isArray(sched.hostelIds)) {
+        if (sched.hostelIds.some(id => normHostel(id) === myNormHostel)) return true;
+      }
+      if (sched.hostelId && normHostel(sched.hostelId) === myNormHostel) return true;
+      return false;
+    };
+
+    const hostelSchedules = allSchedules.filter(s => s.status !== 'Cancelled' && matchesHostel(s));
+    const todaySched = hostelSchedules.find(s => s.date === todayStr);
+    const upcomingScheds = hostelSchedules.filter(s => s.date > todayStr).sort((a,b) => a.date.localeCompare(b.date));
+
+    // Find active room entries
+    const myRoomEntries = [];
+    allSchedules.forEach(sched => {
+      const isHostelMatch = matchesHostel(sched);
+      const entries = sched.roomEntries || [];
+      entries.forEach((e, idx) => {
+        const eRoom = normRoom(e.roomNo);
+        if (eRoom && eRoom === myNormRoom) {
+          const eHostel = normHostel(e.hostelName);
+          if (isHostelMatch || !eHostel || eHostel.includes(myNormHostel) || myNormHostel.includes(eHostel)) {
+            const calculatedStatus = evaluateAutoStatus(e.status, e.collectionDate || sched.date, e.deliveryDate || sched.deliveryDate, e);
+            myRoomEntries.push({
+              ...e,
+              _idx: idx,
+              status: calculatedStatus,
+              scheduleId: sched.id,
+              scheduleDate: sched.date || sched.collectionDate || '—',
+              deliveryDate: sched.deliveryDate || e.deliveryDate || '',
+              scheduleLocation: sched.location || 'Central Laundry Point',
+              collectionId: sched.collectionId || sched.groupName || '—',
+              scheduleStatus: sched.status
+            });
+          }
+        }
+      });
+    });
+
+    myRoomEntries.sort((a,b) => (b.scheduleDate || '').localeCompare(a.scheduleDate || ''));
+
+    const statusColors = {
+      'Pending':          { bg: 'rgba(245,158,11,0.1)',   border: 'rgba(245,158,11,0.3)',   text: '#fbbf24', label: 'Pending Pickup' },
+      'Collected':        { bg: 'rgba(99,102,241,0.1)',   border: 'rgba(99,102,241,0.3)',   text: '#818cf8', label: 'Collected by Laundry' },
+      'In washing':       { bg: 'rgba(59,130,246,0.1)',   border: 'rgba(59,130,246,0.3)',   text: '#60a5fa', label: 'In Washing / Processing' },
+      'Completed':        { bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.35)',  text: '#34d399', label: 'Ready for Pickup / Delivery' },
+      'Delivered':        { bg: 'rgba(16,185,129,0.18)',  border: 'rgba(16,185,129,0.5)',   text: '#10b981', label: 'Delivered' },
+      'N/A':              { bg: 'rgba(148,163,184,0.12)', border: 'rgba(148,163,184,0.25)',  text: 'var(--text-muted)', label: 'No laundry given' },
+      'No laundry given': { bg: 'rgba(148,163,184,0.12)', border: 'rgba(148,163,184,0.25)',  text: 'var(--text-muted)', label: 'No laundry given' }
+    };
+
+    let html = `
+      <!-- Student Header Info Card -->
+      <div style="background:var(--bg-elevated);border:1px solid var(--border-normal);border-radius:var(--radius-lg);padding:var(--sp-4) var(--sp-5);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--sp-3)">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(124,58,237,0.1);color:var(--brand-primary);display:flex;align-items:center;justify-content:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46L16 6.05V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3.05L3.62 3.46a1 1 0 0 0-1.37.37l-1 1.73a1 1 0 0 0 .37 1.37L5 8.76V20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.76l3.38-1.93a1 1 0 0 0 .37-1.37l-1-1.73a1 1 0 0 0-1.37-.37z"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:1.05rem;color:var(--text-primary)">${escapeHtml(hostelName)} — Room ${escapeHtml(roomNo)}</div>
+            <div style="font-size:0.8rem;color:var(--text-muted)">Student: ${escapeHtml(user.name || '')} (${escapeHtml(user.email || '')})</div>
+          </div>
+        </div>
+        <div>
+          ${todaySched ? '<span class="badge badge-success" style="font-size:0.82rem;padding:6px 12px">Collection Active Today</span>' : '<span class="badge badge-muted" style="font-size:0.82rem;padding:6px 12px">No Collection Today</span>'}
+        </div>
+      </div>
+    `;
+
+    // 1. Today's or Active Batch Section
+    const activeEntry = myRoomEntries.find(e => e.status !== 'Delivered' && e.status !== 'N/A' && e.status !== 'No laundry given' && ((e.clothesCount && parseInt(e.clothesCount) > 0) || (e.weight && parseFloat(e.weight) > 0)));
+    
+    if (activeEntry) {
+      const st = statusColors[activeEntry.status] || statusColors['Pending'];
+      const hasGivenClothes = activeEntry.status !== 'N/A' && ((activeEntry.clothesCount && activeEntry.clothesCount > 0) || (activeEntry.weight && activeEntry.weight > 0));
+      const isDeliveryDateReached = !activeEntry.deliveryDate || todayStr >= activeEntry.deliveryDate;
+      const showDeliveryConfirmBtn = hasGivenClothes && (activeEntry.status === 'Completed') && isDeliveryDateReached;
+
+      html += `
+        <div style="background:${st.bg};border:2px solid ${st.border};border-radius:var(--radius-xl);padding:var(--sp-6)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:var(--sp-3);margin-bottom:var(--sp-4)">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981"></span>
+                <strong style="color:var(--brand-success);font-size:1.05rem">Current Laundry Status</strong>
+              </div>
+              <div style="font-size:0.82rem;color:var(--text-muted)">
+                Batch: ${escapeHtml(activeEntry.collectionId)} · Collection: ${formatDateDMY(activeEntry.scheduleDate)} 
+                ${activeEntry.deliveryDate ? `· Expected Delivery: ${formatDateDMY(activeEntry.deliveryDate)}` : ''}
+              </div>
+            </div>
+            <span style="padding:8px 18px;border-radius:var(--radius-full);background:${st.bg};border:1.5px solid ${st.border};color:${st.text};font-weight:800;font-size:0.88rem;white-space:nowrap">${st.label}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:var(--sp-3)">
+            ${activeEntry.clothesCount !== undefined ? `<div style="background:rgba(255,255,255,0.04);padding:var(--sp-3) var(--sp-4);border-radius:var(--radius-md);border:1px solid rgba(255,255,255,0.08)"><div style="font-size:0.65rem;text-transform:uppercase;font-weight:700;color:var(--text-muted)">Clothes Count</div><div style="font-size:1.35rem;font-weight:800;color:var(--text-primary)">${activeEntry.clothesCount} <span style="font-size:0.8rem;color:var(--text-muted)">pcs</span></div></div>` : ''}
+            ${activeEntry.weight ? `<div style="background:rgba(255,255,255,0.04);padding:var(--sp-3) var(--sp-4);border-radius:var(--radius-md);border:1px solid rgba(255,255,255,0.08)"><div style="font-size:0.65rem;text-transform:uppercase;font-weight:700;color:var(--text-muted)">Weight</div><div style="font-size:1.35rem;font-weight:800;color:var(--text-primary)">${activeEntry.weight} <span style="font-size:0.8rem;color:var(--text-muted)">kg</span></div></div>` : ''}
+            ${activeEntry.notes ? `<div style="background:rgba(255,255,255,0.04);padding:var(--sp-3) var(--sp-4);border-radius:var(--radius-md);border:1px solid rgba(255,255,255,0.08);grid-column:1/-1"><div style="font-size:0.65rem;text-transform:uppercase;font-weight:700;color:var(--text-muted)">Notes</div><div style="font-size:0.88rem;color:var(--text-secondary)">${escapeHtml(activeEntry.notes)}</div></div>` : ''}
+          </div>
+          ${showDeliveryConfirmBtn ? `
+            <div style="margin-top:14px;padding:12px 16px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);border-radius:var(--radius-md);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+              <div style="font-size:0.88rem;color:var(--text-primary);font-weight:600">
+                Your clothes are ready for pickup! Have you collected your laundry?
+              </div>
+              <button class="btn btn-success" onclick="promptStudentConfirmDelivery('${activeEntry.scheduleId}', ${activeEntry._idx}, '${escapeHtml(roomNo)}', '${escapeHtml(hostelName)}')" style="font-weight:800;font-size:0.85rem;padding:8px 16px">
+                Confirm Received
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    } else if (todaySched) {
+      html += `
+        <div style="background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3);border-radius:var(--radius-xl);padding:var(--sp-6)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981"></span>
+            <strong style="color:var(--brand-success);font-size:1.1rem">Collection Active Today for ${escapeHtml(hostelName)}!</strong>
+          </div>
+          <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:14px;line-height:1.5">
+            Laundry pickup is active today. Please hand over your laundry bag for <strong>Room ${escapeHtml(roomNo)}</strong> at the collection point. Once collected, your item count and status will update automatically.
+          </p>
+          <div style="display:flex;gap:var(--sp-4);flex-wrap:wrap;font-size:0.84rem;color:var(--text-normal);background:rgba(0,0,0,0.1);padding:10px 14px;border-radius:var(--radius-md)">
+            <div><strong>Batch:</strong> ${escapeHtml(todaySched.collectionId || todaySched.groupName || 'Today')}</div>
+            <div><strong>Location:</strong> ${escapeHtml(todaySched.location || 'Central Laundry Point')}</div>
+            ${todaySched.deliveryDate ? `<div><strong>Expected Delivery:</strong> ${formatDateDMY(todaySched.deliveryDate)}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // 2. Upcoming Schedule Section
+    if (upcomingScheds.length > 0) {
+      const next = upcomingScheds[0];
+      const nextDateStr = new Date(next.date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      html += `
+        <div class="card" style="padding:var(--sp-5)">
+          <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary);margin-bottom:6px;display:flex;align-items:center;gap:8px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Next Scheduled Laundry Collection
+          </div>
+          <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5">
+            Next collection for ${escapeHtml(hostelName)} is on <strong>${nextDateStr}</strong> (${next.day || ''}).<br>
+            <strong>Location:</strong> ${escapeHtml(next.location || 'Central Laundry Point')} · <strong>Batch ID:</strong> ${escapeHtml(next.collectionId || next.groupName || '—')}
+            ${next.deliveryDate ? `<br><strong>Expected Delivery:</strong> ${formatDateDMY(next.deliveryDate)}` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. Previous Laundry History (Last 10 Past Schedules)
+    const pastSchedules = hostelSchedules
+      .filter(s => (!activeEntry || s.id !== activeEntry.scheduleId) && (s.date <= todayStr || s.status === 'Delivered'))
+      .sort((a,b) => (b.date || '').localeCompare(a.date || ''))
+      .slice(0, 10);
+
+    if (pastSchedules.length > 0) {
+      html += `
+        <div class="card" style="padding:var(--sp-5)">
+          <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary);margin-bottom:var(--sp-4)">
+            Previous Laundry Records (Room ${escapeHtml(roomNo)}) — Last ${pastSchedules.length} Batches
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Collection Date</th>
+                  <th>Delivery Date</th>
+                  <th>Batch</th>
+                  <th>Clothes</th>
+                  <th>Weight</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${pastSchedules.map(sched => {
+                  const entry = (sched.roomEntries || []).find(e => normRoom(e.roomNo) === myNormRoom);
+                  const hasGiven = entry && entry.status !== 'N/A' && ((entry.clothesCount && entry.clothesCount > 0) || (entry.weight && entry.weight > 0) || entry.status === 'Delivered');
+
+                  if (!hasGiven) {
+                    const st = statusColors['No laundry given'];
+                    return `
+                      <tr>
+                        <td style="font-weight:600">${formatDateDMY(sched.date)}</td>
+                        <td style="color:var(--text-secondary)">${formatDateDMY(sched.deliveryDate)}</td>
+                        <td style="font-family:var(--font-mono);font-size:0.82rem">${escapeHtml(sched.collectionId || sched.groupName || '—')}</td>
+                        <td>0 pcs</td>
+                        <td>—</td>
+                        <td><span style="padding:3px 10px;border-radius:var(--radius-full);background:${st.bg};border:1px solid ${st.border};color:${st.text};font-weight:700;font-size:0.75rem">${st.label}</span></td>
+                      </tr>
+                    `;
+                  }
+
+                  const st = statusColors[entry.status] || statusColors['Delivered'];
+                  return `
+                    <tr>
+                      <td style="font-weight:600">${formatDateDMY(entry.collectionDate || sched.date)}</td>
+                      <td style="color:var(--text-secondary)">${formatDateDMY(entry.deliveryDate || sched.deliveryDate)}</td>
+                      <td style="font-family:var(--font-mono);font-size:0.82rem">${escapeHtml(sched.collectionId || sched.groupName || '—')}</td>
+                      <td>${entry.clothesCount !== undefined ? entry.clothesCount + ' pcs' : '—'}</td>
+                      <td>${entry.weight ? entry.weight + ' kg' : '—'}</td>
+                      <td><span style="padding:3px 10px;border-radius:var(--radius-full);background:${st.bg};border:1px solid ${st.border};color:${st.text};font-weight:700;font-size:0.75rem">${st.label}</span></td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = html;
+  } catch (err) {
+    console.error('Error rendering student laundry status:', err);
+    container.innerHTML = `<div class="card" style="padding:var(--sp-6);text-align:center"><p style="color:var(--brand-danger)">Error loading laundry status: ${err.message}</p></div>`;
+  }
+}
+
+// ── Tab Switching ────────────────────────────────────────────
+window.switchTab = async function(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+
+  if (tabName === 'current') {
+    document.getElementById('tab-current-btn').classList.add('active');
+    document.getElementById('current-section').classList.remove('hidden');
+    await loadCurrentTabContent();
+  } else if (tabName === 'scheduled') {
+    document.getElementById('tab-scheduled-btn').classList.add('active');
+    document.getElementById('scheduled-section').classList.remove('hidden');
+    await loadScheduledTabContent();
+  } else if (tabName === 'completed-logs') {
+    document.getElementById('tab-completed-logs-btn').classList.add('active');
+    document.getElementById('completed-logs-section').classList.remove('hidden');
+    await loadCompletedLogs();
+  } else if (tabName === 'previous-logs') {
+    document.getElementById('tab-previous-logs-btn').classList.add('active');
+    document.getElementById('previous-logs-section').classList.remove('hidden');
+    await loadPreviousLogs();
+  } else if (tabName === 'schedule-form') {
+    document.getElementById('tab-schedule-btn').classList.add('active');
+    document.getElementById('schedule-form-section').classList.remove('hidden');
+    
+    const today = new Date();
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const monthStr = `${monthNames[today.getMonth()]} ${today.getFullYear()}`;
+    document.getElementById('current-month-name').textContent = monthStr;
+
+    await loadMonthlyGroups();
+  }
+};
+
+async function loadHostels() {
+  try {
+    const snap = await getDocs(query(collection(db, 'hostels'), orderBy('name')));
+    allHostels = [];
+    snap.forEach(d => {
+      allHostels.push({ id: d.id, ...d.data() });
+    });
+
+    const locDropdown = document.getElementById('global-location');
+    if (locDropdown) {
+      locDropdown.innerHTML = '<option value="">Select location…</option>' +
+        allHostels.map(h => `<option value="${h.name}">${h.name}</option>`).join('');
+    }
+  } catch (err) {
+    console.error("Error loading hostels:", err);
+  }
+}
+
+// ── TAB 1: CURRENT (Active Today + Upcoming) ─────────────────
+async function loadCurrentTabContent() {
+  const activeContainer = document.getElementById('active-cards-container');
+  const upcomingContainer = document.getElementById('upcoming-cards-container');
+
+  const todayStr = getLocalTodayStr();
+
+  try {
+    const snap = await getDocs(query(collection(db, 'laundry_schedules'), where('status', '==', 'Scheduled')));
+    allSchedules = [];
+    snap.forEach(d => {
+      const sched = { id: d.id, ...d.data() };
+      applyAutoTransitionsToSchedule(sched);
+      allSchedules.push(sched);
+    });
+
+    const activeList = allSchedules.filter(s => s.date === todayStr);
+    const upcomingList = allSchedules.filter(s => s.date > todayStr);
+    upcomingList.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+    if (activeList.length === 0) {
+      activeContainer.innerHTML = `
+        <div class="card" style="text-align:center;padding:var(--sp-6);color:var(--text-muted)">
+          <div style="font-weight:700">No active laundry collection scheduled for today (${formatDateDMY(todayStr)}).</div>
+          <div style="font-size:0.8rem;margin-top:4px">Check upcoming collections below or schedule a new batch.</div>
+        </div>
+      `;
+    } else {
+      activeContainer.innerHTML = renderFullInteractiveScheduleCards(activeList);
+    }
+
+    if (upcomingList.length === 0) {
+      upcomingContainer.innerHTML = `
+        <div class="card" style="text-align:center;padding:var(--sp-6);color:var(--text-muted)">
+          <div style="font-weight:700">No upcoming laundry collections scheduled.</div>
+        </div>
+      `;
+    } else {
+      upcomingContainer.innerHTML = renderUpcomingSummaryCards(upcomingList);
+    }
+  } catch (err) {
+    activeContainer.innerHTML = `<div class="card" style="color:var(--brand-danger)">Error loading current schedules: ${err.message}</div>`;
+  }
+}
+
+function renderFullInteractiveScheduleCards(schedules) {
+  setTimeout(() => {
+    schedules.forEach(s => {
+      const hostelsList = (s.hostelNames && s.hostelNames.length > 0) ? s.hostelNames : [s.hostelName || 'Hostel'];
+      if (hostelsList.length > 0) {
+        switchActiveHostelTab(s.id, hostelsList[0]);
+      }
+    });
+  }, 50);
+
+  return schedules.map(sched => {
+    const hostelsList = (sched.hostelNames && sched.hostelNames.length > 0)
+      ? sched.hostelNames
+      : [sched.hostelName || 'Hostel'];
+
+    const hostelTabsHtml = hostelsList.map((h, i) => `
+      <button type="button" class="tab-pill hostel-tab-pill-${sched.id} ${i === 0 ? 'active' : ''}" data-hostel="${h}" onclick="switchActiveHostelTab('${sched.id}', '${h}')">
+        ${h}
+      </button>
+    `).join('');
+
+    let totalClothes = 0;
+    let totalWeight = 0;
+    let loggedRowsHtml = '';
+
+    if (sched.roomEntries && sched.roomEntries.length > 0) {
+      sched.roomEntries.forEach((entry, idx) => {
+        const cCount = parseInt(entry.clothesCount) || 0;
+        const wVal = parseFloat(entry.weight) || 0;
+        totalClothes += cCount;
+        totalWeight += wVal;
+
+        const cleanRoom = String(entry.roomNo).replace(/^room\s*/i, '');
+        const studentName = getStudentName(entry.hostelName || '', cleanRoom);
+
+        loggedRowsHtml += `
+          <tr>
+            <td><strong>${entry.hostelName || 'Hostel'}</strong></td>
+            <td><strong>${cleanRoom}</strong></td>
+            <td style="font-size:0.85rem; font-weight:600; color:var(--text-primary)">${studentName ? escapeHtml(studentName) : '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td>
+              <input type="number" min="0" class="form-control" style="width: 100px; margin-bottom: 0; padding: 6px 12px" value="${entry.clothesCount !== undefined ? entry.clothesCount : ''}" placeholder="Pcs" id="clothes-${sched.id}-${idx}" onblur="autoSaveRoomEntry('${sched.id}', ${idx})">
+            </td>
+            <td>
+              <input type="number" step="0.01" min="0" class="form-control" style="width: 135px; font-size:0.82rem; margin-bottom: 0; padding: 6px 10px" value="${entry.weight || ''}" placeholder="Weight (kg)" id="weight-${sched.id}-${idx}" onblur="autoSaveRoomEntry('${sched.id}', ${idx})">
+            </td>
+            <td>
+              <select class="form-control" style="width: 140px; margin-bottom:0; padding: 6px 12px" id="status-${sched.id}-${idx}" onchange="autoSaveRoomEntry('${sched.id}', ${idx})">
+                <option value="Collected" ${entry.status === 'Collected' ? 'selected' : ''}>Collected</option>
+                <option value="In washing" ${entry.status === 'In washing' ? 'selected' : ''}>In washing</option>
+                <option value="Completed" ${entry.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                <option value="Delivered" ${entry.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                <option value="N/A" ${entry.status === 'N/A' ? 'selected' : ''}>N/A (No Clothes)</option>
+              </select>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-danger" onclick="deleteRoomEntry('${sched.id}', ${idx})" style="padding:4px 8px; font-size:0.72rem">&times;</button>
+            </td>
+          </tr>
+        `;
+      });
+    } else {
+      loggedRowsHtml = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);font-size:0.8rem;padding:var(--sp-4)">No rooms logged yet. Select a hostel tab and floor tab below to log rooms.</td></tr>`;
+    }
+
+    const hostelsListStr = sched.hostelNames ? sched.hostelNames.join(', ') : sched.hostelName;
+
+    return `
+      <div class="hostel-schedule-card">
+        <div class="card-meta-header">
+          <div class="meta-item">
+            <div class="meta-label">Hostel / Group</div>
+            <div class="meta-value card-group-title">${sched.groupName ? 'Group ' + sched.groupName : sched.hostelName}</div>
+            <div style="font-size:0.78rem; color:var(--text-secondary)">Hostels: ${hostelsListStr}</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Collection ID</div>
+            <div class="meta-value"><span class="collection-id-badge">${sched.collectionId}</span></div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Collection Date</div>
+            <div class="meta-value date-with-day" style="font-size:0.95rem; font-weight:700">${formatDateDMY(sched.date)} (${sched.day})</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Expected Delivery</div>
+            <div class="meta-value" style="font-size:0.95rem; font-weight:700; color:var(--brand-primary)">${formatDateDMY(sched.deliveryDate) || '—'}</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Location</div>
+            <div class="meta-value" style="font-size:0.95rem; font-weight:700">${sched.location || '—'}</div>
+          </div>
+          <div style="display:flex; gap:8px; margin-left:auto; align-self:center">
+            <button class="btn btn-secondary btn-sm" onclick="openRescheduleModal('${sched.id}', '${sched.date}', '${sched.location || ''}', '${sched.deliveryDate || ''}', true)" style="font-weight:700; font-size:0.8rem">
+              Edit Dates
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabbed Hostel & Floor Selection Panel -->
+        <div class="tabs-bar-container">
+          <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--brand-primary); letter-spacing:0.04em; margin-bottom:8px">
+            Log Room Collection — Select Hostel Tab
+          </div>
+          <div class="tabs-row" id="hostel-tabs-row-${sched.id}">
+            ${hostelTabsHtml}
+            <button type="button" class="tab-pill hostel-tab-pill-${sched.id}" data-hostel="__summary__" onclick="toggleSummaryOnlyTab('${sched.id}')" style="background: rgba(124,58,237,0.08); color: var(--brand-primary); border-color: rgba(124,58,237,0.25)">
+              Logged Summary
+            </button>
+          </div>
+
+          <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--brand-primary); letter-spacing:0.04em; margin: 14px 0 8px 0">
+            Select Floor Tab
+          </div>
+          <div class="tabs-row" id="floor-tabs-row-${sched.id}">
+          </div>
+        </div>
+
+        <!-- Floor Rooms List Container -->
+        <div id="floor-rooms-container-${sched.id}" class="hidden" style="margin-bottom: var(--sp-5); background: rgba(124,58,237,0.04); border: 1px solid rgba(124,58,237,0.2); padding: var(--sp-4); border-radius: var(--radius-lg)">
+        </div>
+
+        <!-- Logged Rooms Summary Section -->
+        <div style="margin-top:var(--sp-4)">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--sp-3); margin-bottom:var(--sp-3); padding-bottom:var(--sp-2); border-bottom:1px solid var(--border-subtle)">
+            <div style="font-size:0.95rem; font-weight:800; color:var(--text-primary)">
+              Logged Rooms Summary for Batch (${sched.roomEntries ? sched.roomEntries.length : 0})
+            </div>
+            <div style="display:flex; gap:var(--sp-2); font-size:0.78rem; font-weight:700; flex-wrap:wrap">
+              <span class="badge" style="background:rgba(124,58,237,0.12); color:var(--brand-primary); border:1px solid rgba(124,58,237,0.25); padding:4px 10px">
+                Total Clothes: ${totalClothes} pcs
+              </span>
+              <span class="badge" style="background:rgba(34,197,94,0.12); color:#4ade80; border:1px solid rgba(34,197,94,0.25); padding:4px 10px">
+                Total Weight: ${totalWeight.toFixed(2)} kg
+              </span>
+            </div>
+          </div>
+
+          <div class="table-wrapper" style="overflow-x:auto">
+            <table style="width:100%; min-width:720px">
+              <thead>
+                <tr>
+                  <th>Hostel</th>
+                  <th>Room No.</th>
+                  <th>Student Name</th>
+                  <th>No. of Clothes <span style="font-size:0.72rem; color:var(--text-muted)">(pcs)</span></th>
+                  <th>Amount Collected <span style="font-size:0.72rem; color:var(--text-muted)">(kg)</span></th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="active-summary-tbody-${sched.id}">
+                ${loggedRowsHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderUpcomingSummaryCards(schedules) {
+  return schedules.map(sched => {
+    const hostelsListStr = sched.hostelNames ? sched.hostelNames.join(', ') : sched.hostelName;
+    return `
+      <div class="hostel-schedule-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:var(--sp-4); margin-bottom:var(--sp-4); flex-wrap:wrap; gap:var(--sp-3)">
+          <div style="display:flex; align-items:center; gap:var(--sp-3)">
+            <span class="badge" style="background:rgba(124,58,237,0.12); color:var(--brand-primary); font-weight:800">
+              ${sched.groupName ? 'GROUP ' + sched.groupName : 'SCHEDULE'}
+            </span>
+            <span class="collection-id-badge">${sched.collectionId}</span>
+          </div>
+          <span class="badge badge-primary" style="font-size:0.8rem">Upcoming Collection</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:var(--sp-4)">
+          <div class="tile-box">
+            <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.05em; margin-bottom:4px">Assigned Hostels</div>
+            <div style="font-weight:700; font-size:0.9rem; color:var(--text-primary)">${hostelsListStr}</div>
+          </div>
+          <div class="tile-box">
+            <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.05em; margin-bottom:4px">Collection Location</div>
+            <div style="font-weight:700; font-size:0.9rem; color:var(--text-primary)">${sched.location || '—'}</div>
+          </div>
+          <div class="tile-box">
+            <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.05em; margin-bottom:4px">Collection Date</div>
+            <div style="font-weight:700; font-size:0.9rem; color:var(--text-primary)">${formatDateDMY(sched.date)} (${sched.day})</div>
+          </div>
+          <div class="tile-box">
+            <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.05em; margin-bottom:4px">Expected Delivery</div>
+            <div style="font-weight:700; font-size:0.9rem; color:var(--brand-primary)">${formatDateDMY(sched.deliveryDate) || '—'}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── TAB 2: SCHEDULED TAB ─────────────────────────────────────
+async function loadScheduledTabContent() {
+  const container = document.getElementById('scheduled-cards-container');
+  try {
+    const snap = await getDocs(query(collection(db, 'laundry_schedules'), where('status', '==', 'Scheduled')));
+    const list = [];
+    snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+    list.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div class="card" style="text-align:center;padding:var(--sp-8);color:var(--text-muted)">
+          <div style="font-weight:700">No scheduled laundry collections found.</div>
+        </div>
+      `;
+      return;
+    }
+
+    const todayForReschedule = new Date().toISOString().split('T')[0];
+    const isWorker = currentUser?.role === 'laundry_worker';
+    container.innerHTML = list.map(sched => {
+      const hostelsListStr = sched.hostelNames ? sched.hostelNames.join(', ') : sched.hostelName;
+      const canReschedule = !isWorker && (sched.date >= todayForReschedule);
+      const canDelete = !isWorker;
+      return `
+        <div class="hostel-schedule-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:var(--sp-4); margin-bottom:var(--sp-5); flex-wrap:wrap; gap:var(--sp-3)">
+            <div style="display:flex; align-items:center; gap:var(--sp-4)">
+              <span class="badge" style="background:rgba(124,58,237,0.12); color:var(--brand-primary); font-weight:800">
+                ${sched.groupName ? 'GROUP ' + sched.groupName : 'SCHEDULE'}
+              </span>
+              <span class="collection-id-badge">${sched.collectionId}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:var(--sp-3)">
+              ${canReschedule ? `
+              <button class="btn btn-secondary btn-sm" onclick="openRescheduleModal('${sched.id}', '${sched.date}', '${sched.location || ''}', '${sched.deliveryDate || ''}')" title="Reschedule Batch" style="padding:7px 12px; color:var(--brand-primary); border-color:rgba(124,58,237,0.35); font-weight:700; display:flex; align-items:center; gap:5px">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Reschedule
+              </button>` : ''}
+              ${canDelete ? `
+              <button class="btn btn-secondary btn-sm" onclick="deleteSchedule('${sched.id}')" title="Delete Schedule" style="padding: 7px 12px; color:var(--brand-danger); border-color:rgba(239,68,68,0.3)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </button>` : ''}
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:var(--sp-4)">
+            <div class="tile-box">
+              <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.06em; margin-bottom:6px">Assigned Hostels</div>
+              <div style="font-weight:700; font-size:0.95rem; color:var(--text-primary)">${hostelsListStr}</div>
+            </div>
+            <div class="tile-box">
+              <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.06em; margin-bottom:6px">Collection Location</div>
+              <div style="font-weight:700; font-size:0.95rem; color:var(--text-primary)">${sched.location || '—'}</div>
+            </div>
+            <div class="tile-box">
+              <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.06em; margin-bottom:6px">Collection Date</div>
+              <div style="font-weight:700; font-size:0.9rem; color:var(--text-primary); display:flex; align-items:center; gap:6px">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                ${formatDateDMY(sched.date)} (${sched.day})
+              </div>
+            </div>
+            <div class="tile-box">
+              <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.06em; margin-bottom:6px">Expected Delivery</div>
+              <div style="font-weight:700; font-size:0.95rem; color:var(--brand-primary)">${formatDateDMY(sched.deliveryDate) || '—'}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = `<div class="card" style="color:var(--brand-danger)">Error loading schedules: ${err.message}</div>`;
+  }
+}
+
+// ── TAB 3: COMPLETED LOGS TAB (Ready for Delivery) ──────────
+async function loadCompletedLogs() {
+  const container = document.getElementById('completed-cards-container');
+  try {
+    const snap = await getDocs(collection(db, 'laundry_schedules'));
+    allLogsCache = [];
+    snap.forEach(d => {
+      const sched = { id: d.id, ...d.data() };
+      applyAutoTransitionsToSchedule(sched);
+      allLogsCache.push(sched);
+    });
+    allLogsCache.sort((a, b) => new Date(b.completedAt || b.date || 0) - new Date(a.completedAt || a.date || 0));
+
+    const completedList = allLogsCache.filter(l => 
+      l.status === 'Completed' || (l.roomEntries && l.roomEntries.some(r => r.status === 'Completed' || r.status === 'In washing'))
+    );
+
+    if (completedList.length === 0) {
+      container.innerHTML = `
+        <div class="card" style="text-align:center;padding:var(--sp-8);color:var(--text-muted)">
+          <div style="font-weight:700">No active or completed laundry batches waiting for delivery.</div>
+          <div style="font-size:0.8rem;margin-top:4px">Logged batches will automatically show here as they reach washing or delivery dates.</div>
+        </div>
+      `;
+    } else {
+      container.innerHTML = renderCompletedLogCards(completedList);
+    }
+  } catch (err) {
+    if (container) container.innerHTML = `<div class="card" style="color:var(--brand-danger)">Error loading completed logs: ${err.message}</div>`;
+  }
+}
+
+function renderCompletedLogCards(list) {
+  setTimeout(() => {
+    list.forEach(s => {
+      const hostelsList = (s.hostelNames && s.hostelNames.length > 0) ? s.hostelNames : [s.hostelName || 'Hostel'];
+      if (hostelsList.length > 0) {
+        switchCompletedHostelTab(s.id, hostelsList[0]);
+      }
+    });
+  }, 50);
+
+  return list.map(sched => {
+    const hostelsList = (sched.hostelNames && sched.hostelNames.length > 0) ? sched.hostelNames : [sched.hostelName || 'Hostel'];
+    const hostelsListStr = hostelsList.join(', ');
+
+    const hostelTabsHtml = hostelsList.map((h, i) => `
+      <button type="button" class="tab-pill completed-hostel-tab-pill-${sched.id} ${i === 0 ? 'active' : ''}" data-hostel="${h}" onclick="switchCompletedHostelTab('${sched.id}', '${h}')">
+        ${h}
+      </button>
+    `).join('');
+
+    let totalClothes = 0;
+    let totalWeight = 0;
+    let roomRowsHtml = '';
+
+    if (sched.roomEntries && sched.roomEntries.length > 0) {
+      sched.roomEntries.forEach((entry, idx) => {
+        const cCount = parseInt(entry.clothesCount) || 0;
+        const wVal = parseFloat(entry.weight) || 0;
+        totalClothes += cCount;
+        totalWeight += wVal;
+
+        const cleanRoom = String(entry.roomNo).replace(/^room\s*/i, '');
+        const studentName = getStudentName(entry.hostelName || sched.hostelName || '', cleanRoom);
+
+        roomRowsHtml += `
+          <tr>
+            <td><strong>${entry.hostelName || 'Hostel'}</strong></td>
+            <td><strong>${cleanRoom}</strong></td>
+            <td style="font-size:0.85rem; font-weight:600; color:var(--text-primary)">
+              ${studentName ? escapeHtml(studentName) : '<span style="color:var(--text-muted)">—</span>'}
+            </td>
+            <td>${entry.clothesCount !== undefined ? entry.clothesCount : 0} pcs</td>
+            <td>${wVal.toFixed(2)} kg</td>
+            <td>
+              <select class="form-control" style="width: 130px; margin-bottom:0; padding: 4px 8px; font-weight:700; color:var(--brand-primary)" onchange="updateSingleRoomLogStatus('${sched.id}', ${idx}, this.value)">
+                <option value="Completed" ${entry.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                <option value="In washing" ${entry.status === 'In washing' ? 'selected' : ''}>In washing</option>
+                <option value="Delivered" ${entry.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                <option value="N/A" ${entry.status === 'N/A' ? 'selected' : ''}>N/A</option>
+              </select>
+            </td>
+
+          </tr>
+        `;
+      });
+    } else {
+      roomRowsHtml = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);font-size:0.8rem">No room entries in this log.</td></tr>`;
+    }
+
+    return `
+      <div class="hostel-schedule-card">
+        <div class="card-meta-header">
+          <div class="meta-item">
+            <div class="meta-label">Hostel / Group</div>
+            <div class="meta-value card-group-title">${sched.groupName ? 'Group ' + sched.groupName : sched.hostelName}</div>
+            <div style="font-size:0.78rem; color:var(--text-secondary)">Hostels: ${hostelsListStr}</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Collection ID</div>
+            <div class="meta-value"><span class="collection-id-badge">${sched.collectionId}</span></div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Collection Date</div>
+            <div class="meta-value date-with-day" style="font-size:0.95rem; font-weight:700">${formatDateDMY(sched.date)} (${sched.day})</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Expected Delivery</div>
+            <div class="meta-value" style="font-size:0.95rem; font-weight:700; color:var(--brand-primary)">${formatDateDMY(sched.deliveryDate) || '—'}</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Location</div>
+            <div class="meta-value" style="font-size:0.95rem; font-weight:700">${sched.location || '—'}</div>
+          </div>
+          <div style="display:flex; gap:10px; margin-left:auto; align-self:center; flex-wrap:wrap">
+            <button class="btn btn-secondary" onclick="openDeliveryQrModal('${sched.id}')" style="font-weight:700; padding: var(--sp-2) var(--sp-4); display:inline-flex; align-items:center; gap:6px; color:var(--brand-primary); border-color:rgba(124,58,237,0.35)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              Delivery QR Code
+            </button>
+            <button class="btn btn-secondary" onclick="openRescheduleModal('${sched.id}', '${sched.date}', '${sched.location || ''}', '${sched.deliveryDate || ''}', true)" style="font-weight:700; padding: var(--sp-2) var(--sp-3); font-size:0.82rem">
+              Edit Dates
+            </button>
+
+          </div>
+        </div>
+
+        <div class="tabs-bar-container">
+          <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--brand-primary); letter-spacing:0.04em; margin-bottom:8px">
+            View Rooms by Hostel &amp; Floor — Select Hostel Tab
+          </div>
+          <div class="tabs-row" id="completed-hostel-tabs-row-${sched.id}">
+            ${hostelTabsHtml}
+            <button type="button" class="tab-pill completed-hostel-tab-pill-${sched.id}" data-hostel="__summary__" onclick="toggleCompletedSummaryOnlyTab('${sched.id}')" style="background: rgba(124,58,237,0.08); color: var(--brand-primary); border-color: rgba(124,58,237,0.25)">
+              Combined Summary
+            </button>
+          </div>
+
+          <div id="completed-floor-label-${sched.id}" style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--brand-primary); letter-spacing:0.04em; margin: 14px 0 8px 0; display:none">
+            Filter by Floor
+          </div>
+          <div class="tabs-row" id="completed-floor-tabs-row-${sched.id}">
+          </div>
+        </div>
+
+        <div id="completed-floor-rooms-container-${sched.id}" class="hidden" style="margin-bottom: var(--sp-5); background: rgba(124,58,237,0.04); border: 1px solid rgba(124,58,237,0.2); padding: var(--sp-4); border-radius: var(--radius-lg)">
+        </div>
+
+        <div id="completed-summary-section-${sched.id}" style="margin-top:var(--sp-4)">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--sp-3); margin-bottom:var(--sp-3); padding-bottom:var(--sp-2); border-bottom:1px solid var(--border-subtle)">
+            <div style="font-size:0.95rem; font-weight:800; color:var(--text-primary)">
+              Completed Batch Rooms (${sched.roomEntries ? sched.roomEntries.length : 0})
+            </div>
+            <div style="display:flex; gap:var(--sp-2); font-size:0.78rem; font-weight:700">
+              <span class="badge" style="background:rgba(124,58,237,0.12); color:var(--brand-primary); border:1px solid rgba(124,58,237,0.25); padding:4px 10px">
+                Total Clothes: ${totalClothes} pcs
+              </span>
+              <span class="badge" style="background:rgba(34,197,94,0.12); color:#4ade80; border:1px solid rgba(34,197,94,0.25); padding:4px 10px">
+                Total Weight: ${totalWeight.toFixed(2)} kg
+              </span>
+            </div>
+          </div>
+
+          <div class="table-wrapper" style="overflow-x:auto">
+            <table style="width:100%; min-width:720px">
+              <thead>
+                <tr>
+                  <th>Hostel</th>
+                  <th>Room No.</th>
+                  <th>Student Name</th>
+                  <th>No. of Clothes</th>
+                  <th>Amount Collected</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${roomRowsHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── TAB 4: PREVIOUS LOGS TAB ─────────────────────────────────
+async function loadPreviousLogs() {
+  const tbody = document.getElementById('logs-tbody');
+  const toolbar = document.getElementById('previous-logs-toolbar');
+  if (toolbar) {
+    if (currentUser?.role === 'laundry_worker') {
+      toolbar.classList.add('hidden');
+    } else {
+      toolbar.classList.remove('hidden');
+    }
+  }
+
+  const monthFilterInput = document.getElementById('log-month-filter');
+  if (monthFilterInput && !monthFilterInput.value) {
+    monthFilterInput.value = new Date().toISOString().slice(0, 7);
+  }
+
+  try {
+    const snap = await getDocs(collection(db, 'laundry_schedules'));
+    allLogsCache = [];
+    snap.forEach(d => allLogsCache.push({ id: d.id, ...d.data() }));
+    allLogsCache.sort((a, b) => new Date(b.deliveredAt || b.completedAt || b.date || 0) - new Date(a.deliveredAt || a.completedAt || a.date || 0));
+
+    const deliveredList = allLogsCache.filter(l => l.status === 'Delivered' || (l.roomEntries && l.roomEntries.every(r => r.status === 'Delivered')));
+    renderDeliveredLogRows(deliveredList);
+  } catch (err) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="color:var(--brand-danger);text-align:center;padding:var(--sp-6)">Error loading delivered logs: ${err.message}</td></tr>`;
+  }
+}
+
+function renderDeliveredLogRows(list) {
+  const tbody = document.getElementById('logs-tbody');
+  const title = document.getElementById('logs-table-title');
+  if (title) title.textContent = `Previous Delivered Logs (${list.length} Records)`;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:var(--sp-6)">No delivered laundry logs found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(l => {
+    const totalWeight = l.roomEntries ? l.roomEntries.reduce((acc, curr) => acc + parseFloat(curr.weight || 0), 0) : 0;
+    const totalClothes = l.roomEntries ? l.roomEntries.reduce((acc, curr) => acc + parseInt(curr.clothesCount || 0), 0) : 0;
+
+    let roomsNoStr = '—';
+    if (l.roomEntries && l.roomEntries.length > 0) {
+      const byHostel = {};
+      l.roomEntries.forEach(r => {
+        const hostel = r.hostelName || l.hostelName || 'Rooms';
+        if (!byHostel[hostel]) byHostel[hostel] = [];
+        const cleanRoom = String(r.roomNo).replace(/^room\s*/i, '');
+        const studentName = getStudentName(hostel, cleanRoom);
+        const roomLabel = studentName ? `${cleanRoom} (${studentName})` : cleanRoom;
+        byHostel[hostel].push(roomLabel);
+      });
+      const hostelKeys = Object.keys(byHostel);
+      if (hostelKeys.length === 1 && hostelKeys[0] === 'Rooms') {
+        roomsNoStr = byHostel['Rooms'].join(', ');
+      } else {
+        roomsNoStr = hostelKeys.map(h =>
+          `<div style="margin-bottom:4px"><span style="font-size:0.7rem;font-weight:800;color:var(--brand-primary);text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:2px">${h}</span><span style="color:var(--text-secondary)">${byHostel[h].join(', ')}</span></div>`
+        ).join('');
+      }
+    }
+
+    const deleteButtonHtml = (isLaundryHead && currentUser?.role !== 'laundry_worker')
+      ? `<button class="btn btn-sm btn-secondary" onclick="deleteLog('${l.id}', '${l.collectionId}')" style="padding: 4px 8px; font-size: 0.72rem; margin-top:5px; color:var(--brand-danger)">Delete Log</button>`
+      : '';
+    const nameStr = l.groupName ? `Group ${l.groupName}` : l.hostelName;
+
+    return `
+      <tr>
+        <td>
+          <div style="font-weight:800; color:var(--text-primary)">${l.collectionId || '—'}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted)">${nameStr || ''}</div>
+          ${deleteButtonHtml}
+        </td>
+        <td>
+          <div style="font-weight:600">${formatDateDMY(l.date)} (${l.day || ''})</div>
+          ${l.deliveryDate ? `<div style="font-size:0.75rem; color:var(--brand-primary)">Delivered: ${formatDateDMY(l.deliveryDate)}</div>` : ''}
+        </td>
+        <td>${l.location || '—'}</td>
+        <td style="font-size:0.83rem; line-height:1.4">${roomsNoStr}</td>
+        <td>
+          <div style="font-weight:700">${totalClothes} pcs</div>
+          <div style="font-size:0.78rem; color:var(--text-muted)">${totalWeight.toFixed(2)} kg</div>
+        </td>
+        <td>
+          <span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-weight:700">Delivered</span>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ── TAB 5: MONTHLY HOSTEL GROUPS ─────────────────────────────
+async function loadMonthlyGroups() {
+  const grid = document.getElementById('monthly-groups-grid');
+  const schedGrid = document.getElementById('schedule-groups-grid');
+  const today = new Date();
+  const currentMonthKey = today.toISOString().slice(0, 7);
+
+  try {
+    const snap = await getDocs(query(collection(db, 'laundry_groups'), where('monthYear', '==', currentMonthKey)));
+    currentMonthGroups = [];
+    snap.forEach(d => currentMonthGroups.push({ id: d.id, ...d.data() }));
+    currentMonthGroups.sort((a,b) => (a.groupId || '').localeCompare(b.groupId || ''));
+
+    if (currentMonthGroups.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column: 1/-1; text-align:center; padding:var(--sp-8); color:var(--text-muted); background:var(--bg-elevated); border-radius:var(--radius-lg); border:1px dashed var(--border-subtle)">
+          <div style="font-weight:700; margin-bottom:var(--sp-2)">No Hostel Groups created for this month yet.</div>
+          <div style="font-size:0.85rem; margin-bottom:var(--sp-4)">Group hostels together (e.g. G1, G2) to schedule batch laundry collections.</div>
+          <button class="btn btn-primary" onclick="openCreateGroupModal()">+ Create Group</button>
+        </div>
+      `;
+      schedGrid.innerHTML = `
+        <div style="grid-column: 1/-1; text-align:center; padding:var(--sp-6); color:var(--text-muted)">
+          No groups available to schedule. Create groups in the section above first.
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = currentMonthGroups.map(g => `
+      <div class="group-card">
+        <div class="group-card-header">
+          <span class="group-tag">GROUP ${g.groupId}</span>
+          <button class="group-edit-btn" onclick="openEditGroupModal('${g.id}')">Edit</button>
+        </div>
+        <div class="group-hostels-list">
+          ${(g.hostelNames || []).map(h => `<span class="group-hostel-item">${h}</span>`).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    schedGrid.innerHTML = currentMonthGroups.map(g => `
+      <div class="group-card sched-group-card" id="sched-group-${g.id}" onclick="selectGroupForScheduling('${g.id}')">
+        <div class="group-card-header">
+          <span class="group-tag">GROUP ${g.groupId}</span>
+          <span style="font-size:0.75rem; color:var(--text-muted)">${(g.hostelNames || []).length} Hostels</span>
+        </div>
+        <div class="group-hostels-list">
+          ${(g.hostelNames || []).map(h => `<span class="group-hostel-item">${h}</span>`).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    if (currentMonthGroups.length > 0) {
+      selectGroupForScheduling(currentMonthGroups[0].id);
+    }
+  } catch (err) {
+    grid.innerHTML = `<div style="color:var(--brand-danger)">Error loading groups: ${err.message}</div>`;
+  }
+}
+
+window.selectGroupForScheduling = function(groupId) {
+  selectedGroupId = groupId;
+  document.querySelectorAll('.sched-group-card').forEach(c => c.classList.remove('selected'));
+  const el = document.getElementById(`sched-group-${groupId}`);
+  if (el) el.classList.add('selected');
+
+  const group = currentMonthGroups.find(g => g.id === groupId);
+  if (!group) return;
+
+  const dateVal = document.getElementById('global-date')?.value;
+  if (dateVal) {
+    updateBatchIdPreview(dateVal, group.groupId);
+  }
+};
+
+window.handleGlobalDateChange = function(dateVal) {
+  const dayEl = document.getElementById('global-day');
+  const idEl  = document.getElementById('global-batch-id');
+  const deliveryDateInput = document.getElementById('global-delivery-date');
+
+  if (!dateVal) {
+    if (dayEl) dayEl.textContent = '-';
+    if (idEl) idEl.textContent = '-';
+    return;
+  }
+
+  const d = new Date(dateVal + 'T00:00:00');
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  if (dayEl) dayEl.textContent = days[d.getDay()];
+
+  if (deliveryDateInput && !deliveryDateInput.value) {
+    deliveryDateInput.value = addDaysToDateStr(dateVal, 2);
+  }
+
+  if (selectedGroupId) {
+    const group = currentMonthGroups.find(g => g.id === selectedGroupId);
+    if (group) {
+      updateBatchIdPreview(dateVal, group.groupId);
+    }
+  }
+};
+
+async function updateBatchIdPreview(dateVal, groupTag) {
+  const idEl = document.getElementById('global-batch-id');
+  if (!idEl || !dateVal || !groupTag) return;
+  try {
+    const snap = await getDocs(collection(db, 'laundry_schedules'));
+    const list = [];
+    snap.forEach(doc => list.push(doc.data()));
+    idEl.textContent = calculateGroupCollectionId(dateVal, groupTag, list);
+  } catch (err) {
+    console.error(err);
+    idEl.textContent = '-';
+  }
+}
+
+function calculateGroupCollectionId(dateVal, groupTag, list) {
+  const d = new Date(dateVal + 'T00:00:00');
+  const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  const monthStr = months[d.getMonth()];
+  const yearStr = d.getFullYear().toString().slice(-2);
+  
+  const prefix = `${monthStr}${yearStr}_${groupTag}_C`;
+  const matches = list.filter(s => s.collectionId && s.collectionId.startsWith(prefix));
+  
+  let maxNum = 0;
+  matches.forEach(m => {
+    const num = parseInt(m.collectionId.replace(prefix, ''));
+    if (!isNaN(num) && num > maxNum) maxNum = num;
+  });
+
+  return `${prefix}${maxNum + 1}`;
+}
+
+// Handle Create Schedule for Selected Group
+window.handleCreateGroupSchedule = async function() {
+  if (!selectedGroupId) {
+    showToast("Please select a Hostel Group card from the grid.", "warning");
+    return;
+  }
+
+  const group = currentMonthGroups.find(g => g.id === selectedGroupId);
+  if (!group) return;
+
+  const dateVal      = document.getElementById('global-date')?.value;
+  const deliveryVal  = document.getElementById('global-delivery-date')?.value || '';
+  const dayVal       = document.getElementById('global-day')?.textContent || '';
+  const collId       = document.getElementById('global-batch-id')?.textContent || '';
+  const location     = document.getElementById('global-location')?.value;
+
+  if (!dateVal) {
+    showToast("Please select a Collection Date.", "warning");
+    return;
+  }
+  if (!location) {
+    showToast("Please select a Collection Location.", "warning");
+    return;
+  }
+
+  const btn = document.getElementById('schedule-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = 'Scheduling&hellip;';
+
+  try {
+    await addDoc(collection(db, 'laundry_schedules'), {
+      groupId: group.groupId,
+      groupName: group.groupId,
+      hostelIds: group.hostelIds,
+      hostelNames: group.hostelNames,
+      hostelName: `Group ${group.groupId} (${group.hostelNames.join(', ')})`,
+      collectionId: collId,
+      date: dateVal,
+      deliveryDate: deliveryVal || '',
+      day: dayVal,
+      location: location,
+      status: 'Scheduled',
+      roomEntries: [],
+      createdAt: new Date().toISOString()
+    });
+
+    showToast(`Laundry batch "${collId}" scheduled successfully for Group ${group.groupId}!`, "success");
+    switchTab('current');
+  } catch (err) {
+    showToast("Error creating schedule: " + err.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `Schedule Laundry`;
+  }
+};
+
+// ── Floor and Room Tab Controls ──────────────────────────────
+window.getFloorName = function(idx) {
+  if (idx === 0) return 'Ground Floor';
+  if (idx === 1) return '1st Floor';
+  if (idx === 2) return '2nd Floor';
+  if (idx === 3) return '3rd Floor';
+  return `${idx}th Floor`;
+};
+
+window.generateRoomsForFloor = function(idx, count) {
+  const rooms = [];
+  const n = parseInt(count) || 20;
+  for (let i = 1; i <= n; i++) {
+    const pad = i < 10 ? `0${i}` : `${i}`;
+    if (idx === 0) {
+      rooms.push(`G${pad}`);
+    } else {
+      rooms.push(`${idx}${pad}`);
+    }
+  }
+  return rooms;
+};
+
+window.toggleSummaryOnlyTab = function(schedId) {
+  document.querySelectorAll(`.hostel-tab-pill-${schedId}`).forEach(btn => {
+    if (btn.dataset.hostel === '__summary__') {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  const floorRow = document.getElementById(`floor-tabs-row-${schedId}`);
+  const container = document.getElementById(`floor-rooms-container-${schedId}`);
+  if (floorRow) floorRow.innerHTML = '<span style="font-size:0.8rem; font-weight:700; color:var(--brand-primary); padding:4px 0">Viewing Logged Summary</span>';
+  if (container) container.classList.add('hidden');
+};
+
+window.toggleCompletedSummaryOnlyTab = function(schedId) {
+  document.querySelectorAll(`.completed-hostel-tab-pill-${schedId}`).forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.hostel === '__summary__');
+  });
+
+  const floorLabel = document.getElementById(`completed-floor-label-${schedId}`);
+  const floorRow = document.getElementById(`completed-floor-tabs-row-${schedId}`);
+  const container = document.getElementById(`completed-floor-rooms-container-${schedId}`);
+  if (floorLabel) floorLabel.style.display = 'none';
+  if (floorRow) floorRow.innerHTML = '';
+  if (container) container.classList.add('hidden');
+};
+
+window.switchActiveHostelTab = function(schedId, hostelName) {
+  document.querySelectorAll(`.hostel-tab-pill-${schedId}`).forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.hostel === hostelName);
+  });
+
+  const floorRow = document.getElementById(`floor-tabs-row-${schedId}`);
+  if (!floorRow) return;
+
+  const hostelObj = allHostels.find(h => h.name === hostelName || h.id === hostelName);
+  const numFloors = hostelObj ? (hostelObj.floors || 6) : 6;
+
+  let floorPillsHtml = '';
+  for (let i = 0; i < numFloors; i++) {
+    floorPillsHtml += `
+      <button type="button" class="tab-pill tab-pill-floor floor-tab-pill-${schedId} ${i === 0 ? 'active' : ''}" data-floor="${i}" onclick="switchActiveFloorTab('${schedId}', '${hostelName}', ${i})">
+        ${getFloorName(i)}
+      </button>
+    `;
+  }
+
+  floorRow.innerHTML = floorPillsHtml;
+  switchActiveFloorTab(schedId, hostelName, 0);
+};
+
+window.switchActiveFloorTab = function(schedId, hostelName, floorIdx) {
+  document.querySelectorAll(`.floor-tab-pill-${schedId}`).forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.floor) === floorIdx);
+  });
+
+  const container = document.getElementById(`floor-rooms-container-${schedId}`);
+  if (!container) return;
+
+  const hostelObj = allHostels.find(h => h.name === hostelName || h.id === hostelName);
+  const roomCount = (hostelObj && hostelObj.floorRoomsConfig && hostelObj.floorRoomsConfig[floorIdx]) 
+    ? hostelObj.floorRoomsConfig[floorIdx] 
+    : (hostelObj && hostelObj.rooms ? Math.ceil(hostelObj.rooms / (hostelObj.floors || 6)) : 20);
+
+  const rooms = generateRoomsForFloor(floorIdx, roomCount);
+  const sched = allSchedules.find(s => s.id === schedId);
+
+  let roomRowsHtml = rooms.map(roomNo => {
+    const cleanRoom = String(roomNo).replace(/^room\s*/i, '');
+    const studentName = getStudentName(hostelName, cleanRoom);
+    const existing = (sched && sched.roomEntries) ? sched.roomEntries.find(r => String(r.roomNo).replace(/^room\s*/i, '') === cleanRoom && (!r.hostelName || r.hostelName === hostelName)) : null;
+    const existingClothes = existing && existing.clothesCount !== undefined ? existing.clothesCount : '';
+    const existingWeight = existing ? existing.weight : '';
+    const existingStatus = existing ? existing.status : '';
+
+    return `
+      <tr>
+        <td><strong style="color:var(--text-primary)">${cleanRoom}</strong></td>
+        <td style="font-size:0.85rem; font-weight:600; color:var(--text-primary)">
+          ${studentName ? escapeHtml(studentName) : '<span style="color:var(--text-muted)">—</span>'}
+        </td>
+        <td>
+          <input type="number" min="0" class="form-control floor-room-clothes-${schedId}" data-room="${cleanRoom}" style="width: 100px; margin-bottom: 0; padding: 6px 12px" placeholder="Pcs" value="${existingClothes}" onblur="autoSaveRoomFloorLog('${schedId}', '${hostelName}', '${cleanRoom}')">
+        </td>
+        <td>
+          <input type="number" step="0.01" min="0" class="form-control floor-room-weight-${schedId}" data-room="${cleanRoom}" style="width: 135px; font-size:0.82rem; margin-bottom: 0; padding: 6px 10px" placeholder="Weight (kg)" value="${existingWeight}" onblur="autoSaveRoomFloorLog('${schedId}', '${hostelName}', '${cleanRoom}')">
+        </td>
+        <td>
+          <select class="form-control floor-room-status-${schedId}" data-room="${cleanRoom}" style="width: 140px; margin-bottom: 0; padding: 6px 12px" onchange="autoSaveRoomFloorLog('${schedId}', '${hostelName}', '${cleanRoom}')">
+            <option value="" ${!existingStatus || existingStatus === 'Select' ? 'selected' : ''}>Select</option>
+            <option value="Collected" ${existingStatus === 'Collected' ? 'selected' : ''}>Collected</option>
+            <option value="In washing" ${existingStatus === 'In washing' ? 'selected' : ''}>In washing</option>
+            <option value="Completed" ${existingStatus === 'Completed' ? 'selected' : ''}>Completed</option>
+            <option value="Delivered" ${existingStatus === 'Delivered' ? 'selected' : ''}>Delivered</option>
+            <option value="N/A" ${existingStatus === 'N/A' ? 'selected' : ''}>N/A (No Clothes)</option>
+          </select>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-3); flex-wrap:wrap; gap:var(--sp-2)">
+      <div>
+        <strong style="color:var(--brand-primary); font-size:0.95rem">${hostelName} — ${getFloorName(floorIdx)} Rooms (${rooms.length})</strong>
+        <div style="font-size:0.75rem; color:var(--text-muted)">Entering clothes or weight automatically sets status to Collected</div>
+      </div>
+    </div>
+    <div class="table-wrapper" style="max-height:350px; overflow-y:auto">
+      <table style="width:100%; min-width:600px">
+        <thead>
+          <tr>
+            <th>Room No.</th>
+            <th>Student Name</th>
+            <th>No. of Clothes <span style="font-size:0.72rem; color:var(--text-muted)">(pcs)</span></th>
+            <th>Amount Collected <span style="font-size:0.72rem; color:var(--text-muted)">(kg)</span></th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${roomRowsHtml}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  container.classList.remove('hidden');
+};
+
+window.switchCompletedHostelTab = function(schedId, hostelName) {
+  document.querySelectorAll(`.completed-hostel-tab-pill-${schedId}`).forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.hostel === hostelName);
+  });
+
+  const floorLabel = document.getElementById(`completed-floor-label-${schedId}`);
+  const floorRow = document.getElementById(`completed-floor-tabs-row-${schedId}`);
+  const container = document.getElementById(`completed-floor-rooms-container-${schedId}`);
+  if (!floorRow || !container) return;
+
+  if (floorLabel) floorLabel.style.display = 'block';
+
+  const hostelObj = allHostels.find(h => h.name === hostelName || h.id === hostelName);
+  const numFloors = hostelObj ? (hostelObj.floors || 6) : 6;
+
+  let floorPillsHtml = `
+    <button type="button" class="tab-pill tab-pill-floor completed-floor-tab-pill-${schedId} active" data-floor="all" onclick="switchCompletedFloorTab('${schedId}', '${hostelName}', 'all')">
+      All Floors
+    </button>`;
+
+  for (let i = 0; i < numFloors; i++) {
+    floorPillsHtml += `
+      <button type="button" class="tab-pill tab-pill-floor completed-floor-tab-pill-${schedId}" data-floor="${i}" onclick="switchCompletedFloorTab('${schedId}', '${hostelName}', ${i})">
+        ${getFloorName(i)}
+      </button>`;
+  }
+
+  floorRow.innerHTML = floorPillsHtml;
+  switchCompletedFloorTab(schedId, hostelName, 'all');
+};
+
+window.switchCompletedFloorTab = function(schedId, hostelName, floorIdx) {
+  document.querySelectorAll(`.completed-floor-tab-pill-${schedId}`).forEach(btn => {
+    const match = floorIdx === 'all' ? btn.dataset.floor === 'all' : parseInt(btn.dataset.floor) === floorIdx;
+    btn.classList.toggle('active', match);
+  });
+
+  const container = document.getElementById(`completed-floor-rooms-container-${schedId}`);
+  if (!container) return;
+
+  const logBatch = (typeof allLogsCache !== 'undefined' ? allLogsCache : []).find(s => s.id === schedId) || allSchedules.find(s => s.id === schedId);
+  const allEntries = (logBatch && logBatch.roomEntries) ? logBatch.roomEntries : [];
+  const hostelEntries = allEntries.filter(e => !e.hostelName || e.hostelName === hostelName);
+
+  let filteredEntries;
+  let heading;
+
+  if (floorIdx === 'all') {
+    filteredEntries = hostelEntries;
+    heading = `${hostelName} — All Rooms (${hostelEntries.length})`;
+  } else {
+    const hostelObj = allHostels.find(h => h.name === hostelName || h.id === hostelName);
+    const roomCount = (hostelObj && hostelObj.floorRoomsConfig && hostelObj.floorRoomsConfig[floorIdx])
+      ? hostelObj.floorRoomsConfig[floorIdx]
+      : (hostelObj && hostelObj.rooms ? Math.ceil(hostelObj.rooms / (hostelObj.floors || 6)) : 20);
+
+    const floorRoomNums = new Set(generateRoomsForFloor(floorIdx, roomCount).map(r => String(r).replace(/^room\s*/i, '')));
+    filteredEntries = hostelEntries.filter(e => floorRoomNums.has(String(e.roomNo).replace(/^room\s*/i, '')));
+    heading = `${hostelName} — ${getFloorName(floorIdx)} (${filteredEntries.length} rooms)`;
+  }
+
+  if (filteredEntries.length === 0) {
+    container.innerHTML = `
+      <div style="color:var(--text-muted);font-size:0.85rem;padding:var(--sp-4);text-align:center">
+        No completed entries for <strong>${hostelName}</strong>${floorIdx !== 'all' ? ' on ' + getFloorName(floorIdx) : ''}.
+      </div>`;
+    container.classList.remove('hidden');
+    return;
+  }
+
+  let totalClothes = filteredEntries.reduce((a, e) => a + (parseInt(e.clothesCount) || 0), 0);
+  let totalWeight = filteredEntries.reduce((a, e) => a + (parseFloat(e.weight) || 0), 0);
+
+  const rowsHtml = filteredEntries.map(e => {
+    const idxInBatch = allEntries.indexOf(e);
+    const cleanRoom = String(e.roomNo).replace(/^room\s*/i, '');
+    const studentName = getStudentName(e.hostelName || hostelName, cleanRoom);
+    return `
+      <tr>
+        <td><strong style="color:var(--text-primary)">${cleanRoom}</strong></td>
+        <td style="font-size:0.85rem; font-weight:600; color:var(--text-primary)">
+          ${studentName ? escapeHtml(studentName) : '<span style="color:var(--text-muted)">—</span>'}
+        </td>
+        <td>${e.clothesCount !== undefined ? e.clothesCount : 0} pcs</td>
+        <td>${parseFloat(e.weight || 0).toFixed(2)} kg</td>
+        <td>
+          <select class="form-control" style="width:130px;margin-bottom:0;padding:4px 8px;font-weight:700;color:var(--brand-primary)" onchange="updateSingleRoomLogStatus('${schedId}', ${idxInBatch}, this.value)">
+            <option value="Completed" ${e.status === 'Completed' ? 'selected' : ''}>Completed</option>
+            <option value="In washing" ${e.status === 'In washing' ? 'selected' : ''}>In washing</option>
+            <option value="Delivered" ${e.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+            <option value="N/A" ${e.status === 'N/A' ? 'selected' : ''}>N/A</option>
+          </select>
+        </td>
+
+      </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--sp-2);margin-bottom:var(--sp-3)">
+      <strong style="color:var(--brand-primary);font-size:0.95rem">${heading}</strong>
+      <div style="display:flex;gap:var(--sp-2);font-size:0.78rem;font-weight:700">
+        <span class="badge" style="background:rgba(124,58,237,0.12);color:var(--brand-primary);border:1px solid rgba(124,58,237,0.25);padding:4px 10px">Clothes: ${totalClothes} pcs</span>
+        <span class="badge" style="background:rgba(34,197,94,0.12);color:#4ade80;border:1px solid rgba(34,197,94,0.25);padding:4px 10px">Weight: ${totalWeight.toFixed(2)} kg</span>
+      </div>
+    </div>
+    <div class="table-wrapper" style="max-height:320px;overflow-y:auto">
+      <table style="width:100%;min-width:480px">
+        <thead>
+          <tr>
+            <th>Room No.</th>
+            <th>Student Name</th>
+            <th>No. of Clothes</th>
+            <th>Amount Collected</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+
+  container.classList.remove('hidden');
+};
+
+// ── Auto-Save Room Logs (Active Items) ────────────────────────
+window.autoSaveRoomEntry = async function(schedId, idx) {
+  const clothesInput = document.getElementById(`clothes-${schedId}-${idx}`);
+  const weightInput = document.getElementById(`weight-${schedId}-${idx}`);
+  const statusSelect = document.getElementById(`status-${schedId}-${idx}`);
+
+  const clothesVal = parseInt(clothesInput?.value) || 0;
+  const weightVal = parseFloat(weightInput?.value);
+  let statusVal = statusSelect?.value;
+
+  const sched = allSchedules.find(s => s.id === schedId);
+  if (!sched || !sched.roomEntries || !sched.roomEntries[idx]) return;
+
+  if ((clothesVal > 0 || (!isNaN(weightVal) && weightVal > 0)) && (!statusVal || statusVal === 'Select')) {
+    statusVal = 'Collected';
+    if (statusSelect) statusSelect.value = 'Collected';
+  }
+
+  sched.roomEntries[idx].clothesCount = clothesVal;
+  if (!isNaN(weightVal) && weightVal >= 0) sched.roomEntries[idx].weight = weightVal;
+  if (statusVal) sched.roomEntries[idx].status = statusVal;
+
+  try {
+    await updateDoc(doc(db, 'laundry_schedules', schedId), { roomEntries: sched.roomEntries });
+    if (statusSelect) {
+      statusSelect.style.borderColor = 'var(--brand-success)';
+      setTimeout(() => { statusSelect.style.borderColor = ''; }, 1500);
+    }
+  } catch (err) {
+    console.error('Auto-save room entry failed:', err.message);
+  }
+};
+
+window.autoSaveRoomFloorLog = async function(schedId, hostelName, roomNo) {
+  const clothesInput = document.querySelector(`.floor-room-clothes-${schedId}[data-room="${roomNo}"]`);
+  const weightInput = document.querySelector(`.floor-room-weight-${schedId}[data-room="${roomNo}"]`);
+  const statusSelect = document.querySelector(`.floor-room-status-${schedId}[data-room="${roomNo}"]`);
+
+  let clothesVal = parseInt(clothesInput?.value) || 0;
+  let weightVal = parseFloat(weightInput?.value);
+  let statusVal = statusSelect?.value;
+
+  if ((clothesVal > 0 || (!isNaN(weightVal) && weightVal > 0)) && (!statusVal || statusVal === 'Select')) {
+    statusVal = 'Collected';
+    if (statusSelect) statusSelect.value = 'Collected';
+  }
+
+  if ((!statusVal || statusVal === 'Select') && isNaN(weightVal)) return;
+
+  if (statusVal === 'N/A') {
+    clothesVal = 0;
+    weightVal = 0;
+    if (clothesInput && !clothesInput.value) clothesInput.value = '0';
+    if (weightInput && !weightInput.value) weightInput.value = '0.00';
+  }
+
+  const sched = allSchedules.find(s => s.id === schedId);
+  if (!sched) return;
+
+  const roomEntries = sched.roomEntries || [];
+  const existingIdx = roomEntries.findIndex(e => e.roomNo === roomNo && (!e.hostelName || e.hostelName === hostelName));
+  const studentInfo = getStudentInfo(hostelName, roomNo);
+
+  const entryData = {
+    hostelName,
+    roomNo,
+    studentName: studentInfo.name || '',
+    studentEmail: studentInfo.email || '',
+    clothesCount: clothesVal,
+    weight: !isNaN(weightVal) && weightVal >= 0 ? weightVal : (roomEntries[existingIdx]?.weight || 0),
+    status: (statusVal && statusVal !== 'Select') ? statusVal : (roomEntries[existingIdx]?.status || 'Collected')
+  };
+
+  if (existingIdx !== -1) {
+    roomEntries[existingIdx] = { ...roomEntries[existingIdx], ...entryData };
+  } else {
+    roomEntries.push(entryData);
+  }
+
+  sched.roomEntries = roomEntries;
+
+  try {
+    await updateDoc(doc(db, 'laundry_schedules', schedId), { roomEntries });
+    if (statusSelect) {
+      statusSelect.style.borderColor = 'var(--brand-success)';
+      setTimeout(() => { statusSelect.style.borderColor = ''; }, 1500);
+    }
+  } catch (err) {
+    console.error('Auto-save floor room log failed:', err.message);
+  }
+};
+
+window.deleteRoomEntry = async function(schedId, idx) {
+  const sched = allSchedules.find(s => s.id === schedId);
+  if (!sched) return;
+
+  const room = sched.roomEntries[idx].roomNo;
+  if (!confirm(`Delete room entry ${room}?`)) return;
+
+  sched.roomEntries.splice(idx, 1);
+
+  try {
+    await updateDoc(doc(db, 'laundry_schedules', schedId), { roomEntries: sched.roomEntries });
+    showToast(`Room ${room} entry removed`, "info");
+    await loadCurrentTabContent();
+  } catch (err) {
+    showToast("Failed to delete room log: " + err.message, "error");
+  }
+};
+
+window.updateSingleRoomLogStatus = async function(logId, roomIdx, newStatus) {
+  try {
+    const snap = await getDocs(collection(db, 'laundry_schedules'));
+    let matchLog = null;
+    snap.forEach(d => { if (d.id === logId) matchLog = { id: d.id, ...d.data() }; });
+    if (!matchLog || !matchLog.roomEntries || !matchLog.roomEntries[roomIdx]) return;
+
+    matchLog.roomEntries[roomIdx].status = newStatus;
+    if (newStatus === 'Delivered') {
+      matchLog.roomEntries[roomIdx].deliveredAt = new Date().toISOString();
+    }
+
+    const allDelivered = matchLog.roomEntries.every(r => r.status === 'Delivered');
+    const overallStatus = allDelivered ? 'Delivered' : matchLog.status;
+
+    await updateDoc(doc(db, 'laundry_schedules', logId), {
+      roomEntries: matchLog.roomEntries,
+      status: overallStatus
+    });
+
+    showToast(`Room status updated to ${newStatus}!`, "success");
+    await loadCompletedLogs();
+    await loadPreviousLogs();
+  } catch (err) {
+    showToast("Failed to update status: " + err.message, "error");
+  }
+};
+
+window.markLogBatchDelivered = async function(logId) {
+  try {
+    const snap = await getDocs(collection(db, 'laundry_schedules'));
+    let matchLog = null;
+    snap.forEach(d => { if (d.id === logId) matchLog = { id: d.id, ...d.data() }; });
+    if (!matchLog || !matchLog.roomEntries) return;
+
+    if (!confirm(`Mark all ${matchLog.roomEntries.length} room(s) in this batch as Delivered?`)) return;
+
+    const updatedRooms = matchLog.roomEntries.map(r => ({
+      ...r,
+      status: 'Delivered',
+      deliveredAt: r.deliveredAt || new Date().toISOString()
+    }));
+
+    await updateDoc(doc(db, 'laundry_schedules', logId), {
+      status: 'Delivered',
+      roomEntries: updatedRooms,
+      deliveredAt: new Date().toISOString()
+    });
+
+    showToast("Entire batch marked as Delivered and moved to Previous Logs!", "success");
+    await loadCompletedLogs();
+    await loadPreviousLogs();
+  } catch (err) {
+    showToast("Error delivering batch: " + err.message, "error");
+  }
+};
+
+window.deleteLog = async function(logId, collId) {
+  if (!isLaundryHead) {
+    showToast("Access Denied: Only the Laundry Head and Admins can delete completed logs.", "error");
+    return;
+  }
+  if (!confirm(`Are you sure you want to delete completed log "${collId}"?`)) return;
+
+  try {
+    await deleteDoc(doc(db, 'laundry_schedules', logId));
+    showToast("Completed log successfully deleted.", "info");
+    await loadPreviousLogs();
+  } catch (err) {
+    showToast("Error deleting log: " + err.message, "error");
+  }
+};
+
+window.deleteSchedule = async function(schedId) {
+  if (!confirm("Are you sure you want to delete this schedule?")) return;
+
+  try {
+    await deleteDoc(doc(db, 'laundry_schedules', schedId));
+    showToast("Schedule deleted.", "info");
+    await loadScheduledTabContent();
+  } catch (err) {
+    showToast("Error deleting schedule: " + err.message, "error");
+  }
+};
+
+// ── Reschedule / Edit Dates Modal ────────────────────────────
+window.openRescheduleModal = function(schedId, currentDate, currentLocation, currentDelivery = '', isCompletedBatch = false) {
+  document.getElementById('reschedule-sched-id').value = schedId;
+  const dateInput = document.getElementById('reschedule-date-input');
+  const deliveryInput = document.getElementById('reschedule-delivery-date-input');
+  const locSelect = document.getElementById('reschedule-location-select');
+  const subtitle = document.getElementById('reschedule-modal-subtitle');
+
+  const todayStr = getLocalTodayStr();
+  const isActiveOrPast = currentDate && currentDate <= todayStr;
+
+  dateInput.value = currentDate || '';
+  handleRescheduleDateChange(currentDate);
+
+  if (deliveryInput) {
+    deliveryInput.value = currentDelivery || addDaysToDateStr(currentDate, 2);
+  }
+
+  locSelect.innerHTML = '<option value="">Select location…</option>' +
+    allHostels.map(h => `<option value="${h.name}" ${h.name === currentLocation ? 'selected' : ''}>${h.name}</option>`).join('');
+
+  const isLockedCollection = isCompletedBatch || isActiveOrPast;
+
+  if (isLockedCollection) {
+    // For active or completed batches, collection has already started/occurred.
+    // We can ONLY change the delivery date and nothing else.
+    dateInput.disabled = true;
+    dateInput.style.opacity = '0.6';
+    dateInput.style.cursor = 'not-allowed';
+    dateInput.title = 'Collection date cannot be changed once active or completed';
+
+    locSelect.disabled = true;
+    locSelect.style.opacity = '0.6';
+    locSelect.style.cursor = 'not-allowed';
+    locSelect.title = 'Location cannot be changed once active or completed';
+
+    if (deliveryInput) {
+      deliveryInput.disabled = false;
+      deliveryInput.style.opacity = '1';
+      deliveryInput.style.cursor = 'auto';
+      deliveryInput.title = '';
+    }
+    if (subtitle) subtitle.textContent = 'Update expected delivery date for this batch (collection date and location are locked)';
+  } else {
+    // Future upcoming batch — collection date and location can be rescheduled, delivery date is locked until collection day
+    dateInput.disabled = false;
+    dateInput.style.opacity = '1';
+    dateInput.style.cursor = 'auto';
+    dateInput.title = '';
+
+    locSelect.disabled = false;
+    locSelect.style.opacity = '1';
+    locSelect.style.cursor = 'auto';
+    locSelect.title = '';
+
+    if (deliveryInput) {
+      deliveryInput.disabled = true;
+      deliveryInput.style.opacity = '0.6';
+      deliveryInput.style.cursor = 'not-allowed';
+      deliveryInput.title = 'Delivery date can be edited once this batch becomes active on or after collection day';
+    }
+    if (subtitle) subtitle.textContent = 'Reschedule collection date (delivery date can be edited once active)';
+  }
+
+  document.getElementById('reschedule-modal-backdrop').classList.add('show');
+};
+
+window.closeRescheduleModal = function() {
+  document.getElementById('reschedule-modal-backdrop').classList.remove('show');
+};
+
+window.handleRescheduleDateChange = function(dateVal) {
+  const dayDisplay = document.getElementById('reschedule-day-display');
+  const deliveryInput = document.getElementById('reschedule-delivery-date-input');
+  if (!dateVal) { dayDisplay.textContent = '—'; return; }
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const d = new Date(dateVal + 'T00:00:00');
+  dayDisplay.textContent = days[d.getDay()];
+
+  if (deliveryInput && !deliveryInput.value) {
+    deliveryInput.value = addDaysToDateStr(dateVal, 2);
+  }
+};
+
+window.saveReschedule = async function() {
+  const schedId = document.getElementById('reschedule-sched-id').value;
+  const newDate = document.getElementById('reschedule-date-input').value;
+  const newDelivery = document.getElementById('reschedule-delivery-date-input').value;
+  const newLocation = document.getElementById('reschedule-location-select').value;
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  if (!newDate) {
+    showToast('Please select a collection date.', 'warning');
+    return;
+  }
+  if (!newLocation) {
+    showToast('Please select a collection location.', 'warning');
+    return;
+  }
+
+  const newDay = days[new Date(newDate + 'T00:00:00').getDay()];
+  const btn = document.getElementById('reschedule-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    await updateDoc(doc(db, 'laundry_schedules', schedId), {
+      date: newDate,
+      deliveryDate: newDelivery || '',
+      day: newDay,
+      location: newLocation,
+      rescheduledAt: new Date().toISOString()
+    });
+    showToast(`Schedule dates updated successfully.`, 'success');
+    closeRescheduleModal();
+    await loadScheduledTabContent();
+    await loadCurrentTabContent();
+    await loadCompletedLogs();
+  } catch (err) {
+    showToast('Failed to update schedule dates: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Dates';
+  }
+};
+
+// ── QR Code Delivery Modal Controls ──────────────────────────
+window.openDeliveryQrModal = function(schedId, roomNo = null, hostelName = null) {
+  const sched = allSchedules.find(s => s.id === schedId) || (typeof allLogsCache !== 'undefined' ? allLogsCache.find(s => s.id === schedId) : null);
+  if (!sched) return;
+
+  const qrContainer = document.getElementById('delivery-qr-canvas-container');
+  const infoDiv = document.getElementById('delivery-qr-info');
+  const urlInput = document.getElementById('delivery-qr-url-input');
+  const modal = document.getElementById('delivery-qr-modal-backdrop');
+
+  qrContainer.innerHTML = '';
+
+  const baseUrl = window.location.origin + window.location.pathname;
+  const params = new URLSearchParams();
+  params.set('action', 'confirm-delivery');
+  params.set('schedId', sched.id);
+  if (roomNo) params.set('roomNo', roomNo);
+  if (hostelName) params.set('hostel', hostelName);
+  const confirmUrl = `${baseUrl}?${params.toString()}`;
+
+  urlInput.value = confirmUrl;
+
+  if (roomNo) {
+    const studentName = getStudentName(hostelName || sched.hostelName || '', roomNo);
+    infoDiv.innerHTML = `
+      <strong>Room ${escapeHtml(roomNo)}</strong> (${escapeHtml(hostelName || sched.hostelName || 'Hostel')})<br>
+      ${studentName ? `<span style="color:var(--brand-primary); font-weight:700">${escapeHtml(studentName)}</span><br>` : ''}
+      Batch: <span style="font-family:var(--font-mono)">${escapeHtml(sched.collectionId || sched.groupName || '—')}</span>
+    `;
+  } else {
+    infoDiv.innerHTML = `
+      <strong>Batch ${escapeHtml(sched.collectionId || sched.groupName || '—')}</strong><br>
+      Hostels: <span style="color:var(--brand-primary); font-weight:600">${escapeHtml(sched.hostelNames?.join(', ') || sched.hostelName || '—')}</span>
+    `;
+  }
+
+  try {
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(qrContainer, {
+        text: confirmUrl,
+        width: 180,
+        height: 180,
+        colorDark: "#1e1b4b",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    } else {
+      qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(confirmUrl)}" alt="Delivery QR Code" style="width:180px;height:180px;border-radius:8px">`;
+    }
+  } catch (e) {
+    qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(confirmUrl)}" alt="Delivery QR Code" style="width:180px;height:180px;border-radius:8px">`;
+  }
+
+  modal.classList.add('show');
+};
+
+window.closeDeliveryQrModal = function() {
+  document.getElementById('delivery-qr-modal-backdrop')?.classList.remove('show');
+};
+
+window.copyDeliveryQrLink = function() {
+  const input = document.getElementById('delivery-qr-url-input');
+  if (input) {
+    navigator.clipboard.writeText(input.value).then(() => {
+      showToast('Confirmation link copied to clipboard!', 'success');
+    }).catch(() => {
+      input.select();
+      document.execCommand('copy');
+      showToast('Confirmation link copied!', 'success');
+    });
+  }
+};
+
+// ── Student Delivery Confirmation Modal Controls ────────────
+window.promptStudentConfirmDelivery = function(schedId, roomIdx, roomNo, hostelName) {
+  document.getElementById('student-confirm-sched-id').value = schedId;
+  document.getElementById('student-confirm-room-idx').value = roomIdx;
+  document.getElementById('student-confirm-title').textContent = `Confirm Receipt: Room ${roomNo} (${hostelName})`;
+  document.getElementById('student-confirm-details').textContent = 'Please confirm that you have collected and verified your laundry clothes.';
+  document.getElementById('student-confirm-modal-backdrop')?.classList.add('show');
+};
+
+window.closeStudentConfirmModal = function() {
+  document.getElementById('student-confirm-modal-backdrop')?.classList.remove('show');
+};
+
+window.executeStudentDeliveryConfirmation = async function() {
+  const schedId = document.getElementById('student-confirm-sched-id').value;
+  const roomIdx = parseInt(document.getElementById('student-confirm-room-idx').value);
+  const btn = document.getElementById('student-confirm-btn');
+
+  if (!schedId || isNaN(roomIdx)) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Confirming…';
+
+  try {
+    const snap = await getDocs(collection(db, 'laundry_schedules'));
+    let targetDoc = null;
+    snap.forEach(d => { if (d.id === schedId) targetDoc = { id: d.id, ...d.data() }; });
+
+    if (!targetDoc || !targetDoc.roomEntries || !targetDoc.roomEntries[roomIdx]) {
+      throw new Error('Schedule or room entry not found.');
+    }
+
+    targetDoc.roomEntries[roomIdx].status = 'Delivered';
+    targetDoc.roomEntries[roomIdx].deliveredAt = new Date().toISOString();
+    targetDoc.roomEntries[roomIdx].deliveredBy = 'Student Confirmation';
+
+    const allDelivered = targetDoc.roomEntries.every(r => r.status === 'Delivered');
+    const overallStatus = allDelivered ? 'Delivered' : targetDoc.status;
+
+    await updateDoc(doc(db, 'laundry_schedules', schedId), {
+      roomEntries: targetDoc.roomEntries,
+      status: overallStatus
+    });
+
+    showToast('Delivery confirmed successfully! Your laundry status is now Delivered.', 'success');
+    closeStudentConfirmModal();
+
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    if (currentUser?.role === 'student') {
+      await renderStudentLaundryStatus(currentUser);
+    } else {
+      await loadCompletedLogs();
+      await loadPreviousLogs();
+    }
+  } catch (err) {
+    showToast('Error confirming delivery: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'I Have Received My Laundry';
+  }
+};
+
+async function checkDeliveryConfirmationQuery(user) {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('action') !== 'confirm-delivery') return;
+
+  const schedId = params.get('schedId');
+  const paramRoom = params.get('roomNo') || user?.roomNo || '';
+
+  if (!schedId) return;
+
+  try {
+    const snap = await getDocs(collection(db, 'laundry_schedules'));
+    let matchedSched = null;
+    snap.forEach(d => { if (d.id === schedId) matchedSched = { id: d.id, ...d.data() }; });
+
+    if (!matchedSched || !matchedSched.roomEntries) return;
+
+    const normRoom = (r) => String(r || '').replace(/^room\s*[-#:]*\s*/i, '').replace(/[\s\-_]/g, '').toLowerCase().trim();
+    const myNorm = normRoom(paramRoom);
+
+    const entryIdx = matchedSched.roomEntries.findIndex(e => normRoom(e.roomNo) === myNorm);
+    if (entryIdx !== -1) {
+      const entry = matchedSched.roomEntries[entryIdx];
+      if (entry.status === 'Delivered') {
+        showToast(`Laundry for Room ${entry.roomNo} is already marked as Delivered.`, 'info');
+        return;
+      }
+
+      if (entry.status === 'N/A' || (!entry.clothesCount && !entry.weight)) {
+        showToast(`No laundry was submitted for Room ${entry.roomNo} in this batch.`, 'info');
+        return;
+      }
+
+      document.getElementById('student-confirm-sched-id').value = schedId;
+      document.getElementById('student-confirm-room-idx').value = entryIdx;
+      document.getElementById('student-confirm-title').textContent = `Delivery for Room ${entry.roomNo} (${entry.hostelName || matchedSched.hostelName || ''})`;
+      document.getElementById('student-confirm-details').innerHTML = `
+        Clothes: <strong>${entry.clothesCount !== undefined ? entry.clothesCount + ' pcs' : '—'}</strong> · Weight: <strong>${entry.weight ? entry.weight + ' kg' : '—'}</strong><br>
+        Batch: <span style="font-family:var(--font-mono)">${escapeHtml(matchedSched.collectionId || matchedSched.groupName || '—')}</span><br><br>
+        Please confirm that you have collected and verified your laundry clothes.
+      `;
+      document.getElementById('student-confirm-modal-backdrop')?.classList.add('show');
+    }
+  } catch (e) {
+    console.warn('Delivery confirmation check error:', e.message);
+  }
+}
+
+// ── Group Modal CRUD ─────────────────────────────────────────
+let currentEditingGroupId = null;
+
+window.openCreateGroupModal = function() {
+  currentEditingGroupId = null;
+  document.getElementById('group-modal-title').textContent = 'Create Monthly Hostel Group';
+  document.getElementById('group-modal-subtitle').textContent = 'Group hostels into G1, G2, G3... for this month';
+  document.getElementById('group-id-input').value = '';
+  document.getElementById('group-modal-delete-btn').classList.add('hidden');
+
+  const today = new Date();
+  document.getElementById('group-month-select').value = today.toISOString().slice(0, 7);
+
+  renderModalHostelCheckboxes([]);
+  document.getElementById('group-modal-backdrop').classList.add('show');
+};
+
+window.openEditGroupModal = function(groupId) {
+  const group = currentMonthGroups.find(g => g.id === groupId);
+  if (!group) return;
+
+  currentEditingGroupId = groupId;
+  document.getElementById('group-modal-title').textContent = `Edit Group ${group.groupId}`;
+  document.getElementById('group-modal-subtitle').textContent = 'Update assigned hostels or group tag';
+  document.getElementById('group-id-input').value = group.groupId || '';
+  document.getElementById('group-month-select').value = group.monthYear || new Date().toISOString().slice(0, 7);
+  document.getElementById('group-modal-delete-btn').classList.remove('hidden');
+
+  renderModalHostelCheckboxes(group.hostelIds || []);
+  document.getElementById('group-modal-backdrop').classList.add('show');
+};
+
+window.closeGroupModal = function() {
+  document.getElementById('group-modal-backdrop').classList.remove('show');
+};
+
+function renderModalHostelCheckboxes(selectedIds = []) {
+  const grid = document.getElementById('modal-hostels-checkbox-grid');
+  if (!grid) return;
+
+  if (allHostels.length === 0) {
+    grid.innerHTML = '<span style="color:var(--text-muted);font-size:0.85rem">No hostels found.</span>';
+    return;
+  }
+
+  grid.innerHTML = allHostels.map(h => `
+    <label class="checkbox-label" style="font-size:0.85rem;display:flex;align-items:center;gap:8px">
+      <input type="checkbox" name="modal-hostel-item" value="${h.id}" data-name="${h.name}" ${selectedIds.includes(h.id) ? 'checked' : ''}>
+      <span>${h.name}</span>
+    </label>
+  `).join('');
+}
+
+window.handleGroupMonthChange = function(monthVal) {
+};
+
+window.saveMonthlyGroup = async function() {
+  const monthVal = document.getElementById('group-month-select').value;
+  const groupId = document.getElementById('group-id-input').value.trim().toUpperCase();
+  const checkedBoxes = Array.from(document.querySelectorAll('input[name="modal-hostel-item"]:checked'));
+
+  if (!monthVal) {
+    showToast("Please select a month.", "warning");
+    return;
+  }
+  if (!groupId) {
+    showToast("Please enter a Group ID (e.g. G1, G2).", "warning");
+    return;
+  }
+  if (checkedBoxes.length === 0) {
+    showToast("Please select at least one hostel for this group.", "warning");
+    return;
+  }
+
+  const hostelIds = checkedBoxes.map(cb => cb.value);
+  const hostelNames = checkedBoxes.map(cb => cb.dataset.name);
+
+  try {
+    if (currentEditingGroupId) {
+      await updateDoc(doc(db, 'laundry_groups', currentEditingGroupId), {
+        monthYear: monthVal,
+        groupId,
+        hostelIds,
+        hostelNames,
+        updatedAt: new Date().toISOString()
+      });
+      showToast(`Group ${groupId} updated successfully!`, "success");
+    } else {
+      await addDoc(collection(db, 'laundry_groups'), {
+        monthYear: monthVal,
+        groupId,
+        hostelIds,
+        hostelNames,
+        createdAt: new Date().toISOString()
+      });
+      showToast(`Group ${groupId} created successfully!`, "success");
+    }
+
+    closeGroupModal();
+    await loadMonthlyGroups();
+  } catch (err) {
+    showToast("Error saving group: " + err.message, "error");
+  }
+};
+
+window.deleteMonthlyGroup = async function() {
+  if (!currentEditingGroupId) return;
+  const group = currentMonthGroups.find(g => g.id === currentEditingGroupId);
+  const groupName = group ? `Group ${group.groupId}` : 'this group';
+  if (!confirm(`Are you sure you want to delete ${groupName}?`)) return;
+
+  try {
+    await deleteDoc(doc(db, 'laundry_groups', currentEditingGroupId));
+    showToast(`${groupName} deleted.`, "info");
+    closeGroupModal();
+    await loadMonthlyGroups();
+  } catch (err) {
+    showToast("Error deleting group: " + err.message, "error");
+  }
+};
+
+window.copyPreviousMonthGroups = async function() {
+  const today = new Date();
+  const prevMonthDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const prevMonthKey = prevMonthDate.toISOString().slice(0,7);
+  const currentMonthKey = today.toISOString().slice(0,7);
+
+  try {
+    const snap = await getDocs(query(collection(db, 'laundry_groups'), where('monthYear', '==', prevMonthKey)));
+    const prevGroups = [];
+    snap.forEach(d => prevGroups.push(d.data()));
+
+    if (prevGroups.length === 0) {
+      showToast(`No groups found from previous month (${prevMonthKey}) to copy.`, "warning");
+      return;
+    }
+
+    let copiedCount = 0;
+    for (const g of prevGroups) {
+      const exists = currentMonthGroups.some(cg => cg.groupId === g.groupId);
+      if (!exists) {
+        await addDoc(collection(db, 'laundry_groups'), {
+          monthYear: currentMonthKey,
+          groupId: g.groupId,
+          hostelIds: g.hostelIds,
+          hostelNames: g.hostelNames,
+          createdAt: new Date().toISOString()
+        });
+        copiedCount++;
+      }
+    }
+
+    showToast(`Copied ${copiedCount} group(s) from previous month!`, "success");
+    await loadMonthlyGroups();
+  } catch (err) {
+    showToast("Error copying groups: " + err.message, "error");
+  }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HMC Events — Event Request Form</title>
+  <meta name="description" content="Submit accommodation, equipment, stall booking, meal pass, or general service requests for HMC campus events." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── CSS Variables (matches HMC Portal design system) ── */
+    :root {
+      --brand-primary:   #6C63FF;
+      --brand-secondary: #A78BFA;
+      --brand-success:   #10B981;
+      --brand-danger:    #EF4444;
+      --brand-warning:   #F59E0B;
+      --bg-base:         #0A0A1A;
+      --bg-elevated:     #1A1A3E;
+      --bg-card:         #12122A;
+      --text-primary:    #F0F0FF;
+      --text-muted:      #6B6B9A;
+      --border-subtle:   rgba(108, 99, 255, 0.15);
+      --font-primary:    'Inter', sans-serif;
+      --radius-sm:       0.5rem;
+      --radius-md:       0.75rem;
+      --radius-lg:       1rem;
+      --radius-xl:       1.5rem;
+      --transition:      0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-primary);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background:
+        radial-gradient(ellipse at 80% -10%, rgba(108,99,255,0.25) 0%, transparent 55%),
+        radial-gradient(ellipse at -10% 80%, rgba(167,139,250,0.12) 0%, transparent 50%),
+        var(--bg-base);
+    }
+
+    /* ── Page Shell ── */
+    .page-shell {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 5rem;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      padding: 2rem 1.5rem 2.5rem;
+      background: linear-gradient(135deg, rgba(26,26,62,0.8), rgba(18,18,42,0.6));
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      backdrop-filter: blur(20px);
+      position: relative;
+      overflow: hidden;
+    }
+    .page-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(108,99,255,0.06), transparent);
+      pointer-events: none;
+    }
+    /* HMC logo — top right, professional */
+    .hmc-logo-corner {
+      position: absolute;
+      top: 1.25rem;
+      right: 1.25rem;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: contain;
+      background: #ffffff !important;
+      padding: 2px;
+      border: 2px solid #CBD5E1;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      mix-blend-mode: normal !important;
+      z-index: 2;
+    }
+    .brand-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #a78bfa, var(--brand-primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.75rem;
+    }
+    .brand-logo .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--brand-primary);
+      -webkit-text-fill-color: initial;
+      display: inline-block;
+    }
+    .event-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text-primary);
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+    .event-subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .event-pill {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.3rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(108,99,255,0.12);
+      border: 1px solid rgba(108,99,255,0.25);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--brand-secondary);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .header-skeleton { animation: shimmer 1.4s ease-in-out infinite; }
+    @keyframes shimmer {
+      0%, 100% { opacity: 0.4; }
+      50%       { opacity: 0.9; }
+    }
+
+    /* ── Section Heading ── */
+    .section-heading {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section-heading::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    /* ── Contact Info Block ── */
+    .contact-block {
+      background: rgba(26,26,62,0.55);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+      margin-bottom: 1.75rem;
+      backdrop-filter: blur(12px);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+    }
+    .form-grid .span-full { grid-column: 1 / -1; }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .field-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .field-required::after { content: ' *'; color: var(--brand-primary); }
+    .field-input,
+    .field-select,
+    .field-textarea {
+      background: rgba(10,10,26,0.6);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 0.9rem;
+      color: var(--text-primary);
+      font-family: var(--font-primary);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      width: 100%;
+    }
+    .field-input::placeholder, .field-textarea::placeholder { color: var(--text-muted); }
+    .field-input:focus, .field-select:focus, .field-textarea:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+    }
+    .field-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6B9A' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.9rem center;
+      padding-right: 2.2rem;
+      cursor: pointer;
+    }
+    .field-select option { background: #1A1A3E; }
+    .field-textarea { resize: vertical; min-height: 80px; }
+
+    /* ── Request Type Cards ── */
+    .request-types-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 1.75rem;
+    }
+    .type-card {
+      position: relative;
+      padding: 1.25rem;
+      border-radius: var(--radius-lg);
+      background: rgba(26,26,62,0.5);
+      border: 1.5px solid var(--border-subtle);
+      cursor: pointer;
+      transition: all var(--transition);
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+      user-select: none;
+    }
+    .type-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(108,99,255,0.08), transparent);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .type-card:hover { border-color: rgba(108,99,255,0.35); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .type-card:hover::before { opacity: 1; }
+    .type-card.selected {
+      border-color: var(--brand-primary);
+      background: rgba(108,99,255,0.12);
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.15), 0 8px 24px rgba(108,99,255,0.15);
+      transform: translateY(-2px);
+    }
+    .type-card.selected::before { opacity: 1; }
+    .type-card input[type="radio"] { display: none; }
+    .type-card-icon {
+      font-size: 1.8rem;
+      margin-bottom: 0.6rem;
+      display: block;
+      line-height: 1;
+    }
+    .type-card-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+    .type-card-desc {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .type-card-check {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      transition: all var(--transition);
+    }
+    .type-card.selected .type-card-check {
+      background: var(--brand-primary);
+      border-color: var(--brand-primary);
+      color: #fff;
+    }
+    .type-card.selected .type-card-check::after { content: ''; }
+
+    /* ── Dynamic Fields Panel ── */
+    .dynamic-fields {
+      background: rgba(26,26,62,0.55);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+      margin-bottom: 1.75rem;
+      backdrop-filter: blur(12px);
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .dynamic-fields.hidden { display: none; }
+
+    /* ── Submit Button ── */
+    .submit-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 1rem;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, var(--brand-primary), #8B5CF6);
+      color: #fff;
+      font-family: var(--font-primary);
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all var(--transition);
+      box-shadow: 0 4px 24px rgba(108,99,255,0.4);
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.01em;
+    }
+    .submit-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .submit-btn:hover { box-shadow: 0 8px 32px rgba(108,99,255,0.55); transform: translateY(-2px); }
+    .submit-btn:hover::before { opacity: 1; }
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .submit-btn .btn-spinner {
+      display: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+    .submit-btn.loading .btn-label { display: none; }
+    .submit-btn.loading .btn-spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .privacy-note {
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .privacy-note a { color: var(--brand-primary); text-decoration: none; }
+
+    /* ── Thank You Screen ── */
+    #thankYouScreen {
+      display: none;
+      text-align: center;
+      padding: 4rem 2rem;
+      animation: fadeIn 0.5s ease;
+    }
+    #thankYouScreen.visible { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+    .ty-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.05));
+      border: 2px solid rgba(16,185,129,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.4rem;
+      margin-bottom: 0.5rem;
+      animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes popIn {
+      from { transform: scale(0.4); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    .ty-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text-primary);
+    }
+    .ty-sub {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      max-width: 380px;
+      line-height: 1.6;
+    }
+    .ty-ref {
+      display: inline-block;
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      background: rgba(108,99,255,0.12);
+      border: 1px solid rgba(108,99,255,0.25);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--brand-primary);
+      font-family: monospace;
+      letter-spacing: 0.05em;
+    }
+    .ty-back-btn {
+      margin-top: 1rem;
+      padding: 0.75rem 2rem;
+      border-radius: var(--radius-lg);
+      background: rgba(108,99,255,0.12);
+      border: 1.5px solid var(--border-subtle);
+      color: var(--brand-primary);
+      font-family: var(--font-primary);
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .ty-back-btn:hover { background: rgba(108,99,255,0.2); transform: translateY(-1px); }
+
+    /* ── Loading Overlay ── */
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-base);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      z-index: 9999;
+      transition: opacity 0.4s ease;
+    }
+    #loadingOverlay.hidden { opacity: 0; pointer-events: none; }
+    .loader-ring {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border-subtle);
+      border-top-color: var(--brand-primary);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    #loadingOverlay p { color: var(--text-muted); font-size: 0.85rem; }
+
+    /* ── Error banner ── */
+    .error-banner {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: var(--radius-md);
+      padding: 0.9rem 1.1rem;
+      color: var(--brand-danger);
+      font-size: 0.85rem;
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+    .error-banner.visible { display: block; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 0.75rem 1.25rem;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      z-index: 9999;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── Link inactive screen ── */
+    #inactiveScreen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 3rem 1.5rem;
+      gap: 1rem;
+    }
+    #inactiveScreen.visible { display: flex; }
+    .inactive-icon {
+      width: 72px; height: 72px;
+      background: rgba(239,68,68,0.12);
+      border: 2px solid rgba(239,68,68,0.3);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+    }
+    /* ── Event Picker ── */
+    .event-picker-wrap {
+      margin-bottom: 1.75rem;
+    }
+    .event-picker-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .span-full { grid-column: 1; }
+      .request-types-grid { grid-template-columns: 1fr 1fr; }
+      .event-title { font-size: 1.35rem; }
+    }
+    @media (max-width: 380px) {
+      .request-types-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay">
+    <div class="loader-ring"></div>
+    <p>Loading event details…</p>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <div class="page-shell">
+
+    <!-- Header -->
+    <header class="page-header" style="text-align: center;">
+      <img src="../assets/hmc-logo.jpg" alt="HMC Logo" class="hmc-logo-corner"
+        onerror="this.src='../assets/hmc-logo.png';this.onerror=function(){this.style.display='none'}">
+      <div class="brand-logo">HMC<span class="dot"></span>Events</div>
+      <h1 class="event-title" id="eventTitle">Event Request Portal</h1>
+      <p class="event-subtitle" id="eventSubtitle">Submit your service request for campus events</p>
+      <div style="display:flex;justify-content:center;gap:10px;margin-top:1rem;flex-wrap:wrap">
+        <span class="event-pill" id="eventPill">External Request Portal</span>
+        <button type="button" onclick="openTrackModal()" style="background:rgba(108,99,255,0.2);border:1px solid var(--brand-primary);color:#fff;border-radius:999px;padding:0.35rem 1.1rem;font-size:0.75rem;font-weight:700;cursor:pointer">Track Request by Unique ID</button>
+      </div>
+    </header>
+
+    <!-- Link Inactive Screen -->
+    <div id="inactiveScreen">
+      <div class="inactive-icon">[Locked]</div>
+      <h2 style="font-size:1.5rem;font-weight:800;color:var(--text-primary)">Request Form Unavailable</h2>
+      <p style="color:var(--text-muted);max-width:360px;line-height:1.6">This external request link is currently inactive. Please contact the organizing committee to activate the form.</p>
+    </div>
+
+    <!-- Thank You Screen (hidden by default) -->
+    <div id="thankYouScreen">
+      <div class="ty-icon"></div>
+      <h2 class="ty-title">Request Submitted!</h2>
+      <p class="ty-sub">Your request has been received and will be reviewed by the organizing committee. You'll be contacted via the email provided.</p>
+      <span class="ty-ref" id="tyRefId">—</span>
+      <button class="ty-back-btn" onclick="resetForm()">Submit Another Request</button>
+    </div>
+
+    <!-- Main Form -->
+    <form id="requestForm" novalidate>
+
+      <!-- Error Banner -->
+      <div class="error-banner" id="errorBanner"></div>
+
+      <!-- Event Picker (shown when no eventId in URL) -->
+      <div id="eventPickerWrap" class="event-picker-wrap" style="display:none">
+        <div class="event-picker-label">Which event is your request for?</div>
+        <select id="eventPickerSelect" class="field-input" onchange="onEventPickerChange(this.value)" style="margin-bottom:0">
+          <option value="">— Select an event —</option>
+        </select>
+      </div>
+
+      <!-- ① Contact Information -->
+      <p class="section-heading">Contact Information</p>
+      <div class="contact-block">
+        <div class="form-grid">
+          <div class="field-group">
+            <label class="field-label field-required" for="contactName">Full Name</label>
+            <input type="text" id="contactName" class="field-input" placeholder="Your full name" required />
+          </div>
+          <div class="field-group">
+            <label class="field-label field-required" for="contactOrg">Organization</label>
+            <input type="text" id="contactOrg" class="field-input" placeholder="Team / College / Committee" required />
+            <span class="field-help" style="font-size:0.75rem; color:var(--text-secondary); margin-top:4px; display:block">Team/College/Committee</span>
+          </div>
+          <div class="field-group">
+            <label class="field-label field-required" for="contactEmail">Email Address</label>
+            <input type="email" id="contactEmail" class="field-input" placeholder="you@example.com" required />
+          </div>
+          <div class="field-group">
+            <label class="field-label field-required" for="contactPhone">Phone Number</label>
+            <input type="tel" id="contactPhone" class="field-input" placeholder="+91 XXXXX XXXXX" required />
+          </div>
+        </div>
+      </div>
+
+      <!-- ② Request Type -->
+      <p class="section-heading">Select Request Type</p>
+      <div class="request-types-grid" id="requestTypesGrid">
+        <!-- Cards injected by JS based on enabled features -->
+      </div>
+
+      <!-- ③ Dynamic Fields (per request type) -->
+      <div class="dynamic-fields hidden" id="dynamicFields">
+        <p class="section-heading" id="dynamicTitle">Request Details</p>
+        <div class="form-grid" id="dynamicGrid">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+
+      <!-- ④ Submit -->
+      <div class="submit-row">
+        <button type="submit" class="submit-btn" id="submitBtn">
+          <span class="btn-spinner"></span>
+          <span class="btn-label">Submit Request →</span>
+        </button>
+        <p class="privacy-note">
+          By submitting, you agree to share your contact details with the HMC Events Committee.
+          Your information will only be used for event coordination.
+        </p>
+      </div>
+
+    </form>
+  </div>
+
+  <script type="module">
+    import { getCampusEvent, submitExternalRequest } from '../js/events.js';
+    import { db } from '../js/firebase-config.js';
+
+    // ── URL Params ───────────────────────────────────────────────
+    const params  = new URLSearchParams(window.location.search);
+    const eventId = params.get('eventId') || null;
+
+    // ── Request type definitions ─────────────────────────────────
+    const REQUEST_TYPES = [
+      {
+        key:   'accommodation',
+        icon:  '',
+        name:  'Accommodation',
+        desc:  'Lodging for visiting teams & guests',
+        featureKey: 'accommodation',
+        fields: [
+          { id: 'accOrgName',  label: 'Organization / Team Name', type: 'text',     required: true,  placeholder: 'e.g. Team IIT Delhi', span: 'full' },
+          { id: 'accGuests',   label: 'Number of Guests',         type: 'number',   required: true,  placeholder: '0', min: 1 },
+          { id: 'accCheckin',  label: 'Check-in Date',            type: 'date',     required: true },
+          { id: 'accCheckout', label: 'Check-out Date',           type: 'date',     required: true },
+          { id: 'accSpecial',  label: 'Special Requirements',     type: 'textarea', required: false, placeholder: 'Dietary needs, accessibility, etc.', span: 'full' },
+        ],
+      },
+      {
+        key:   'equipment',
+        icon:  '',
+        name:  'Equipment Rental',
+        desc:  'Borrow or rent event equipment',
+        featureKey: 'equipment',
+        fields: [
+          { id: 'eqpItem',     label: 'Item / Equipment Name',  type: 'text',   required: true,  placeholder: 'e.g. Projector, Sound System' },
+          { id: 'eqpQty',      label: 'Quantity',               type: 'number', required: true,  placeholder: '1', min: 1 },
+          { id: 'eqpDateFrom', label: 'Date Needed From',       type: 'date',   required: true },
+          { id: 'eqpDateTo',   label: 'Date Needed Until',      type: 'date',   required: true },
+          { id: 'eqpPurpose',  label: 'Purpose / Usage',        type: 'textarea', required: true, placeholder: 'Describe how you will use the equipment', span: 'full' },
+        ],
+      },
+      {
+        key:   'stall',
+        icon:  '',
+        name:  'Stall Booking',
+        desc:  'Reserve a stall at the event venue',
+        featureKey: 'stalls',
+        fields: [
+          {
+            id: 'stallType', label: 'Stall Type', type: 'select', required: true,
+            options: ['Food & Beverages', 'Clothing & Fashion', 'Electronics', 'Books & Stationery', 'Handicrafts', 'Services', 'Other'],
+          },
+          { id: 'stallContact', label: 'Primary Contact', type: 'text', required: true, placeholder: 'Contact person name' },
+          { id: 'stallPhone',   label: 'Contact Phone',   type: 'tel',  required: true, placeholder: '+91 XXXXX XXXXX' },
+          { id: 'stallDesc',    label: 'Brief Description of Stall', type: 'textarea', required: true, placeholder: 'What will you be selling / offering?', span: 'full' },
+        ],
+      },
+      {
+        key:   'mealPass',
+        icon:  '',
+        name:  'Meal Pass Request',
+        desc:  'Request meal passes for team / guests',
+        featureKey: 'mealPasses',
+        fields: [
+          { id: 'mpCount',    label: 'Number of Passes', type: 'number', required: true, placeholder: '0', min: 1 },
+          {
+            id: 'mpMealType', label: 'Meal Type', type: 'select', required: true,
+            options: ['Breakfast', 'Lunch', 'Dinner', 'All Meals'],
+          },
+          { id: 'mpDateFrom', label: 'Start Date', type: 'date', required: true },
+          { id: 'mpDateTo',   label: 'End Date',   type: 'date', required: true },
+        ],
+      },
+      {
+        key:   'general',
+        icon:  '',
+        name:  'General Request',
+        desc:  'Any other query or requirement',
+        featureKey: null, // always visible
+        fields: [
+          { id: 'genSubject', label: 'Subject',  type: 'text',     required: true,  placeholder: 'Brief subject line', span: 'full' },
+          { id: 'genDetails', label: 'Details',  type: 'textarea', required: true,  placeholder: 'Describe your request in detail…', span: 'full', rows: 5 },
+        ],
+      },
+    ];
+
+    let selectedType  = null;
+    let eventData     = null;
+
+    // ── On Load ──────────────────────────────────────────────────
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (!eventId) {
+        // No eventId — show general portal + event picker
+        hideLoading();
+        document.getElementById('eventTitle').textContent = 'HMC Event Request Portal';
+        document.getElementById('eventSubtitle').textContent = 'Submit your service request for any campus event';
+        document.getElementById('eventPickerWrap').style.display = 'block';
+        renderRequestTypes(null); // show all types
+        // Load active events for picker
+        try {
+          const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+          const snap = await getDocs(query(collection(db, 'campus_events'), where('externalLinkActive','==',true)));
+          const sel = document.getElementById('eventPickerSelect');
+          snap.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = d.data().title || d.id;
+            sel.appendChild(opt);
+          });
+        } catch(e) { console.warn('Event picker load error:', e); }
+        return;
+      }
+
+      try {
+        eventData = await getCampusEvent(eventId);
+
+        // ── Check if link is active ──────────────────────────────
+        if (eventData && eventData.externalLinkActive === false) {
+          document.getElementById('requestForm').style.display = 'none';
+          document.getElementById('inactiveScreen').classList.add('visible');
+          document.getElementById('eventTitle').textContent = eventData.title || 'Event Request';
+          document.getElementById('eventSubtitle').textContent = 'External link is inactive';
+          hideLoading();
+          return;
+        }
+
+        if (eventData) {
+          document.getElementById('eventTitle').textContent    = eventData.title || 'Event Request';
+          document.getElementById('eventSubtitle').textContent = eventData.description || 'Submit your service request for this event';
+          document.getElementById('eventPill').textContent     = eventData.title || 'Event Request';
+          document.title = `${eventData.title} — Request Form | HMC Events`;
+        } else {
+          document.getElementById('eventTitle').textContent = 'Event Not Found';
+          document.getElementById('eventSubtitle').textContent = 'The specified event could not be found.';
+          showError('The specified event could not be found.');
+        }
+      } catch (err) {
+        console.error('Failed to load event:', err);
+        document.getElementById('eventTitle').textContent = 'Event Request Portal';
+        document.getElementById('eventSubtitle').textContent = 'Submit your service request for campus events';
+        showError('Could not load event details. Some features may not be available.');
+      } finally {
+        hideLoading();
+        renderRequestTypes(eventData?.features || null);
+      }
+    });
+
+    // When user picks an event from the dropdown
+    window.onEventPickerChange = function(id) {
+      if (!id) return;
+      window.location.href = window.location.pathname + '?eventId=' + id;
+    };
+
+    // ── Render Type Cards ─────────────────────────────────────────
+    function renderRequestTypes (features) {
+      const grid = document.getElementById('requestTypesGrid');
+      grid.innerHTML = '';
+
+      const enabledTypes = REQUEST_TYPES.filter(t =>
+        t.featureKey === null ||
+        features === null ||
+        features[t.featureKey] === true
+      );
+
+      if (enabledTypes.length === 0) {
+        grid.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;grid-column:1/-1">No request types are currently available for this event.</p>';
+        return;
+      }
+
+      enabledTypes.forEach(type => {
+        const card = document.createElement('label');
+        card.className = 'type-card';
+        card.setAttribute('for', `type-${type.key}`);
+        card.dataset.key = type.key;
+        card.innerHTML = `
+          <input type="radio" id="type-${type.key}" name="requestType" value="${type.key}" />
+          <span class="type-card-check"></span>
+          <div class="type-card-name">${type.name}</div>
+          <div class="type-card-desc">${type.desc}</div>
+        `;
+        card.addEventListener('click', () => selectType(type.key));
+        grid.appendChild(card);
+      });
+    }
+
+    // ── Select Type → Render dynamic fields ───────────────────────
+    function selectType (key) {
+      selectedType = key;
+
+      // Update card selection visuals
+      document.querySelectorAll('.type-card').forEach(c => {
+        c.classList.toggle('selected', c.dataset.key === key);
+      });
+
+      const typeDef = REQUEST_TYPES.find(t => t.key === key);
+      if (!typeDef) return;
+
+      const panel = document.getElementById('dynamicFields');
+      const grid  = document.getElementById('dynamicGrid');
+      document.getElementById('dynamicTitle').textContent = `${typeDef.name} Details`;
+
+      grid.innerHTML = '';
+      typeDef.fields.forEach(f => {
+        const div = document.createElement('div');
+        div.className = `field-group${f.span === 'full' ? ' span-full' : ''}`;
+
+        const label = document.createElement('label');
+        label.className = `field-label${f.required ? ' field-required' : ''}`;
+        label.setAttribute('for', f.id);
+        label.textContent = f.label;
+
+        let input;
+        if (f.type === 'textarea') {
+          input = document.createElement('textarea');
+          input.className = 'field-textarea';
+          if (f.rows) input.rows = f.rows;
+          input.placeholder = f.placeholder || '';
+        } else if (f.type === 'select') {
+          input = document.createElement('select');
+          input.className = 'field-select';
+          const defaultOpt = document.createElement('option');
+          defaultOpt.value = '';
+          defaultOpt.textContent = `Select ${f.label}`;
+          defaultOpt.disabled = true;
+          defaultOpt.selected = true;
+          input.appendChild(defaultOpt);
+          (f.options || []).forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt;
+            o.textContent = opt;
+            input.appendChild(o);
+          });
+        } else {
+          input = document.createElement('input');
+          input.type = f.type;
+          input.className = 'field-input';
+          input.placeholder = f.placeholder || '';
+          if (f.min !== undefined) input.min = f.min;
+        }
+
+        input.id = f.id;
+        input.required = !!f.required;
+
+        div.appendChild(label);
+        div.appendChild(input);
+        grid.appendChild(div);
+      });
+
+      panel.classList.remove('hidden');
+      // Smooth scroll into view
+      setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    }
+
+    // ── Form Submit ───────────────────────────────────────────────
+    document.getElementById('requestForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearError();
+
+      if (!selectedType) {
+        showError('Please select a request type before submitting.');
+        document.getElementById('requestTypesGrid').scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+
+      // Gather contact fields
+      const contactName  = document.getElementById('contactName').value.trim();
+      const contactOrg   = document.getElementById('contactOrg').value.trim();
+      const contactEmail = document.getElementById('contactEmail').value.trim();
+      const contactPhone = document.getElementById('contactPhone').value.trim();
+
+      if (!contactName || !contactOrg || !contactEmail || !contactPhone) {
+        showError('Please fill in all required contact information fields.');
+        document.getElementById('contactName').scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+
+      // Gather dynamic fields
+      const typeDef = REQUEST_TYPES.find(t => t.key === selectedType);
+      const typeData = {};
+      let   valid    = true;
+
+      for (const f of typeDef.fields) {
+        const el  = document.getElementById(f.id);
+        const val = el ? el.value.trim() : '';
+        if (f.required && !val) {
+          el?.focus();
+          showError(`Please fill in the "${f.label}" field.`);
+          valid = false;
+          break;
+        }
+        typeData[f.id] = val;
+      }
+      if (!valid) return;
+
+      // Submit
+      const btn = document.getElementById('submitBtn');
+      btn.classList.add('loading');
+      btn.disabled = true;
+
+      const payload = {
+        requestType: selectedType,
+        contact: { name: contactName, organization: contactOrg, email: contactEmail, phone: contactPhone },
+        details:     typeData,
+        submittedAt: new Date().toISOString(),
+      };
+
+      try {
+        const res = await submitExternalRequest(eventId || 'general', payload);
+        const trackingId = res?.trackingId || 'REQ-' + Math.floor(100000 + Math.random() * 900000);
+
+        // Send task notifications to Admins and Event head
+        try {
+          const { doc, getDoc, collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+          
+          let adminUid = null;
+          const setupSnap = await getDoc(doc(db, 'meta', 'setup'));
+          if (setupSnap.exists()) {
+            adminUid = setupSnap.data().adminUid;
+          }
+          
+          let eventHeadUid = eventData?.createdBy || null;
+          
+          const recipients = [];
+          if (adminUid) recipients.push({ uid: adminUid, name: 'Admin' });
+          if (eventHeadUid && eventHeadUid !== adminUid) {
+            recipients.push({ uid: eventHeadUid, name: 'Event Head' });
+          }
+          
+          for (const rec of recipients) {
+            await addDoc(collection(db, 'tasks'), {
+              title: `External Request [${trackingId}]: ${payload.requestType} - ${eventData?.title || 'General'}`,
+              description: `New request submitted by ${payload.contact.name} (${payload.contact.organization}). Contact: ${payload.contact.email} / ${payload.contact.phone}. Tracking ID: ${trackingId}.`,
+              assignedToUid: rec.uid,
+              assignedToName: rec.name,
+              createdByUid: 'guest',
+              createdByName: 'Guest User',
+              status: 'pending',
+              type: 'external_request',
+              createdAt: new Date().toISOString(),
+              dueDate: eventData?.startDate || new Date().toISOString().split('T')[0]
+            });
+          }
+        } catch (taskErr) {
+          console.warn("Failed to create notification tasks:", taskErr);
+        }
+
+        document.getElementById('requestForm').style.display = 'none';
+        document.getElementById('tyRefId').textContent       = trackingId;
+        document.getElementById('thankYouScreen').classList.add('visible');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (err) {
+        console.error('Submit error:', err);
+        showError(`Submission failed: ${err.message}. Please try again.`);
+      } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    });
+
+    // ── Reset form ────────────────────────────────────────────────
+    window.resetForm = function () {
+      document.getElementById('thankYouScreen').classList.remove('visible');
+      document.getElementById('requestForm').style.display   = '';
+      document.getElementById('requestForm').reset();
+      document.getElementById('dynamicFields').classList.add('hidden');
+      selectedType = null;
+      document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+      clearError();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // ── Utilities ─────────────────────────────────────────────────
+    function hideLoading () {
+      const ov = document.getElementById('loadingOverlay');
+      ov.classList.add('hidden');
+      setTimeout(() => ov.remove(), 450);
+    }
+
+    function showError (msg) {
+      const b = document.getElementById('errorBanner');
+      b.textContent = 'Warning: ' + msg;
+      b.classList.add('visible');
+    }
+
+    function clearError () {
+      document.getElementById('errorBanner').classList.remove('visible');
+    }
+
+    function showToast (msg, duration = 2800) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    // ── Track Request & Realtime Messages Modal ───────────────────
+    let currentTrackReq = null;
+
+    window.openTrackModal = function() {
+      document.getElementById('trackModal').style.display = 'flex';
+      document.getElementById('trackIdInput').focus();
+    };
+
+    window.closeTrackModal = function() {
+      document.getElementById('trackModal').style.display = 'none';
+    };
+
+    window.lookupRequest = async function() {
+      const trackingId = document.getElementById('trackIdInput').value.trim().toUpperCase();
+      if (!trackingId) { showToast('Please enter a Tracking ID.'); return; }
+
+      const btn = document.getElementById('trackSearchBtn');
+      btn.disabled = true;
+      btn.textContent = 'Searching…';
+
+      try {
+        const { collectionGroup, getDocs, query, where, collection, orderBy } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+        const snap = await getDocs(query(collectionGroup(db, 'external_requests'), where('trackingId', '==', trackingId)));
+
+        if (snap.empty) {
+          showToast('No request found for this Tracking ID.');
+          document.getElementById('trackResultBox').style.display = 'none';
+          return;
+        }
+
+        const docSnap = snap.docs[0];
+        const reqData = docSnap.data();
+        const pathSegments = docSnap.ref.path.split('/');
+        // path is campus_events/{eventId}/external_requests/{reqId}
+        const eventId = pathSegments[1];
+        const reqId = docSnap.id;
+
+        currentTrackReq = { id: reqId, eventId, trackingId, ...reqData };
+
+        // Render result box
+        const statusColors = { approved: '#10B981', rejected: '#EF4444', pending: '#F59E0B' };
+        document.getElementById('trackResultStatus').innerHTML = `<span style="padding:3px 10px;border-radius:999px;font-size:0.75rem;font-weight:800;background:${statusColors[reqData.status]||'#94A3B8'}22;color:${statusColors[reqData.status]||'#94A3B8'};text-transform:uppercase">${reqData.status || 'Pending'}</span>`;
+        document.getElementById('trackResultType').textContent = reqData.requestType || 'General Request';
+        document.getElementById('trackResultName').textContent = reqData.contact?.name || reqData.contactName || '—';
+        document.getElementById('trackResultOrg').textContent = reqData.contact?.organization || reqData.orgName || '—';
+
+        document.getElementById('trackResultBox').style.display = 'block';
+
+        // Load messages
+        loadTrackMessages(eventId, reqId);
+      } catch(e) {
+        console.error('Lookup error:', e);
+        showToast('Error searching request: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Search';
+      }
+    };
+
+    async function loadTrackMessages(eventId, reqId) {
+      const chatBox = document.getElementById('trackChatList');
+      chatBox.innerHTML = '<div style="color:var(--text-muted);font-size:0.78rem;text-align:center">Loading messages…</div>';
+      try {
+        const { collection, getDocs, orderBy, query } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+        const snap = await getDocs(query(collection(db, 'campus_events', eventId, 'external_requests', reqId, 'messages'), orderBy('createdAt', 'asc')));
+        if (snap.empty) {
+          chatBox.innerHTML = '<div style="color:var(--text-muted);font-size:0.78rem;text-align:center;padding:1rem">No messages yet. Send a note to the organizing committee below.</div>';
+          return;
+        }
+        chatBox.innerHTML = snap.docs.map(d => {
+          const m = d.data();
+          const isApplicant = m.senderType === 'applicant';
+          return `
+            <div style="margin-bottom:8px;text-align:${isApplicant?'right':'left'}">
+              <div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:2px">${m.senderName || (isApplicant?'You':'Event Head')}</div>
+              <div style="display:inline-block;padding:8px 12px;border-radius:12px;max-width:85%;font-size:0.82rem;background:${isApplicant?'var(--brand-primary)':'var(--bg-card)'};color:#fff;border:1px solid ${isApplicant?'transparent':'var(--border-subtle)'}">${m.text}</div>
+            </div>`;
+        }).join('');
+        chatBox.scrollTop = chatBox.scrollHeight;
+      } catch(e) {
+        chatBox.innerHTML = '<div style="color:var(--brand-danger);font-size:0.75rem">Error loading chat</div>';
+      }
+    }
+
+    window.sendApplicantMsg = async function() {
+      if (!currentTrackReq) return;
+      const input = document.getElementById('trackMsgInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+      try {
+        const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+        await addDoc(collection(db, 'campus_events', currentTrackReq.eventId, 'external_requests', currentTrackReq.id, 'messages'), {
+          text,
+          senderName: currentTrackReq.contact?.name || 'Applicant',
+          senderType: 'applicant',
+          createdAt: serverTimestamp()
+        });
+        loadTrackMessages(currentTrackReq.eventId, currentTrackReq.id);
+        showToast('Message sent to Event Head.');
+      } catch(e) { showToast('Send failed: ' + e.message); }
+    };
+  </script>
+
+  <!-- Track Modal Overlay -->
+  <div id="trackModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1rem">
+    <div style="background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);width:100%;max-width:480px;padding:1.5rem;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.6)">
+      <button type="button" onclick="closeTrackModal()" style="position:absolute;top:1.25rem;right:1.25rem;background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer">&times;</button>
+      <h3 style="font-size:1.1rem;font-weight:800;color:var(--text-primary);margin-bottom:0.35rem">Track External Request</h3>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem">Enter your Unique Tracking ID (e.g., REQ-123456) to check real-time status and message the event organizers.</p>
+
+      <div style="display:flex;gap:8px;margin-bottom:1.25rem">
+        <input type="text" id="trackIdInput" class="field-input" placeholder="e.g. REQ-849201" style="text-transform:uppercase" />
+        <button type="button" id="trackSearchBtn" onclick="lookupRequest()" style="background:var(--brand-primary);color:#fff;border:none;border-radius:var(--radius-md);padding:0.75rem 1.25rem;font-weight:700;cursor:pointer">Search</button>
+      </div>
+
+      <div id="trackResultBox" style="display:none;border-top:1px solid var(--border-subtle);padding-top:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+          <div>
+            <div id="trackResultName" style="font-weight:800;font-size:0.95rem;color:var(--text-primary)"></div>
+            <div id="trackResultOrg" style="font-size:0.78rem;color:var(--text-muted)"></div>
+          </div>
+          <div id="trackResultStatus"></div>
+        </div>
+        <div style="font-size:0.78rem;color:var(--brand-secondary);font-weight:700;margin-bottom:1rem">Type: <span id="trackResultType" style="color:var(--text-primary)"></span></div>
+
+        <!-- Chat / Message Box -->
+        <div style="background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:10px;margin-bottom:0.75rem">
+          <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:8px">Messages with Event Head</div>
+          <div id="trackChatList" style="max-height:160px;overflow-y:auto;margin-bottom:10px;padding-right:4px"></div>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="trackMsgInput" class="field-input" placeholder="Type a message to organizers…" style="padding:0.5rem 0.75rem;font-size:0.8rem" onkeydown="if(event.key==='Enter'){event.preventDefault();sendApplicantMsg();}" />
+            <button type="button" onclick="sendApplicantMsg()" style="background:var(--brand-primary);color:#fff;border:none;border-radius:var(--radius-md);padding:0 1rem;font-size:0.8rem;font-weight:700;cursor:pointer">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

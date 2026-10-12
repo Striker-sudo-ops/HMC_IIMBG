@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hierarchy — HMC Portal</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  <script type="module">import { initTheme } from '../js/theme.js'; initTheme();</script>
+  <style>
+    .hierarchy-tree { display: flex; flex-direction: column; gap: var(--sp-5); }
+    .hierarchy-group {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      backdrop-filter: var(--glass-blur);
+      overflow: hidden;
+    }
+    .hierarchy-group-header {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-4);
+      padding: var(--sp-4) var(--sp-5);
+      background: rgba(108,99,255,0.08);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .hierarchy-group-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.95rem;
+      flex: 1;
+    }
+    .hierarchy-members {
+      padding: var(--sp-3) var(--sp-5);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--sp-3);
+    }
+    .member-chip {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: 6px 12px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      transition: var(--transition-fast);
+    }
+    .member-chip:hover { border-color: var(--border-normal); }
+    .member-chip button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.9rem;
+      line-height: 1;
+      padding: 0;
+      transition: var(--transition-fast);
+    }
+    .member-chip button:hover { color: var(--brand-danger); }
+    .unassigned-section {
+      background: rgba(255,255,255,0.02);
+      border: 1px dashed var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-5);
+    }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Hierarchy Manager</h1>
+        <p class="page-subtitle">Assign members to sub-admin groups</p>
+      </div>
+      <button class="btn btn-secondary" onclick="loadData()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.84"/></svg>
+        Refresh
+      </button>
+    </div>
+
+    <div class="page-body">
+      <div class="grid-2" style="align-items:start">
+        <!-- Hierarchy Tree -->
+        <div>
+          <h3 style="margin-bottom:var(--sp-4);color:var(--text-secondary);font-size:0.85rem;text-transform:uppercase;letter-spacing:.05em">Current Structure</h3>
+          <div class="hierarchy-tree" id="hierarchy-tree">
+            <div style="text-align:center;padding:var(--sp-8)"><div class="spinner" style="margin:0 auto"></div></div>
+          </div>
+        </div>
+
+        <!-- Assign Panel -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Assign Member</h3>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:var(--sp-4)">
+              <div class="form-group">
+                <label class="form-label">Select Member</label>
+                <select id="assign-member-select" class="form-control">
+                  <option value="">Choose a member…</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Assign Under Sub-Admin</label>
+                <select id="assign-supervisor-select" class="form-control">
+                  <option value="">Unassigned (Direct)</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="handleAssign()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+                Assign
+              </button>
+            </div>
+          </div>
+
+          <!-- Unassigned Members -->
+          <div class="card" style="margin-top:var(--sp-5)">
+            <div class="card-header">
+              <h3 class="card-title">Unassigned Members</h3>
+              <span class="badge badge-muted" id="unassigned-count">0</span>
+            </div>
+            <div id="unassigned-list" style="display:flex;flex-wrap:wrap;gap:var(--sp-2)">
+              <p style="color:var(--text-muted);font-size:0.85rem">All members assigned!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from '../js/auth.js';
+  import { renderSidebar, initSidebarTheme } from '../js/sidebar.js';
+  import { getAllMembers, assignSupervisor, getMembersUnder } from '../js/members.js';
+  import { renderAvatar, showToast } from '../js/utils.js';
+
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('manage-hierarchy.html');
+  initSidebarTheme();
+
+  let allMembers = [];
+
+  initAuthGuard({
+    requireLogin: true,
+    requireRoles: ['admin'],
+    onReady: async (user) => {
+      populateSidebarUser(user);
+      await loadData();
+    }
+  });
+
+  window.loadData = async function() {
+    allMembers = await getAllMembers();
+    renderHierarchy();
+    populateSelects();
+    renderUnassigned();
+  };
+
+  function renderHierarchy() {
+    const tree = document.getElementById('hierarchy-tree');
+    const subAdmins = allMembers.filter(m => m.role === 'subadmin' || m.role === 'admin');
+    const admins    = allMembers.filter(m => m.role === 'admin');
+
+    let html = '';
+
+    // Admin group (direct reports)
+    admins.forEach(admin => {
+      const directMembers = allMembers.filter(m =>
+        m.supervisorId === admin.uid || (!m.supervisorId && m.role === 'member' && m.uid !== admin.uid)
+      );
+      html += `
+        <div class="hierarchy-group">
+          <div class="hierarchy-group-header">
+            ${renderAvatar(admin, 'sm')}
+            <div class="hierarchy-group-title">${admin.name} <span style="font-size:0.72rem;font-family:var(--font-mono);color:var(--brand-primary)">${admin.uniqueId}</span></div>
+            <span class="badge badge-danger">ADMIN</span>
+          </div>
+          <div class="hierarchy-members">
+            ${directMembers.length
+              ? directMembers.filter(m => !m.supervisorId || m.supervisorId === admin.uid).map(m => memberChip(m)).join('')
+              : '<p style="color:var(--text-muted);font-size:0.82rem">No direct members</p>'}
+          </div>
+        </div>
+      `;
+    });
+
+    // Sub-admin groups
+    const subAdminOnly = allMembers.filter(m => m.role === 'subadmin');
+    subAdminOnly.forEach(sa => {
+      const members = allMembers.filter(m => m.supervisorId === sa.uid);
+      html += `
+        <div class="hierarchy-group" style="margin-left:var(--sp-6)">
+          <div class="hierarchy-group-header" style="background:rgba(245,158,11,0.06)">
+            ${renderAvatar(sa, 'sm')}
+            <div class="hierarchy-group-title">${sa.name} <span style="font-size:0.72rem;font-family:var(--font-mono);color:var(--brand-secondary)">${sa.uniqueId}</span></div>
+            <span class="badge badge-warning">SUB-ADMIN</span>
+          </div>
+          <div class="hierarchy-members">
+            ${members.length
+              ? members.map(m => memberChip(m)).join('')
+              : '<p style="color:var(--text-muted);font-size:0.82rem">No members assigned yet</p>'}
+          </div>
+        </div>
+      `;
+    });
+
+    tree.innerHTML = html || `<div class="empty-state"><p>No members found</p></div>`;
+  }
+
+  function memberChip(m) {
+    return `
+      <div class="member-chip">
+        ${renderAvatar(m, 'sm')}
+        <span>${m.name}</span>
+        <button onclick="handleUnassign('${m.uid}','${m.name}')" title="Remove from group"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    `;
+  }
+
+  function populateSelects() {
+    const memberSel = document.getElementById('assign-member-select');
+    const supSel    = document.getElementById('assign-supervisor-select');
+
+    const members   = allMembers.filter(m => m.role === 'member');
+    const supAdmins = allMembers.filter(m => m.role === 'subadmin' || m.role === 'admin');
+
+    memberSel.innerHTML = `<option value="">Choose a member…</option>` +
+      members.map(m => `<option value="${m.uid}">${m.name} (${m.uniqueId})</option>`).join('');
+
+    supSel.innerHTML = `<option value="">Unassigned (Direct)</option>` +
+      supAdmins.map(m => `<option value="${m.uid}">${m.name} — ${m.role}</option>`).join('');
+  }
+
+  function renderUnassigned() {
+    const unassigned = allMembers.filter(m => m.role === 'member' && !m.supervisorId);
+    document.getElementById('unassigned-count').textContent = unassigned.length;
+    const el = document.getElementById('unassigned-list');
+    el.innerHTML = unassigned.length
+      ? unassigned.map(m => `
+          <div style="display:flex;align-items:center;gap:var(--sp-2);padding:6px 10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-full);font-size:0.78rem">
+            ${renderAvatar(m, 'sm')}
+            <span>${m.name}</span>
+          </div>`).join('')
+      : `<p style="color:var(--text-muted);font-size:0.85rem">All members assigned</p>`;
+  }
+
+  window.handleAssign = async function() {
+    const memberUid = document.getElementById('assign-member-select').value;
+    const supUid    = document.getElementById('assign-supervisor-select').value;
+    if (!memberUid) { showToast('Select a member first', 'warning'); return; }
+
+    try {
+      await assignSupervisor(memberUid, supUid || null);
+      showToast('Assignment updated!', 'success');
+      await loadData();
+    } catch (e) { showToast(e.message, 'error'); }
+  };
+
+  window.handleUnassign = async function(uid, name) {
+    if (!confirm(`Remove ${name} from their current group?`)) return;
+    try {
+      await assignSupervisor(uid, null);
+      showToast(`${name} unassigned`, 'info');
+      await loadData();
+    } catch (e) { showToast(e.message, 'error'); }
+  };
+</script>
+</body>
+</html>

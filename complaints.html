@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Complaints & Feedback — HMC Portal</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <script type="module">import { initTheme } from './js/theme.js'; initTheme();</script>
+  <style>
+    .complaints-container {
+      display: grid;
+      grid-template-columns: 1.1fr 1.9fr;
+      gap: var(--sp-6);
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .complaints-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    .complaint-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-5);
+      margin-bottom: var(--sp-4);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-3);
+    }
+    .complaint-card:hover {
+      border-color: var(--border-normal);
+      transform: translateY(-2px);
+    }
+    .complaint-card.status-resolved {
+      border-left: 4px solid var(--brand-success);
+    }
+    .complaint-card.status-unresolved {
+      border-left: 4px solid var(--brand-danger);
+    }
+    .complaint-card.type-feedback {
+      border-left: 4px solid var(--brand-primary);
+    }
+    .card-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--sp-2);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: var(--sp-2);
+    }
+    .card-meta-user {
+      font-weight: 600;
+      color: var(--brand-primary);
+    }
+    .complaint-desc {
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+    }
+    .complaint-image-thumb {
+      max-width: 100%;
+      max-height: 160px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      cursor: pointer;
+      border: 1px solid var(--border-subtle);
+      transition: opacity 0.2s ease;
+    }
+    .complaint-image-thumb:hover {
+      opacity: 0.85;
+    }
+    .form-group-toggle {
+      display: flex;
+      background: var(--bg-base);
+      padding: 4px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: var(--sp-3);
+    }
+    .form-group-toggle button {
+      flex: 1;
+      padding: var(--sp-2);
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .form-group-toggle button.active {
+      background: var(--brand-primary);
+      color: white;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+    .filter-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--sp-3);
+      margin-bottom: var(--sp-4);
+      background: var(--card-bg);
+      padding: var(--sp-3) var(--sp-4);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+    }
+    .category-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-mess { background: rgba(99,102,241,0.12); color: #818cf8; }
+    .badge-laundary { background: rgba(236,72,153,0.12); color: #f472b6; }
+    .badge-laundry { background: rgba(236,72,153,0.12); color: #f472b6; }
+    .badge-maintenance { background: rgba(245,158,11,0.12); color: #fbbf24; }
+    .badge-hostel { background: rgba(16,185,129,0.12); color: #34d399; }
+    .badge-administration { background: rgba(107,114,128,0.12); color: #9ca3af; }
+    .badge-hmc { background: rgba(139,92,246,0.12); color: #a78bfa; }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Complaints & Feedback</h1>
+      </div>
+      <div style="display:flex; gap:var(--sp-2)">
+        <button class="btn btn-danger" onclick="openLodgeModal('complaint')" style="display:flex; align-items:center; gap:var(--sp-1.5); font-weight:700">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Lodge Complaint
+        </button>
+        <button class="btn btn-primary" onclick="openLodgeModal('feedback')" style="display:flex; align-items:center; gap:var(--sp-1.5); font-weight:700">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Submit Feedback
+        </button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <!-- View Toggle Tabs (Complaints / Feedback Switch) -->
+      <div class="tabs" id="main-view-tabs" style="margin-bottom: var(--sp-5); border-bottom: 1px solid var(--border-subtle); padding-bottom: 1px; display: flex; gap: var(--sp-2)">
+        <button class="tab active" id="view-tab-complaint" onclick="switchMainView('complaint')">Complaints</button>
+        <button class="tab" id="view-tab-feedback" onclick="switchMainView('feedback')">Feedback & Suggestions</button>
+      </div>
+
+      <!-- Stats Summary Banner — hidden by default; JS shows & populates for non-student roles only -->
+      <div id="stats-grid-container" class="stats-grid" style="display: none; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-6)"></div>
+
+      <div>
+        <!-- Filter Panel -->
+        <div class="filter-section" style="display: flex; flex-direction: column; gap: var(--sp-3); align-items: stretch; margin-bottom: var(--sp-4)">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--sp-2)">
+            <div class="tabs" id="status-tabs" style="margin:0">
+              <button class="tab active" onclick="setFilterStatus('all', this)">All</button>
+              <button class="tab" onclick="setFilterStatus('unresolved', this)">Unresolved</button>
+              <button class="tab" onclick="setFilterStatus('resolved', this)">Resolved</button>
+            </div>
+            
+            <div style="display:flex; align-items:center; gap:var(--sp-2)">
+              <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase" id="lbl-cat-filter">Category:</label>
+              <div id="cat-filter-container">
+                <!-- Managed dynamically (select box for Admin, hidden or static text for co-admin) -->
+              </div>
+            </div>
+          </div>
+          
+          <div class="search-bar" id="complaints-search-bar" style="width: 100%">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Search description, student name, or roll number..." id="complaints-search" oninput="onSearchComplaints(this.value)">
+          </div>
+        </div>
+
+          <!-- Complaints/Feedback List -->
+          <div id="complaints-list">
+            <div style="text-align:center; padding:var(--sp-8)"><div class="spinner" style="margin:0 auto"></div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Lodge Complaint / Feedback Modal -->
+<div class="modal-overlay" id="lodge-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h3 class="modal-title">Lodge Complaint</h3>
+      <button class="modal-close" onclick="closeLodgeModal()">&times;</button>
+    </div>
+    <form id="lodge-form" onsubmit="handleLodge(event)" style="padding-top:var(--sp-2)">
+      <input type="hidden" id="sub-type" value="complaint">
+
+      <!-- Date (Auto-filled and locked) -->
+      <div class="form-group">
+        <label class="form-label" for="sub-date">Date</label>
+        <input type="text" id="sub-date" class="form-control" readonly style="background:var(--bg-elevated); border-color:var(--border-subtle); opacity:0.8; cursor:not-allowed">
+      </div>
+
+      <!-- Category Select -->
+      <div class="form-group">
+        <label class="form-label" for="sub-category">Category *</label>
+        <select id="sub-category" class="form-control premium-form-control premium-select" required>
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label class="form-label" for="sub-desc">Description *</label>
+        <textarea id="sub-desc" class="form-control" rows="5" required placeholder="Provide details of your complaint or suggestion here..."></textarea>
+      </div>
+
+      <!-- Image (Optional) -->
+      <div class="form-group">
+        <label class="form-label">Attach Image (Optional)</label>
+        <label for="sub-image" id="file-upload-label" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--sp-1); padding:var(--sp-4); background:var(--bg-base); border:2px dashed var(--border-normal); border-radius:var(--radius-lg); cursor:pointer; transition:all 0.2s ease; text-align:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--brand-primary); margin-bottom:2px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span style="font-size:0.8rem; font-weight:700; color:var(--text-secondary)" id="file-upload-text">Choose file or drag here</span>
+          <span style="font-size:0.68rem; color:var(--text-muted)">PNG, JPG or JPEG up to 5MB</span>
+        </label>
+        <input type="file" id="sub-image" class="hidden" accept="image/*" onchange="previewUploadImage(this)" style="display:none">
+        <div id="image-preview-container" style="display:none; margin-top: 12px; text-align: center; position:relative">
+          <img id="form-image-preview" src="" style="max-height: 120px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle)">
+          <button type="button" onclick="clearUploadImage()" style="position:absolute; top:-6px; right:-6px; background:var(--brand-danger); color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; display:flex; align-items:center; justify-content:center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+      </div>
+
+      <div class="flex gap-3" style="margin-top:var(--sp-4)">
+        <button type="submit" id="submit-btn" class="btn btn-primary flex-1" style="font-weight:700; display:flex; justify-content:center; align-items:center">Submit</button>
+        <button type="button" class="btn btn-secondary" onclick="closeLodgeModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Full Image Modal -->
+<div id="image-modal" class="modal" style="display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:99999; position:fixed; top:0; left:0; width:100%; height:100%">
+  <div style="position:relative; max-width:90%; max-height:90%">
+    <img id="modal-full-image" src="" style="max-width:100%; max-height:85vh; border-radius:var(--radius-lg); border:1px solid rgba(255,255,255,0.1); box-shadow:var(--shadow-lg)">
+    <button onclick="closeImageModal()" style="position:absolute; top:-40px; right:0; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:50%; width:32px; height:32px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:var(--transition-fast)" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+</div>
+
+<script type="module">
+  import { initAuthGuard, populateSidebarUser } from './js/auth.js';
+  import { initSidebarTheme, renderSidebar } from './js/sidebar.js';
+  import { getCategories } from './js/tasks.js';
+  import { createComplaint, getAllComplaints, resolveComplaint } from './js/complaints.js';
+  import { showToast, openModal, closeModal } from './js/utils.js';
+
+  document.getElementById('sidebar-container').innerHTML = renderSidebar('complaints.html');
+  initSidebarTheme();
+
+  let currentUser = null;
+  let allComplaints = [];
+  let categories = [];
+  let filterMainType = 'complaint';
+  let filterStatus = 'all';
+  let filterCategory = 'all';
+  let filterSearch = '';
+  let uploadPicFile = null;
+
+  window.switchMainView = function(viewType) {
+    filterMainType = viewType;
+    
+    document.getElementById('view-tab-complaint').classList.toggle('active', viewType === 'complaint');
+    document.getElementById('view-tab-feedback').classList.toggle('active', viewType === 'feedback');
+    
+    filterStatus = 'all';
+    document.querySelectorAll('#status-tabs .tab').forEach(t => {
+      t.classList.toggle('active', t.textContent.trim().toLowerCase() === 'all');
+    });
+
+    renderComplaints();
+  };
+
+  // Auto set current date
+  document.getElementById('sub-date').value = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  initAuthGuard({
+    requireLogin: true,
+    onReady: async (user) => {
+      currentUser = user;
+      populateSidebarUser(user);
+
+      // Load Categories & Populate lodge form
+      try {
+        categories = await getCategories();
+        const catSel = document.getElementById('sub-category');
+        catSel.innerHTML = '<option value="">Select category…</option>';
+        categories.forEach(c => {
+          const display = formatCategory(c.name);
+          catSel.innerHTML += `<option value="${c.name}">${display}</option>`;
+        });
+      } catch (err) {
+        showToast("Error loading categories: " + err.message, "error");
+      }
+
+      // Populate filter dropdown or lock category
+      setupCategoryFilter();
+
+      // Fetch complaints logs
+      await loadComplaintsList();
+    }
+  });
+
+  function formatCategory(ct) {
+    if (!ct) return '';
+    const lower = ct.toLowerCase().trim();
+    if (lower === 'hmc') return 'HMC';
+    if (lower.startsWith('laund')) return 'Laundry';
+    return ct.charAt(0).toUpperCase() + ct.slice(1);
+  }
+  window.openLodgeModal = function(type) {
+    const subType = type || 'complaint';
+    document.getElementById('sub-type').value = subType;
+    
+    // Set date input value dynamically on open
+    document.getElementById('sub-date').value = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const titleEl = document.querySelector('#lodge-modal .modal-title');
+    if (titleEl) {
+      titleEl.textContent = subType === 'complaint' ? 'Lodge Complaint' : 'Submit Feedback';
+    }
+    
+    const submitEl = document.getElementById('submit-btn');
+    if (submitEl) {
+      submitEl.textContent = subType === 'complaint' ? 'Submit Complaint' : 'Submit Feedback';
+    }
+
+    openModal('lodge-modal');
+  };
+
+  window.closeLodgeModal = function() {
+    closeModal('lodge-modal');
+    document.getElementById('lodge-form').reset();
+    clearUploadImage();
+  };
+
+  window.previewUploadImage = function(input) {
+    if (!input.files[0]) return;
+    uploadPicFile = input.files[0];
+    document.getElementById('file-upload-text').textContent = uploadPicFile.name;
+    document.getElementById('file-upload-label').style.borderColor = 'var(--brand-success)';
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('form-image-preview').src = e.target.result;
+      document.getElementById('image-preview-container').style.display = 'inline-block';
+    };
+    reader.readAsDataURL(uploadPicFile);
+  };
+
+  window.clearUploadImage = function() {
+    uploadPicFile = null;
+    document.getElementById('sub-image').value = '';
+    document.getElementById('file-upload-text').textContent = 'Choose file or drag here';
+    document.getElementById('file-upload-label').style.borderColor = 'var(--border-normal)';
+    document.getElementById('image-preview-container').style.display = 'none';
+  };
+
+  window.handleLodge = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const type = document.getElementById('sub-type').value;
+    const category = document.getElementById('sub-category').value;
+    const description = document.getElementById('sub-desc').value.trim();
+    const correctLabel = type === 'complaint' ? 'Submit Complaint' : 'Submit Feedback';
+
+    if (!category) { showToast('Please select a category.', 'error'); return; }
+    if (!description) { showToast('Please enter a description.', 'error'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+
+    try {
+      await createComplaint({ type, category, description, imageFile: uploadPicFile });
+      showToast(`${type === 'complaint' ? 'Complaint' : 'Feedback'} submitted successfully!`, 'success');
+      closeLodgeModal();
+      // Reload
+      await loadComplaintsList();
+    } catch(err) {
+      showToast('Error: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = correctLabel;
+    }
+  };
+
+  function setupCategoryFilter() {
+    const container = document.getElementById('cat-filter-container');
+    const isSuperAdmin = currentUser.role === 'admin';
+    const isMessHead = currentUser.role === 'admin' || 
+                       currentUser.title?.toLowerCase().includes('mess head') || 
+                       currentUser.post?.toLowerCase().includes('mess head') || 
+                       currentUser.post?.toLowerCase().includes('mess committee head') || 
+                       currentUser.post?.toLowerCase().includes('mess coordinator') ||
+                       (currentUser.category === 'mess' && currentUser.post === 'Head');
+
+    if (isSuperAdmin) {
+      // Super admin can select any category
+      let selectHtml = `<select class="form-control" style="width:160px;margin-bottom:0" onchange="onCategoryFilterChange(this.value)">`;
+      selectHtml += `<option value="all">All Categories</option>`;
+      categories.forEach(c => {
+        selectHtml += `<option value="${c.name}">${formatCategory(c.name)}</option>`;
+      });
+      selectHtml += `</select>`;
+      container.innerHTML = selectHtml;
+      filterCategory = 'all';
+    } else if (currentUser.role === 'subadmin' || currentUser.role === 'member') {
+      // Co-admin or member: locked to their own category
+      let uCat = currentUser.category || '';
+      if (isMessHead && !uCat) {
+        uCat = 'mess';
+      }
+      filterCategory = uCat.toLowerCase().trim();
+      container.innerHTML = `<span class="category-badge badge-${filterCategory}" style="font-size:0.8rem;padding:6px 12px">${formatCategory(filterCategory)}</span>`;
+    } else {
+      // Students see all their own lodged tickets, let them select categories too
+      let selectHtml = `<select class="form-control" style="width:160px;margin-bottom:0" onchange="onCategoryFilterChange(this.value)">`;
+      selectHtml += `<option value="all">All Categories</option>`;
+      categories.forEach(c => {
+        selectHtml += `<option value="${c.name}">${formatCategory(c.name)}</option>`;
+      });
+      selectHtml += `</select>`;
+      container.innerHTML = selectHtml;
+      filterCategory = 'all';
+    }
+  }
+
+  window.onCategoryFilterChange = function(val) {
+    filterCategory = val;
+    renderComplaints();
+  };
+
+  window.onSearchComplaints = function(val) {
+    filterSearch = val.toLowerCase().trim();
+    renderComplaints();
+  };
+
+  window.setFilterStatus = function(status, btn) {
+    filterStatus = status;
+    document.querySelectorAll('#status-tabs .tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    renderComplaints();
+  };
+
+  async function loadComplaintsList() {
+    const listEl = document.getElementById('complaints-list');
+    try {
+      const data = await getAllComplaints();
+      const isSuperAdmin = currentUser.role === 'admin';
+      const isHmc = (currentUser.role === 'admin' || currentUser.role === 'subadmin' || currentUser.role === 'member');
+      const isMessHead = currentUser.role === 'admin' || 
+                         currentUser.title?.toLowerCase().includes('mess head') || 
+                         currentUser.post?.toLowerCase().includes('mess head') || 
+                         currentUser.post?.toLowerCase().includes('mess committee head') || 
+                         currentUser.post?.toLowerCase().includes('mess coordinator') ||
+                         (currentUser.category === 'mess' && currentUser.post === 'Head');
+
+      let userCat = (currentUser.category || '').toLowerCase().trim();
+      if (isMessHead && !userCat) {
+        userCat = 'mess';
+      }
+
+      // Filter by permissions
+      if (isSuperAdmin || currentUser.role === 'chief_warden') {
+        // Super Admin and Chief Warden see all complaints & feedback across all hostels
+        allComplaints = data;
+      } else if (currentUser.role === 'hostel_warden') {
+        const assigned = Array.isArray(currentUser.assignedHostels) && currentUser.assignedHostels.length 
+          ? currentUser.assignedHostels 
+          : (currentUser.assignedHostel ? [currentUser.assignedHostel] : []);
+        allComplaints = data.filter(c => 
+          (c.hostelName && assigned.includes(c.hostelName)) || 
+          c.userUid === currentUser.uid ||
+          c.category === 'hostel'
+        );
+      } else if (currentUser.role === 'hostel_supervisor') {
+        const assigned = currentUser.assignedHostel || (Array.isArray(currentUser.assignedHostels) ? currentUser.assignedHostels[0] : null);
+        allComplaints = data.filter(c => 
+          (c.hostelName && c.hostelName === assigned) || 
+          c.userUid === currentUser.uid
+        );
+      } else if (isHmc) {
+        // HMC Co-admins/members see all tickets in their category OR tickets they personally lodged
+        if (isMessHead && currentUser.role !== 'admin') {
+          allComplaints = data.filter(c => c.category === 'mess' || c.userUid === currentUser.uid);
+        } else {
+          allComplaints = data.filter(c => c.category === userCat || c.userUid === currentUser.uid);
+        }
+      } else {
+        // Students see only their own lodged tickets
+        allComplaints = data.filter(c => c.userUid === currentUser.uid);
+      }
+
+      renderComplaints();
+    } catch(err) {
+      console.error(err);
+      listEl.innerHTML = `<div style="color:var(--brand-danger);text-align:center;padding:var(--sp-4)">Error loading complaints: ${err.message}</div>`;
+    }
+  }
+
+  function renderComplaints() {
+    const container = document.getElementById('complaints-list');
+    let list = allComplaints.filter(c => (c.type || 'complaint') === filterMainType);
+    const statsGrid = document.getElementById('stats-grid-container');
+
+    // Students do not see aggregate statistics boxes or the search bar
+    if (currentUser && currentUser.role === 'student') {
+      if (statsGrid) statsGrid.style.display = 'none';
+      const searchBar = document.getElementById('complaints-search-bar');
+      if (searchBar) searchBar.style.display = 'none';
+    } else if (statsGrid) {
+      statsGrid.style.display = 'grid';
+    }
+
+    // Update Stats & Tab Controls based on active main type
+    if (filterMainType === 'complaint') {
+      document.getElementById('status-tabs').style.display = 'flex';
+      
+      const totalCount = list.length;
+      const unresolvedCount = list.filter(c => c.status === 'unresolved').length;
+      const resolvedCount = list.filter(c => c.status === 'resolved').length;
+      
+      if (currentUser && currentUser.role !== 'student' && statsGrid) {
+        statsGrid.innerHTML = `
+          <div class="card" style="padding: var(--sp-4) var(--sp-5); display: flex; align-items: center; gap: var(--sp-4)">
+            <div style="background: var(--bg-glass); color: var(--brand-primary); padding: 12px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); line-height: 1.2">${totalCount}</div>
+              <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em">Total Complaints</div>
+            </div>
+          </div>
+          <div class="card" style="padding: var(--sp-4) var(--sp-5); display: flex; align-items: center; gap: var(--sp-4)">
+            <div style="background: rgba(239, 68, 68, 0.12); color: var(--brand-danger); padding: 12px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); line-height: 1.2">${unresolvedCount}</div>
+              <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em">Unresolved</div>
+            </div>
+          </div>
+          <div class="card" style="padding: var(--sp-4) var(--sp-5); display: flex; align-items: center; gap: var(--sp-4)">
+            <div style="background: rgba(16, 185, 129, 0.12); color: var(--brand-success); padding: 12px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); line-height: 1.2">${resolvedCount}</div>
+              <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em">Resolved</div>
+            </div>
+          </div>
+        `;
+      }
+    } else {
+      document.getElementById('status-tabs').style.display = 'none';
+      
+      const totalCount = list.length;
+      
+      if (currentUser && currentUser.role !== 'student' && statsGrid) {
+        statsGrid.innerHTML = `
+          <div class="card" style="grid-column: span 3; padding: var(--sp-4) var(--sp-5); display: flex; align-items: center; gap: var(--sp-4)">
+            <div style="background: var(--bg-glass); color: var(--brand-primary); padding: 12px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); line-height: 1.2">${totalCount}</div>
+              <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em">Total Feedback</div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Filter by status tab
+    if (filterMainType === 'complaint') {
+      if (filterStatus === 'resolved') {
+        list = list.filter(c => c.status === 'resolved');
+      } else if (filterStatus === 'unresolved') {
+        list = list.filter(c => c.status === 'unresolved');
+      }
+    }
+
+    // Filter by category dropdown
+    if (filterCategory !== 'all') {
+      list = list.filter(c => c.category === filterCategory);
+    }
+
+    // Filter by search text
+    if (filterSearch) {
+      list = list.filter(c => 
+        (c.description && c.description.toLowerCase().includes(filterSearch)) ||
+        (c.userName && c.userName.toLowerCase().includes(filterSearch)) ||
+        (c.userRoll && c.userRoll.toLowerCase().includes(filterSearch))
+      );
+    }
+
+    if (!list.length) {
+      const emptyMsg = currentUser && currentUser.role === 'student'
+        ? `You have not lodged any ${filterMainType === 'complaint' ? 'complaints' : 'feedback'} yet.`
+        : 'No records found';
+      container.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:var(--sp-8);border:1px dashed var(--border-subtle);border-radius:var(--radius-lg);background:var(--card-bg)">${emptyMsg}</div>`;
+      return;
+    }
+
+    container.innerHTML = list.map(c => {
+      const isComplaint = c.type === 'complaint';
+      const badgeCls = `badge-${c.category || 'general'}`;
+      
+      const typeIcon = isComplaint
+        ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--brand-danger);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+        : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--brand-primary);flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+
+      const statusBadge = isComplaint
+        ? `<span class="badge badge-${c.status === 'resolved' ? 'success' : 'danger'}" style="text-transform: capitalize; font-weight:700">${c.status}</span>`
+        : `<span class="badge badge-primary" style="font-weight:700">Feedback</span>`;
+
+      // Show resolved action button to Admins and Co-admins of that category
+      let actionBtnHtml = '';
+      if (isComplaint && c.status === 'unresolved') {
+        const isSuperAdmin = currentUser.role === 'admin';
+        const isMyCategoryCoadmin = currentUser.role === 'subadmin' && (currentUser.category || '').toLowerCase().trim() === c.category;
+        if (isSuperAdmin || isMyCategoryCoadmin) {
+          actionBtnHtml = `<button class="btn btn-sm btn-success" onclick="resolveGrievance('${c.id}')" style="padding: 6px 12px; font-size: 0.75rem; border-radius: var(--radius-sm); display:inline-flex; align-items:center; gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Resolve Issue</button>`;
+        }
+      }
+
+      const imageHtml = c.imageUrl
+        ? `<div style="margin-top:var(--sp-2)"><img src="${c.imageUrl}" class="complaint-image-thumb" onclick="viewFullImagePopup('${c.imageUrl}')" alt="Complaint Attachment" style="cursor:pointer; border-radius:var(--radius-md); max-height:100px; border:1px solid var(--border-subtle); transition:transform 0.2s" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"></div>`
+        : '';
+
+      // Prominently show author name for Feedbacks and Complaints
+      const isHmc = (currentUser.role === 'admin' || currentUser.role === 'subadmin' || currentUser.role === 'member');
+      const shouldShowName = !isComplaint || isHmc || (c.userUid === currentUser.uid);
+      const authorHtml = shouldShowName
+        ? `<span class="card-meta-user" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; color:var(--brand-primary)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${c.userName} (${c.userRoll})</span>`
+        : `<span style="color:var(--text-muted)">Submitted Anonymously</span>`;
+
+      return `
+        <div class="complaint-card status-${c.status || 'unresolved'} type-${c.type}" style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:var(--sp-4); margin-bottom:var(--sp-3); box-shadow:var(--shadow-sm); transition:all 0.25s ease; border-left: 4px solid ${isComplaint ? (c.status === 'resolved' ? 'var(--brand-success)' : 'var(--brand-danger)') : 'var(--brand-primary)'}">
+          <div class="card-meta-row" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--sp-2); font-size:0.75rem; color:var(--text-muted); border-bottom:1px solid var(--border-subtle); padding-bottom:var(--sp-2); margin-bottom:var(--sp-2)">
+            <span style="display:flex; align-items:center; gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${c.dateStr || '—'}</span>
+            ${authorHtml}
+            <span class="category-badge ${badgeCls}">${formatCategory(c.category)}</span>
+          </div>
+          <div style="display:flex; gap:10px; align-items:flex-start">
+            ${typeIcon}
+            <div style="flex:1">
+              <div class="complaint-desc" style="font-size:0.85rem; line-height:1.5; color:var(--text-secondary); word-break:break-word">${c.description}</div>
+              ${imageHtml}
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--sp-2); margin-top:var(--sp-2); padding-top:var(--sp-2); border-top:1px dashed var(--border-subtle)">
+            <div>${statusBadge}</div>
+            <div>${actionBtnHtml}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  window.resolveGrievance = async function(id) {
+    if (!confirm("Are you sure you want to mark this complaint as resolved?")) return;
+    try {
+      await resolveComplaint(id);
+      showToast("Complaint resolved successfully!", "success");
+      await loadComplaintsList();
+    } catch(err) {
+      showToast("Error resolving issue: " + err.message, "error");
+    }
+  };
+
+  // Internal modal image popup view
+  window.viewFullImagePopup = function(imgSrc) {
+    document.getElementById('modal-full-image').src = imgSrc;
+    document.getElementById('image-modal').style.display = 'flex';
+  };
+
+  window.closeImageModal = function() {
+    document.getElementById('image-modal').style.display = 'none';
+  };
+</script>
+</body>
+</html>

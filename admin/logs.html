@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audit Logs — HMC Admin</title>
+  <meta name="description" content="View and download HMC member activity and settings change logs. Auto-deleted after 2 weeks.">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  <script type="module">import { initTheme } from '../js/theme.js'; initTheme();</script>
+  <style>
+    /* ── Logs Filter & Stats Header ── */
+    .log-stats-bar {
+      display: flex; gap: var(--sp-4); flex-wrap: wrap; margin-bottom: var(--sp-6);
+    }
+    .log-stat-card {
+      background: var(--glass-bg); backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+      padding: var(--sp-4) var(--sp-5); flex: 1; min-width: 220px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .log-stat-val { font-size: 1.5rem; font-weight: 800; color: var(--text-primary); }
+    .log-stat-lbl { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* Controls Bar */
+    .logs-controls {
+      display: flex; gap: var(--sp-3); flex-wrap: wrap; align-items: center; justify-content: space-between;
+      background: var(--glass-bg); backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border); border-radius: var(--radius-xl);
+      padding: var(--sp-4); margin-bottom: var(--sp-6);
+    }
+    .logs-search-wrap {
+      display: flex; gap: var(--sp-3); flex: 1; min-width: 280px; flex-wrap: wrap;
+    }
+    .logs-search-input {
+      flex: 1; min-width: 200px; padding: 9px 14px;
+      background: var(--bg-base); border: 1px solid var(--border-normal);
+      border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.88rem; outline: none;
+    }
+    .logs-search-input:focus { border-color: var(--brand-primary); }
+
+    .logs-select {
+      padding: 9px 14px; background: var(--bg-base);
+      border: 1px solid var(--border-normal); border-radius: var(--radius-md);
+      color: var(--text-primary); font-size: 0.88rem; outline: none; cursor: pointer;
+    }
+
+    /* Logs Table */
+    .logs-table-wrap {
+      background: var(--glass-bg); backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border); border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+    .logs-table {
+      width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;
+    }
+    .logs-table th {
+      background: rgba(255, 255, 255, 0.03); padding: 12px 16px;
+      font-weight: 700; color: var(--text-muted); text-transform: uppercase;
+      font-size: 0.72rem; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-subtle);
+    }
+    .logs-table td {
+      padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); vertical-align: top;
+    }
+    .logs-table tr:hover { background: rgba(124, 58, 237, 0.04); }
+
+    .dept-badge {
+      display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.03em;
+    }
+    .dept-badge-mess { background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+    .dept-badge-hostel { background: rgba(108,99,255,0.18); color: #a78bfa; border: 1px solid rgba(108,99,255,0.3); }
+    .dept-badge-events { background: rgba(167,139,250,0.18); color: #c084fc; border: 1px solid rgba(167,139,250,0.3); }
+    .dept-badge-laundry { background: rgba(52,211,153,0.18); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+    .dept-badge-admin { background: rgba(236,72,153,0.18); color: #f472b6; border: 1px solid rgba(236,72,153,0.3); }
+    .dept-badge-administration { background: rgba(236,72,153,0.18); color: #f472b6; border: 1px solid rgba(236,72,153,0.3); }
+    .dept-badge-tasks { background: rgba(59,130,246,0.18); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+    .dept-badge-water-tds { background: rgba(14,165,233,0.18); color: #38bdf8; border: 1px solid rgba(14,165,233,0.3); }
+    .dept-badge-cleanliness { background: rgba(20,184,166,0.18); color: #2dd4bf; border: 1px solid rgba(20,184,166,0.3); }
+    .dept-badge-food-testing { background: rgba(239,68,68,0.18); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .dept-badge-electricity { background: rgba(250,204,21,0.18); color: #fde047; border: 1px solid rgba(250,204,21,0.3); }
+
+    .auto-purge-banner {
+      display: flex; align-items: center; gap: var(--sp-3); padding: 12px 16px;
+      background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: var(--radius-lg); color: #60a5fa; font-size: 0.85rem; margin-bottom: var(--sp-6);
+    }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">HMC Member Activity & Settings Logs</h1>
+        <p class="page-subtitle">Track all settings modifications and operational actions performed by HMC members</p>
+      </div>
+    </div>
+
+    <!-- Auto Purge Notification Banner -->
+    <div class="auto-purge-banner">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div>
+        <strong>Automatic 2-Week Log Cleanup:</strong> Audit logs are automatically deleted after 14 days to preserve database storage and privacy. You can download CSV copies anytime.
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="log-stats-bar">
+      <div class="log-stat-card">
+        <div class="log-stat-val" id="stat-total-logs">—</div>
+        <div class="log-stat-lbl">Active Logs (Last 14 Days)</div>
+      </div>
+      <div class="log-stat-card">
+        <div class="log-stat-val" id="stat-active-users">—</div>
+        <div class="log-stat-lbl">HMC Members Logged</div>
+      </div>
+      <div class="log-stat-card">
+        <div class="log-stat-val" id="stat-purged-count">0</div>
+        <div class="log-stat-lbl">Auto-Purged (>2 Weeks)</div>
+      </div>
+    </div>
+
+    <!-- Controls Bar -->
+    <div class="logs-controls">
+      <div class="logs-search-wrap">
+        <input type="text" id="log-search" class="logs-search-input" placeholder="Search member, action, or details…">
+        <select id="log-dept-filter" class="logs-select">
+          <option value="ALL">All Departments</option>
+          <option value="Mess">Mess</option>
+          <option value="Hostel">Hostel</option>
+          <option value="Events">Events</option>
+          <option value="Laundry">Laundry</option>
+          <option value="Water TDS">Water TDS</option>
+          <option value="Cleanliness">Cleanliness</option>
+          <option value="Tasks">Tasks</option>
+          <option value="Food Testing">Food Testing</option>
+          <option value="Electricity">Electricity</option>
+          <option value="Administration">Administration</option>
+        </select>
+      </div>
+
+      <div style="display:flex; gap:var(--sp-2)">
+        <button class="btn btn-sm btn-secondary" id="btn-download-csv">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+        <button class="btn btn-sm btn-secondary" id="btn-download-json">Export JSON</button>
+        <button class="btn btn-sm btn-danger" id="btn-manual-purge">Purge >2 Weeks</button>
+      </div>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="logs-table-wrap">
+      <table class="logs-table">
+        <thead>
+          <tr>
+            <th style="width: 180px">Date & Time</th>
+            <th style="width: 200px">HMC Member</th>
+            <th style="width: 140px">Department</th>
+            <th style="width: 220px">Action</th>
+            <th>Details & Changes</th>
+          </tr>
+        </thead>
+        <tbody id="logs-tbody">
+          <tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--text-muted)">Loading audit logs…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import { initAuthGuard, populateSidebarUser } from '../js/auth.js';
+import { renderSidebar, initSidebarTheme } from '../js/sidebar.js';
+import { showToast } from '../js/utils.js';
+import { db } from '../js/firebase-config.js';
+import { autoPurgeOldLogs } from '../js/audit-logger.js';
+import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+document.getElementById('sidebar-container').innerHTML = renderSidebar('logs.html');
+initSidebarTheme();
+
+let allLogs = [];
+
+initAuthGuard({
+  requireLogin: true,
+  requireRoles: ['admin'],
+  onReady: async (user) => {
+    populateSidebarUser(user);
+    
+    // Auto purge on load
+    const purged = await autoPurgeOldLogs();
+    document.getElementById('stat-purged-count').textContent = purged;
+    if (purged > 0) {
+      showToast(`Auto-purged ${purged} log entries older than 2 weeks.`, "info");
+    }
+
+    await loadLogs();
+  }
+});
+
+async function loadLogs() {
+  const tbody = document.getElementById('logs-tbody');
+  try {
+    const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'));
+    const snap = await getDocs(q);
+    
+    allLogs = [];
+    snap.forEach(docSnap => {
+      const data = docSnap.data();
+      let dateObj = null;
+      if (data.timestamp && data.timestamp.seconds) {
+        dateObj = new Date(data.timestamp.seconds * 1000);
+      } else if (data.createdAtIso) {
+        dateObj = new Date(data.createdAtIso);
+      } else {
+        dateObj = new Date();
+      }
+
+      allLogs.push({
+        id: docSnap.id,
+        ...data,
+        formattedTime: dateObj.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }),
+        rawDate: dateObj
+      });
+    });
+
+    renderLogs();
+  } catch (err) {
+    console.error('Error fetching logs:', err);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--brand-danger)">Error loading logs: ${err.message}</td></tr>`;
+  }
+}
+
+function renderLogs() {
+  const tbody = document.getElementById('logs-tbody');
+  const searchVal = document.getElementById('log-search').value.toLowerCase().trim();
+  const deptVal = document.getElementById('log-dept-filter').value;
+
+  const filtered = allLogs.filter(item => {
+    const matchesDept = deptVal === 'ALL' || (item.department || '').toLowerCase() === deptVal.toLowerCase();
+    const matchesSearch = !searchVal ||
+      (item.userName || '').toLowerCase().includes(searchVal) ||
+      (item.action || '').toLowerCase().includes(searchVal) ||
+      (item.details || '').toLowerCase().includes(searchVal) ||
+      (item.userCategory || '').toLowerCase().includes(searchVal) ||
+      (item.department || '').toLowerCase().includes(searchVal);
+    return matchesDept && matchesSearch;
+  });
+
+  // Update stats
+  document.getElementById('stat-total-logs').textContent = filtered.length;
+  const uniqueUsers = new Set(filtered.map(l => l.userName || l.userId)).size;
+  document.getElementById('stat-active-users').textContent = uniqueUsers;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--text-muted)">No audit logs match your search or filter.</td></tr>`;
+    return;
+  }
+
+  let html = '';
+  filtered.forEach(log => {
+    // Determine department name (use stored department or userCategory, fall back to Administration)
+    let deptName = (log.department && log.department.toLowerCase() !== 'login')
+      ? log.department
+      : ((log.userCategory && log.userCategory.toLowerCase() !== 'login') ? log.userCategory : 'Administration');
+
+    const deptKey = deptName.toLowerCase().replace(/\s+/g, '-');
+    const knownBadges = new Set(['mess','hostel','events','laundry','admin','administration']);
+    const deptBadgeClass = knownBadges.has(deptKey) ? `dept-badge-${deptKey}` : 'dept-badge-administration';
+
+    html += `
+      <tr>
+        <td style="color: var(--text-muted); font-size: 0.8rem">${log.formattedTime}</td>
+        <td>
+          <div style="font-weight:700; color:var(--text-primary)">${log.userName || 'HMC Member'}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted)">${log.userCategory || 'HMC'} &bull; ${log.userRole || 'member'}</div>
+        </td>
+        <td><span class="dept-badge ${deptBadgeClass}">${deptName}</span></td>
+        <td style="font-weight:600; color:var(--text-primary)">${log.action || 'Settings Updated'}</td>
+        <td style="color:var(--text-normal); font-size:0.84rem; line-height: 1.4">${log.details || '&mdash;'}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
+
+// Event Listeners
+document.getElementById('log-search').addEventListener('input', renderLogs);
+document.getElementById('log-dept-filter').addEventListener('change', renderLogs);
+
+// Export CSV
+document.getElementById('btn-download-csv').addEventListener('click', () => {
+  if (allLogs.length === 0) {
+    showToast("No logs available to export.", "warning");
+    return;
+  }
+  let csv = "Timestamp,Member Name,User ID,Role,Department,Action,Details\r\n";
+  allLogs.forEach(l => {
+    csv += `"${l.formattedTime}","${l.userName || ''}","${l.userUniqueId || ''}","${l.userRole || ''}","${l.department || ''}","${(l.action || '').replace(/"/g, '""')}","${(l.details || '').replace(/"/g, '""')}"\r\n`;
+  });
+  triggerDownload(csv, `HMC_Audit_Logs_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv');
+  showToast("Audit logs downloaded as CSV", "success");
+});
+
+// Export JSON
+document.getElementById('btn-download-json').addEventListener('click', () => {
+  if (allLogs.length === 0) {
+    showToast("No logs available to export.", "warning");
+    return;
+  }
+  const jsonStr = JSON.stringify(allLogs, null, 2);
+  triggerDownload(jsonStr, `HMC_Audit_Logs_${new Date().toISOString().slice(0,10)}.json`, 'application/json');
+  showToast("Audit logs downloaded as JSON", "success");
+});
+
+// Manual Purge
+document.getElementById('btn-manual-purge').addEventListener('click', async () => {
+  if (!confirm("Are you sure you want to purge all log entries older than 14 days?")) return;
+  const count = await autoPurgeOldLogs();
+  showToast(`Purged ${count} expired log entries.`, "info");
+  document.getElementById('stat-purged-count').textContent = count;
+  await loadLogs();
+});
+
+function triggerDownload(content, filename, contentType) {
+  const blob = new Blob([content], { type: contentType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

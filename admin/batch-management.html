@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Batch Management — HMC Admin</title>
+  <meta name="description" content="Manage graduation batches — freeze access or permanently remove data at year-end.">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  <script type="module">import { initTheme } from '../js/theme.js'; initTheme();</script>
+  <style>
+    .batch-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:var(--sp-5); margin-top:var(--sp-6); }
+    .batch-card { background:var(--glass-bg); backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); border-radius:var(--radius-xl); padding:var(--sp-6); display:flex; flex-direction:column; gap:var(--sp-4); transition:var(--transition-fast); position:relative; overflow:hidden; }
+    .batch-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; background:linear-gradient(90deg,var(--brand-primary),var(--brand-accent)); opacity:0; transition:var(--transition-fast); }
+    .batch-card:hover { border-color:rgba(124,58,237,0.4); transform:translateY(-2px); box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+    .batch-card:hover::before { opacity:1; }
+    .batch-card.frozen { border-color:rgba(239,68,68,0.35); }
+    .batch-card.frozen::before { background:linear-gradient(90deg,#ef4444,#f97316); opacity:1; }
+    .batch-year-badge { font-size:1.6rem; font-weight:900; background:linear-gradient(135deg,var(--brand-primary),var(--brand-accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .batch-status-pill { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; }
+    .pill-active { background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); }
+    .pill-frozen { background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); }
+    .pill-soon   { background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid rgba(251,191,36,0.3); }
+    .batch-stat-row { display:flex; gap:var(--sp-3); flex-wrap:wrap; }
+    .batch-stat-chip { display:flex; flex-direction:column; gap:2px; flex:1; min-width:70px; background:rgba(255,255,255,0.03); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:var(--sp-2) var(--sp-3); }
+    .batch-stat-val { font-size:1.2rem; font-weight:800; color:var(--text-primary); }
+    .batch-stat-lbl { font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; }
+    .batch-actions { display:flex; gap:var(--sp-2); flex-wrap:wrap; margin-top:var(--sp-2); }
+    .batch-action-btn { flex:1; min-width:110px; padding:8px 12px; border:none; border-radius:var(--radius-md); font-size:0.8rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:var(--transition-fast); }
+    .btn-freeze   { background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid rgba(251,191,36,0.3); }
+    .btn-freeze:hover   { background:rgba(251,191,36,0.25); transform:translateY(-1px); }
+    .btn-unfreeze { background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); }
+    .btn-unfreeze:hover { background:rgba(52,211,153,0.25); }
+    .btn-delete-batch { background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); }
+    .btn-delete-batch:hover { background:rgba(239,68,68,0.22); transform:translateY(-1px); }
+    .batch-action-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+    .info-banner { display:flex; align-items:flex-start; gap:var(--sp-3); padding:14px 18px; border-radius:var(--radius-lg); font-size:0.85rem; line-height:1.6; margin-bottom:var(--sp-4); }
+    .banner-warning { background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.3); color:#fbbf24; }
+    .banner-danger  { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; }
+    .transfer-panel { background:var(--glass-bg); backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); border-radius:var(--radius-xl); padding:var(--sp-6); margin-top:var(--sp-6); }
+    .transfer-panel h3 { font-size:1.05rem; font-weight:700; margin-bottom:var(--sp-4); color:var(--text-primary); display:flex; align-items:center; gap:var(--sp-2); }
+    .member-select { width:100%; padding:11px 16px; background:var(--bg-base); border:1px solid var(--border-normal); border-radius:var(--radius-md); color:var(--text-primary); font-size:0.88rem; font-weight:500; margin-bottom:var(--sp-4); appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='%23a1a1aa' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat:no-repeat; background-position:right 12px center; background-size:16px; padding-right:40px; }
+    .member-select:focus { border-color:var(--brand-primary); box-shadow:0 0 0 3px rgba(124,58,237,0.2); outline:none; }
+    .empty-state { text-align:center; padding:var(--sp-10); color:var(--text-muted); }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="layout">
+  <div id="sidebar-container"></div>
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Batch Management</h1>
+        <p class="page-subtitle">Manage graduation batches &mdash; freeze access or permanently remove data at year-end</p>
+      </div>
+    </div>
+
+    <div class="info-banner banner-warning">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <div><strong>Automatic Freeze:</strong> All non-admin accounts are automatically blocked from June 1st of their graduation year. No manual action needed &mdash; the system enforces this on every login.</div>
+    </div>
+
+    <div class="info-banner banner-danger">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div><strong>Delete Batch is Irreversible.</strong> Deleting removes all Firestore profiles for that graduation year. Before deleting your own batch, use the Transfer Admin panel below, then delete your account from your profile page.</div>
+    </div>
+
+    <div id="batch-grid" class="batch-grid">
+      <div class="empty-state" id="batch-loading">
+        <div class="spinner" style="margin:0 auto 16px;width:36px;height:36px;"></div>
+        <p>Loading batches&hellip;</p>
+      </div>
+    </div>
+
+    <div class="transfer-panel">
+      <h3>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Transfer Admin Role
+      </h3>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:var(--sp-4)">Promote another active HMC member to Admin before deleting your own account. Once promoted, delete your account from your profile page.</p>
+      <label style="font-size:0.82rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:var(--sp-2)">Select Member to Promote</label>
+      <select id="admin-transfer-select" class="member-select"><option value="">Loading members&hellip;</option></select>
+      <button class="btn btn-primary" onclick="transferAdminRole()" style="width:100%" id="transfer-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Promote to Admin
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal-overlay" id="delete-confirm-modal">
+  <div class="modal" style="max-width:440px">
+    <div style="text-align:center;margin-bottom:var(--sp-5)">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto var(--sp-3)">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+      </div>
+      <h3 class="modal-title" id="delete-modal-title">Delete Batch?</h3>
+    </div>
+    <div style="font-size:0.9rem;line-height:1.7;color:var(--text-normal)" id="delete-modal-body"></div>
+    <div style="display:flex;gap:var(--sp-3);margin-top:var(--sp-5)">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()" style="flex:1">Cancel</button>
+      <button class="btn" id="delete-confirm-btn" style="flex:1;background:rgba(239,68,68,0.85);color:#fff;border:none" onclick="executeDeleteBatch()">Yes, Delete Permanently</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initAuthGuard, getCurrentUser, populateSidebarUser } from '../js/auth.js';
+import { renderSidebar, initSidebarTheme } from '../js/sidebar.js';
+import { showToast } from '../js/utils.js';
+import { db } from '../js/firebase-config.js';
+import { collection, getDocs, writeBatch, doc, updateDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+document.getElementById('sidebar-container').innerHTML = renderSidebar('batch-management.html');
+initSidebarTheme();
+
+initAuthGuard({
+  requireLogin: true,
+  requireRoles: ['admin'],
+  onReady: (user) => {
+    populateSidebarUser(user);
+    loadBatches();
+  }
+});
+
+let allUsers = [];
+let batches  = {};
+let pendingDeleteYear = null;
+
+async function loadBatches() {
+  const grid = document.getElementById('batch-grid');
+
+  // 10-second timeout guard — if Firestore hangs, show an error
+  const timeout = setTimeout(() => {
+    if (grid.querySelector('#batch-loading')) {
+      grid.innerHTML = `<div class="empty-state"><p style="color:var(--brand-danger)">Timed out loading batches. Check your Firestore security rules or network connection.</p></div>`;
+    }
+  }, 10000);
+
+  try {
+    // Query roles relevant for graduation batch management (excluding laundry workers)
+    const roles = ['admin', 'member', 'subadmin', 'past_member', 'student'];
+    const snapshots = await Promise.all(
+      roles.map(role =>
+        getDocs(query(collection(db, 'users'), where('role', '==', role)))
+      )
+    );
+
+    allUsers = [];
+    snapshots.forEach(snap => {
+      snap.docs.forEach(d => allUsers.push({ uid: d.id, ...d.data() }));
+    });
+
+    batches = {};
+    allUsers.forEach(u => {
+      // Exclude laundry workers explicitly
+      if (u.role === 'laundry_worker') return;
+
+      let yr = u.graduationYear || null;
+      if (!yr && u.batch) yr = u.batch > 2000 ? u.batch + 2 : u.batch;
+      if (!yr && u.email) {
+        const m = u.email.split('@')[0].match(/(20\d{2})/);
+        if (m) yr = parseInt(m[1]);
+      }
+      // If no valid year, do not include in batch management
+      if (!yr) return;
+
+      if (!batches[yr]) batches[yr] = { year: yr, users: [], counts: { admin:0, member:0, subadmin:0, student:0, past_member:0, other:0 }, allNonAdminFrozen:true, hasNonAdmin:false };
+      batches[yr].users.push(u);
+      const role = u.role || 'other';
+      if (batches[yr].counts[role] !== undefined) batches[yr].counts[role]++; else batches[yr].counts.other++;
+      if (role !== 'admin') { batches[yr].hasNonAdmin = true; if (!u.accessRevoked) batches[yr].allNonAdminFrozen = false; }
+    });
+
+    clearTimeout(timeout);
+    renderBatchCards();
+    populateMemberSelect();
+  } catch (err) {
+    clearTimeout(timeout);
+    grid.innerHTML = `<div class="empty-state"><p style="color:var(--brand-danger)">Failed to load batches: ${err.message}</p></div>`;
+    console.error('Batch load error:', err);
+  }
+}
+
+function renderBatchCards() {
+  const grid = document.getElementById('batch-grid');
+  const years = Object.keys(batches).map(Number).sort((a,b)=>a-b);
+  if (!years.length) { grid.innerHTML = '<div class="empty-state"><p>No student batches found in database.</p></div>'; return; }
+  const now = new Date();
+  let html = '';
+  years.forEach(yrNum => {
+    const yrKey = String(yrNum);
+    const b = batches[yrKey];
+    const autoFrozen = now.getFullYear() > yrNum || (now.getFullYear() === yrNum && now.getMonth() + 1 >= 6);
+    const manFrozen  = b.hasNonAdmin && b.allNonAdminFrozen;
+    const frozen     = autoFrozen || manFrozen;
+    const monthsLeft = (yrNum - now.getFullYear()) * 12 + (6 - (now.getMonth()+1));
+    const pill = frozen
+      ? '<span class="batch-status-pill pill-frozen">Frozen</span>'
+      : monthsLeft <= 6
+        ? '<span class="batch-status-pill pill-soon">Graduating Soon</span>'
+        : '<span class="batch-status-pill pill-active">Active</span>';
+    
+    const labelTitle = `Class of ${yrKey}`;
+
+    html += `
+    <div class="batch-card ${frozen?'frozen':''}">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-2)">
+        <div class="batch-year-badge">${labelTitle}</div>${pill}
+      </div>
+      <div class="batch-stat-row">
+        <div class="batch-stat-chip"><div class="batch-stat-val">${b.users.length}</div><div class="batch-stat-lbl">Total</div></div>
+        <div class="batch-stat-chip"><div class="batch-stat-val">${b.counts.student}</div><div class="batch-stat-lbl">Students</div></div>
+        <div class="batch-stat-chip"><div class="batch-stat-val">${b.counts.member + b.counts.past_member}</div><div class="batch-stat-lbl">Members</div></div>
+        <div class="batch-stat-chip"><div class="batch-stat-val">${b.counts.admin}</div><div class="batch-stat-lbl">Admins</div></div>
+      </div>
+      ${autoFrozen ? `<p style="font-size:0.78rem;color:var(--text-muted);margin:0">Auto-frozen since June ${yrKey} (Graduation passed)</p>` : ''}
+      <div class="batch-actions">
+        ${!autoFrozen ? `<button class="batch-action-btn ${manFrozen?'btn-unfreeze':'btn-freeze'}" onclick="toggleFreezeBatch('${yrKey}',${manFrozen})" id="freeze-btn-${yrKey}">${manFrozen?'Unfreeze':'Freeze Manually'}</button>` : ''}
+        <button class="batch-action-btn btn-delete-batch" onclick="confirmDeleteBatch('${yrKey}')" id="delete-btn-${yrKey}">Delete Batch</button>
+      </div>
+    </div>`;
+  });
+  grid.innerHTML = html;
+}
+
+function populateMemberSelect() {
+  const sel = document.getElementById('admin-transfer-select');
+  const cu = getCurrentUser();
+  const members = allUsers.filter(u => u.uid !== cu?.uid && u.role !== 'admin' && u.role !== 'student' && u.role !== 'laundry_worker' && !u.accessRevoked);
+  sel.innerHTML = members.length
+    ? '<option value="">Select a member&hellip;</option>' + members.map(m=>`<option value="${m.uid}">${m.name} &mdash; ${m.post||m.role} (Class of ${m.graduationYear||'?'})</option>`).join('')
+    : '<option value="">No eligible members found</option>';
+}
+
+window.toggleFreezeBatch = async function(yearKey, isCurrentlyFrozen) {
+  const btn = document.getElementById(`freeze-btn-${yearKey}`);
+  if (btn) { btn.disabled=true; btn.textContent='Updating\u2026'; }
+  try {
+    const targets = (batches[yearKey]?.users||[]).filter(u=>u.role!=='admin');
+    if (!targets.length) { showToast('No non-admin users to update.','info'); if(btn){btn.disabled=false;btn.textContent=isCurrentlyFrozen?'Unfreeze':'Freeze Manually';} return; }
+    const wb = writeBatch(db);
+    targets.forEach(u => {
+      const updates = { accessRevoked: !isCurrentlyFrozen };
+      // Move active members to past_member status when batch is frozen
+      if (!isCurrentlyFrozen && u.role === 'member') {
+        updates.role = 'past_member';
+        updates.isCurrent = false;
+      } else if (isCurrentlyFrozen && u.role === 'past_member') {
+        updates.role = 'member';
+        updates.isCurrent = true;
+      }
+      wb.update(doc(db,'users',u.uid), updates);
+    });
+    await wb.commit();
+    showToast(isCurrentlyFrozen ? `Batch ${yearKey} access restored for ${targets.length} user(s).` : `Batch ${yearKey} frozen — ${targets.length} user(s) blocked & committee members moved to Past Members.`, isCurrentlyFrozen?'success':'warning');
+    await loadBatches();
+  } catch(err) {
+    showToast('Error: '+err.message,'error');
+    if(btn){btn.disabled=false;btn.textContent=isCurrentlyFrozen?'Unfreeze':'Freeze Manually';}
+  }
+};
+
+window.confirmDeleteBatch = function(yearKey) {
+  pendingDeleteYear = yearKey;
+  const b = batches[yearKey];
+  const cnt = b?.users.length||0, admCnt = b?.counts.admin||0;
+  document.getElementById('delete-modal-title').textContent = `Delete Batch ${yearKey}?`;
+  document.getElementById('delete-modal-body').innerHTML = `This will permanently delete <strong>${cnt} user profile(s)</strong> for Batch <strong>${yearKey}</strong> from Firestore.`+(admCnt?`<br><br><strong style="color:#f87171">Warning: ${admCnt} admin account(s) in this batch. Ensure another admin exists first.</strong>`:'')+`<br><br>This action <strong>cannot be undone</strong>.`;
+  document.getElementById('delete-confirm-modal').classList.add('show');
+  document.body.style.overflow='hidden';
+};
+
+window.closeDeleteModal = function() {
+  document.getElementById('delete-confirm-modal').classList.remove('show');
+  document.body.style.overflow='';
+  pendingDeleteYear=null;
+};
+
+window.executeDeleteBatch = async function() {
+  if (!pendingDeleteYear) return;
+  const yearKey = pendingDeleteYear;
+  const btn = document.getElementById('delete-confirm-btn');
+  btn.disabled=true; btn.textContent='Deleting\u2026';
+  try {
+    const targets = batches[yearKey]?.users||[];
+    for (let i=0;i<targets.length;i+=400) { const wb=writeBatch(db); targets.slice(i,i+400).forEach(u=>wb.delete(doc(db,'users',u.uid))); await wb.commit(); }
+    showToast(`Batch ${yearKey} deleted — ${targets.length} profile(s) removed.`,'success');
+    closeDeleteModal(); await loadBatches();
+  } catch(err) {
+    showToast('Delete failed: '+err.message,'error');
+    btn.disabled=false; btn.textContent='Yes, Delete Permanently';
+  }
+};
+
+window.transferAdminRole = async function() {
+  const sel = document.getElementById('admin-transfer-select');
+  const uid = sel.value;
+  if (!uid) { showToast('Please select a member to promote.','warning'); return; }
+  const target = allUsers.find(u=>u.uid===uid);
+  if (!target) { showToast('Member not found.','error'); return; }
+  if (!confirm(`Promote "${target.name}" to Admin? They will have full admin access.`)) return;
+  const btn = document.getElementById('transfer-btn');
+  btn.disabled=true; btn.textContent='Promoting\u2026';
+  try {
+    await updateDoc(doc(db,'users',uid),{role:'admin'});
+    showToast(`${target.name} has been promoted to Admin.`,'success');
+    await loadBatches();
+  } catch(err) {
+    showToast('Transfer failed: '+err.message,'error');
+  } finally {
+    btn.disabled=false;
+    btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Promote to Admin';
+  }
+};
+
+
+</script>
+</body>
+</html>
